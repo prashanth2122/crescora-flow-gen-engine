@@ -1,0 +1,234 @@
+{
+  "generatedAt": "2026-07-13",
+  "exportWrapper": {
+    "requiredKeys": [
+      "version",
+      "exportedAt",
+      "bot",
+      "flow",
+      "metadata"
+    ],
+    "version": {
+      "type": "string",
+      "literal": "1.0"
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "ISO-8601 timestamp"
+    },
+    "bot": {
+      "requiredKeys": [
+        "name",
+        "description"
+      ],
+      "optionalKeys": [
+        "headerLogoUrl",
+        "headerTitle",
+        "headerTagline",
+        "globalVariables"
+      ],
+      "globalVariables": {
+        "type": "array",
+        "itemShape": {
+          "key": "string",
+          "value": "string"
+        },
+        "keyPattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+      }
+    },
+    "flow": {
+      "requiredKeys": [
+        "version",
+        "nodes",
+        "edges"
+      ],
+      "version": {
+        "major": "number",
+        "minor": "number",
+        "patch": "number"
+      },
+      "nodes": {
+        "requiredKeys": [
+          "id",
+          "type"
+        ],
+        "optionalKeys": [
+          "data",
+          "position"
+        ],
+        "allowedTypes": [
+          "start",
+          "message",
+          "email",
+          "sms",
+          "notification",
+          "media",
+          "carousel",
+          "form",
+          "appointment",
+          "payment",
+          "document-intake",
+          "file-processor",
+          "script",
+          "track-event",
+          "audit-log",
+          "record",
+          "connector",
+          "event-trigger",
+          "webhook-trigger",
+          "approval",
+          "auth-consent",
+          "input",
+          "decision",
+          "faq",
+          "api",
+          "condition",
+          "end",
+          "delay",
+          "language",
+          "queue",
+          "dedupe",
+          "rate-limit",
+          "template-message",
+          "wait-until",
+          "scheduler",
+          "timeout",
+          "retry",
+          "setVariable",
+          "handover",
+          "agent-handoff",
+          "fallback",
+          "switch",
+          "intent-router",
+          "loop",
+          "error",
+          "ai-extract",
+          "ai-generate",
+          "ai-grounded",
+          "web-crawl",
+          "ai-sentiment",
+          "ai-memory"
+        ],
+        "positionShape": {
+          "x": "number",
+          "y": "number"
+        }
+      },
+      "edges": {
+        "requiredKeys": [
+          "id",
+          "source",
+          "target"
+        ],
+        "optionalKeys": [
+          "sourceHandle",
+          "targetHandle",
+          "type",
+          "label",
+          "condition",
+          "isDefault",
+          "isError"
+        ],
+        "condition": {
+          "operator": [
+            "equals",
+            "contains"
+          ],
+          "value": "string"
+        }
+      }
+    },
+    "metadata": {
+      "requiredKeys": [
+        "flowVersion",
+        "nodeCount"
+      ],
+      "flowVersion": "number",
+      "nodeCount": "number"
+    }
+  },
+  "supportedNodeTypes": [
+    "start",
+    "message",
+    "email",
+    "sms",
+    "notification",
+    "media",
+    "carousel",
+    "form",
+    "appointment",
+    "payment",
+    "document-intake",
+    "file-processor",
+    "script",
+    "track-event",
+    "audit-log",
+    "record",
+    "connector",
+    "event-trigger",
+    "webhook-trigger",
+    "approval",
+    "auth-consent",
+    "input",
+    "decision",
+    "faq",
+    "api",
+    "condition",
+    "end",
+    "delay",
+    "language",
+    "queue",
+    "dedupe",
+    "rate-limit",
+    "template-message",
+    "wait-until",
+    "scheduler",
+    "timeout",
+    "retry",
+    "setVariable",
+    "handover",
+    "agent-handoff",
+    "fallback",
+    "switch",
+    "intent-router",
+    "loop",
+    "error",
+    "ai-extract",
+    "ai-generate",
+    "ai-grounded",
+    "web-crawl",
+    "ai-sentiment",
+    "ai-memory"
+  ],
+  "safeSystemVariables": [
+    "system.botId",
+    "system.channel",
+    "system.sessionId"
+  ],
+  "safeContextVariables": [
+    "input",
+    "intent",
+    "lastError"
+  ],
+  "rejectedSystemShorthand": [
+    "botId",
+    "channel",
+    "sessionId"
+  ],
+  "validatorRules": [
+    "Return full export JSON only. No markdown fences, prose, or comments.",
+    "Top-level keys must be exactly `version`, `exportedAt`, `bot`, `flow`, and `metadata`.",
+    "Exactly one `start` node must exist.",
+    "Every edge `source` and `target` must reference a real node ID.",
+    "No duplicate node IDs or edge IDs.",
+    "No orphan or unreachable nodes.",
+    "No `end` node may have outgoing edges.",
+    "No conditional node may have conditional branches without exactly one default edge.",
+    "Allowed edge condition operators are only `equals` and `contains`.",
+    "Do not use bare `{{botId}}`, `{{channel}}`, or `{{sessionId}}`; use `{{system.botId}}`, `{{system.channel}}`, and `{{system.sessionId}}`.",
+    "Every `{{variable}}` read must come from an upstream writer, a declared bot global variable, or an allowed system/context variable.",
+    "Do not copy example-only placeholders such as `{{source}}`, `{{payment_status}}`, `{{customer_phone}}`, `{{consent_text}}`, or `{{ip_address}}` unless the flow writes them first.",
+    "Do not create self-loops or ancestor back-edges unless the loop is explicitly bounded and has a clear exit path.",
+    "Keep `metadata.nodeCount` equal to `flow.nodes.length`."
+  ]
+}

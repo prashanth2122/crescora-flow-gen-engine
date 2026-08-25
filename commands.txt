@@ -1,0 +1,25 @@
+package root stays generic:
+- contract snapshots live at the package root
+- domain bundles live under domains/<industry>/
+- registered domains live in domains/registry.json
+
+current hospital canonical source:
+domains/hospital/templates-source/hospital-full-automation.source.flow.json
+
+sync contract files from the current application code:
+npm run contract:generate
+
+sync all registered domains after any flow-specific change:
+npm run domains:check
+
+build current hospital import file from canonical source:
+npm run domain:hospital:build
+npm run domain:hospital:validate
+npm run domain:hospital:audit:journeys
+npm run domain:hospital:audit:content
+
+repo-sync gate:
+npm run check
+
+strict hospital gate:
+npm run check:strict

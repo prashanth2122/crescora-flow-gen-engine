@@ -1,0 +1,27 @@
+{
+  "name": "@zero-code/flow-generator",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "build": "npm run contract:generate && npm run domains:build",
+    "contract:generate": "node ../../scripts/generate-flow-external-contract.js",
+    "contract:check": "node ../../scripts/generate-flow-external-contract.js --check",
+    "domains:build": "node scripts/run-domain-workflows.mjs build",
+    "domains:validate": "node scripts/run-domain-workflows.mjs validate",
+    "domains:check": "node scripts/run-domain-workflows.mjs check",
+    "domains:check:strict": "node scripts/run-domain-workflows.mjs check:strict",
+    "domain:hospital:build": "node scripts/build-hospital-full-automation.mjs",
+    "domain:hospital:validate": "node scripts/validate-flow-export.mjs domains/hospital/templates/hospital-full-automation.flow.json",
+    "domain:real-estate:build": "node scripts/build-real-estate-lead-to-site-visit.mjs",
+    "domain:real-estate:validate": "node scripts/validate-flow-export.mjs domains/real-estate/templates/real-estate-lead-to-site-visit.flow.json",
+    "domain:hospital:audit:journeys": "node scripts/audit-hospital-journeys.mjs",
+    "domain:hospital:audit:content": "node scripts/audit-hospital-content.mjs",
+    "template:build": "npm run domain:hospital:build",
+    "template:validate": "npm run domain:hospital:validate",
+    "template:audit:journeys": "npm run domain:hospital:audit:journeys",
+    "template:audit:content": "npm run domain:hospital:audit:content",
+    "check": "npm run contract:check && npm run domains:check",
+    "check:strict": "npm run contract:check && npm run domains:check:strict"
+  }
+}

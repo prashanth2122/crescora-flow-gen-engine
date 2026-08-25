@@ -1,0 +1,75 @@
+{
+  "version": "1.0",
+  "exportedAt": "2026-07-13T00:00:00.000Z",
+  "bot": {
+    "name": "External Contract Example Bot",
+    "description": "Minimal validator-safe export example.",
+    "globalVariables": []
+  },
+  "flow": {
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "nodes": [
+      {
+        "id": "start_1",
+        "type": "start",
+        "position": {
+          "x": 80,
+          "y": 200
+        },
+        "data": {
+          "messages": []
+        }
+      },
+      {
+        "id": "message_1",
+        "type": "message",
+        "position": {
+          "x": 320,
+          "y": 200
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Welcome. This export demonstrates the canonical wrapper and a validator-safe minimal graph."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "end_1",
+        "type": "end",
+        "position": {
+          "x": 560,
+          "y": 200
+        },
+        "data": {
+          "messages": []
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_start_message",
+        "source": "start_1",
+        "target": "message_1",
+        "type": "smoothstep"
+      },
+      {
+        "id": "edge_message_end",
+        "source": "message_1",
+        "target": "end_1",
+        "type": "smoothstep"
+      }
+    ]
+  },
+  "metadata": {
+    "flowVersion": 1,
+    "nodeCount": 3
+  }
+}

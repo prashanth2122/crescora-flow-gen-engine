@@ -1,0 +1,4931 @@
+{
+  "generatedAt": "2026-07-13",
+  "nodeCount": 51,
+  "nodes": [
+    {
+      "type": "start",
+      "label": "Conversation Start",
+      "category": "basic",
+      "summary": "Defines the single entry point to a flow and hands control to the first business step.",
+      "useCases": [
+        "Launch a welcome journey for every new user.",
+        "Enter a campaign-specific flow with prefills or source tags.",
+        "Create one predictable entry point for testing, debugging, and analytics."
+      ],
+      "limitations": [
+        "Must have exactly one outgoing edge.",
+        "Should not branch or use conditional routing.",
+        "Any missing next step makes the flow unreachable."
+      ],
+      "edgeConfig": {
+        "summary": "Connect Start directly to one next node. It does not emit route keys and it does not support branching.",
+        "items": [
+          "Outgoing edges: exactly 1",
+          "Conditional edges: not supported",
+          "Default edge: not used",
+          "Best next node: message, input, intent-router, or setVariable"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-start",
+      "uiFields": [],
+      "defaults": {},
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "message",
+      "label": "Response Message",
+      "category": "basic",
+      "summary": "Sends user-visible messages that explain, confirm, prompt, or guide the next step in the flow.",
+      "useCases": [
+        "Welcome users and explain the next expected action.",
+        "Send policy, pricing, or status information in clear language.",
+        "Provide post-action confirmations such as ticket created or payment received.",
+        "Set context before input, decision, or handover nodes."
+      ],
+      "limitations": [
+        "Empty message arrays create silent steps that feel broken.",
+        "Very long text reduces readability on mobile-first channels.",
+        "Should be combined with input/decision nodes for interactive paths."
+      ],
+      "edgeConfig": {
+        "summary": "Message can connect to the next interactive or informational step. It usually has one outgoing edge, but can branch when the message is only setting context before different outcomes.",
+        "items": [
+          "Outgoing edges: 1 or more",
+          "Conditional edges: supported downstream, not on the message itself",
+          "Default edge: recommended when the message has multiple paths",
+          "Best next nodes: input, decision, media, handover, end, or fallback"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-message",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Bot Messages",
+          "type": "messages",
+          "required": false
+        },
+        {
+          "key": "buttons",
+          "label": "Optional Buttons",
+          "type": "buttons",
+          "required": false,
+          "optional": true
+        }
+      ],
+      "defaults": {
+        "messages": [
+          ""
+        ],
+        "buttons": []
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "email",
+      "label": "Email Dispatch",
+      "category": "integration",
+      "summary": "Builds and dispatches an email from runtime templates, variables, and provider settings, then stores the send result for later use.",
+      "useCases": [
+        "Send transactional updates like order, appointment, or case status.",
+        "Deliver follow-up documents, invoices, or onboarding instructions.",
+        "Trigger internal or external escalation emails with context details.",
+        "Send a confirmation or receipt after a flow action completes."
+      ],
+      "limitations": [
+        "Requires a configured backend email provider and verified sender setup.",
+        "Invalid recipient format or blocked domains can cause delivery failure.",
+        "HTML-heavy templates may render differently across email clients.",
+        "This node does not branch on send outcome by itself; inspect outputVar.status in a later node if needed."
+      ],
+      "edgeConfig": {
+        "summary": "Email is usually used as a single linear step. Connect it to one next node, and use a later decision node if you need to branch on the stored send result.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on email itself",
+          "Default edge: recommended for linear flow",
+          "Best next nodes: decision, message, handover, fallback, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-email",
+      "uiFields": [
+        {
+          "key": "to",
+          "label": "To (comma separated emails)",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "cc",
+          "label": "CC (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "bcc",
+          "label": "BCC (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "replyTo",
+          "label": "Reply-To (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "subject",
+          "label": "Subject",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "body",
+          "label": "Body Template",
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "key": "bodyType",
+          "label": "Body Type",
+          "type": "select",
+          "required": false,
+          "options": [
+            "text",
+            "html"
+          ]
+        },
+        {
+          "key": "emitConfirmation",
+          "label": "Emit Confirmation Message",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save result as",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "to": "",
+        "cc": "",
+        "bcc": "",
+        "replyTo": "",
+        "subject": "Update for {{name}}",
+        "body": "Hello {{name}},\n\nYour update is ready.\n\n- Team",
+        "bodyType": "text",
+        "emitConfirmation": false,
+        "outputVar": "emailResult"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar` when configured"
+        ],
+        "reads": [
+          "recipient, subject, and body templates"
+        ],
+        "notes": [
+          "Email nodes are linear; branch on the saved result in later nodes if needed."
+        ]
+      }
+    },
+    {
+      "type": "sms",
+      "label": "SMS Dispatch",
+      "category": "integration",
+      "summary": "Builds and dispatches SMS content using runtime variables and provider routing, then stores the delivery result for later use.",
+      "useCases": [
+        "Send reminders, OTP notifications, or short transactional alerts.",
+        "Deliver urgent follow-ups when users are not active in chat.",
+        "Share compact status updates that require high open rates.",
+        "Send a short fallback notice when chat or email is not ideal."
+      ],
+      "limitations": [
+        "Requires an SMS gateway integration in runtime dependencies.",
+        "Carrier and country compliance rules differ by destination.",
+        "Long messages may be split or truncated based on provider behavior.",
+        "This node does not branch on delivery outcome by itself; inspect outputVar.status later if needed."
+      ],
+      "edgeConfig": {
+        "summary": "SMS is generally a linear step. Connect it to one next node, and branch later if you need to inspect the stored result or follow up differently.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on sms itself",
+          "Default edge: recommended for a linear journey",
+          "Best next nodes: decision, message, handover, fallback, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-sms",
+      "uiFields": [
+        {
+          "key": "to",
+          "label": "To (phone number)",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "messageTemplate",
+          "label": "SMS Template",
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "key": "senderId",
+          "label": "Sender ID (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "emitConfirmation",
+          "label": "Emit Confirmation Message",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save result as",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "to": "",
+        "messageTemplate": "Hi {{name}}, your request is received.",
+        "senderId": "",
+        "emitConfirmation": false,
+        "outputVar": "smsResult"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar` when configured"
+        ],
+        "reads": [
+          "recipient and message templates"
+        ],
+        "notes": [
+          "Use short, channel-safe text and define a later failure branch if required."
+        ]
+      }
+    },
+    {
+      "type": "notification",
+      "label": "Unified Notification",
+      "category": "integration",
+      "summary": "Sends unified multi-channel notifications (WhatsApp/SMS/Email) with fallback strategy and dedupe handling.",
+      "useCases": [
+        "Send appointment confirmations and reminders across preferred channels.",
+        "Notify customer and internal team in one node execution.",
+        "Fallback from WhatsApp to SMS/email when session/provider delivery fails."
+      ],
+      "limitations": [
+        "Channel delivery depends on configured provider dependencies.",
+        "Template variables must resolve when strict template validation is enabled.",
+        "Dedupe only works when idempotency keys are stable and meaningful."
+      ],
+      "edgeConfig": {
+        "summary": "Notification should connect each delivery outcome to a clear next step. It usually exposes three routes so the flow can react to full success, partial success, or total failure.",
+        "items": [
+          "Outgoing edges: 3",
+          "Route outcomes: sent, partially_sent, failed",
+          "Conditional edges: supported through the node's route outcomes",
+          "Best next nodes: end, message, handover, fallback, or decision"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-notification",
+      "uiFields": [
+        {
+          "key": "recipientsJson",
+          "label": "Recipients JSON",
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "key": "channelsJson",
+          "label": "Channels JSON",
+          "type": "textarea",
+          "required": true
+        },
+        {
+          "key": "strategy",
+          "label": "Delivery Strategy",
+          "type": "select",
+          "required": false,
+          "options": [
+            "first_success",
+            "send_all",
+            "priority_order"
+          ]
+        },
+        {
+          "key": "messageCategory",
+          "label": "Message Category",
+          "type": "select",
+          "required": false,
+          "options": [
+            "transactional",
+            "promotional",
+            "service"
+          ]
+        },
+        {
+          "key": "dedupeKey",
+          "label": "Idempotency Key (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "defaultCountryCode",
+          "label": "Default Country Code",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "strictTemplateValidation",
+          "label": "Fail If Template Variables Missing",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "recipients": [
+          {
+            "type": "customer",
+            "phone": "{{customer_phone}}",
+            "email": "{{customer_email}}"
+          }
+        ],
+        "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{customer_phone}}\",\n    \"email\": \"{{customer_email}}\"\n  }\n]",
+        "channels": [
+          {
+            "type": "whatsapp",
+            "templateId": "appointment_confirmed",
+            "enabled": true
+          },
+          {
+            "type": "sms",
+            "message": "Your appointment is confirmed for {{slot_label}}",
+            "enabled": true
+          },
+          {
+            "type": "email",
+            "subject": "Appointment confirmed",
+            "body": "Your appointment is confirmed for {{slot_label}}",
+            "enabled": true
+          }
+        ],
+        "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"templateId\": \"appointment_confirmed\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"sms\",\n    \"message\": \"Your appointment is confirmed for {{slot_label}}\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"email\",\n    \"subject\": \"Appointment confirmed\",\n    \"body\": \"Your appointment is confirmed for {{slot_label}}\",\n    \"enabled\": true\n  }\n]",
+        "strategy": "priority_order",
+        "messageCategory": "transactional",
+        "dedupeKey": "",
+        "defaultCountryCode": "+91",
+        "strictTemplateValidation": true,
+        "outputVar": "notification_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "recipients, channels, dedupe key, and notification templates"
+        ],
+        "notes": [
+          "Channel destination data must already exist for every enabled path."
+        ]
+      }
+    },
+    {
+      "type": "media",
+      "label": "Media Attachment",
+      "category": "basic",
+      "summary": "Sends a file attachment or media URL with optional caption and display filename.",
+      "useCases": [
+        "Share brochures, invoices, reports, and verification documents.",
+        "Send tutorial images/videos to reduce support back-and-forth.",
+        "Attach policy PDFs or forms required for downstream actions."
+      ],
+      "limitations": [
+        "Requires publicly reachable URLs from end-user channels.",
+        "Large files can fail on weak networks or strict channel limits.",
+        "Some channels may not support all media types uniformly."
+      ],
+      "edgeConfig": {
+        "summary": "Media is a linear send step. It emits the attachment message and then continues to exactly one next node; use the next node for any branching or confirmation logic.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on media itself",
+          "Default edge: required to continue the flow",
+          "Best next nodes: input, decision, handover, fallback, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-media",
+      "uiFields": [
+        {
+          "key": "mediaType",
+          "label": "Media Type",
+          "type": "select",
+          "required": true,
+          "options": [
+            "image",
+            "pdf",
+            "doc",
+            "file",
+            "video",
+            "audio"
+          ]
+        },
+        {
+          "key": "url",
+          "label": "File URL",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "caption",
+          "label": "Caption",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "fileName",
+          "label": "File Name",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "mediaType": "image",
+        "url": "",
+        "caption": "",
+        "fileName": ""
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "carousel",
+      "label": "Rich Carousel",
+      "category": "basic",
+      "summary": "Displays multiple cards/slides in a structured, scrollable layout for guided selection, with either static slides or slides generated from array data.",
+      "useCases": [
+        "Compare plans, packages, departments, or recommended options.",
+        "Show featured products, offers, or onboarding steps visually.",
+        "Drive faster user decisions with card-based CTAs."
+      ],
+      "limitations": [
+        "Requires well-formed slide JSON to render correctly.",
+        "Card-heavy content can become cluttered without concise copy.",
+        "Channels without carousel support require text fallback handling."
+      ],
+      "edgeConfig": {
+        "summary": "Carousel is a linear presentation step. It renders the cards and then continues to exactly one next node; any branching or fallback handling should happen after the carousel step.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on carousel itself",
+          "Default edge: required to continue the flow",
+          "Best next nodes: input, decision, handover, fallback, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-carousel",
+      "uiFields": [
+        {
+          "key": "introText",
+          "label": "Intro Text",
+          "type": "textarea",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "slidesMode",
+          "label": "Slide Mode",
+          "type": "select",
+          "required": false,
+          "options": [
+            "static",
+            "dynamic"
+          ]
+        },
+        {
+          "key": "designPreset",
+          "label": "Design Preset",
+          "type": "select",
+          "required": false,
+          "options": [
+            "modern",
+            "glass",
+            "bold",
+            "minimal",
+            "custom"
+          ]
+        },
+        {
+          "key": "cardLayout",
+          "label": "Card Layout",
+          "type": "select",
+          "required": false,
+          "options": [
+            "stacked",
+            "split",
+            "spotlight"
+          ]
+        },
+        {
+          "key": "cardSize",
+          "label": "Card Size",
+          "type": "select",
+          "required": false,
+          "options": [
+            "compact",
+            "comfortable",
+            "expanded"
+          ]
+        },
+        {
+          "key": "showPagination",
+          "label": "Show Pagination Dots",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "autoAdvanceMs",
+          "label": "Auto Advance (ms, 0 disables)",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "customCss",
+          "label": "Custom Card Style (JSON)",
+          "type": "textarea",
+          "required": false,
+          "optional": true,
+          "showIf": {
+            "key": "designPreset",
+            "equals": "custom"
+          }
+        },
+        {
+          "key": "slidesSource",
+          "label": "Dynamic Slide Source",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "slidesMode",
+            "equals": "dynamic"
+          }
+        },
+        {
+          "key": "slideTemplateJson",
+          "label": "Dynamic Slide Template JSON",
+          "type": "textarea",
+          "required": true,
+          "showIf": {
+            "key": "slidesMode",
+            "equals": "dynamic"
+          }
+        },
+        {
+          "key": "slidesJson",
+          "label": "Static Slides JSON",
+          "type": "textarea",
+          "required": true,
+          "showIf": {
+            "key": "slidesMode",
+            "equals": "static"
+          }
+        }
+      ],
+      "defaults": {
+        "introText": "Explore the options below.",
+        "slidesMode": "static",
+        "designPreset": "modern",
+        "cardLayout": "stacked",
+        "cardSize": "comfortable",
+        "showPagination": true,
+        "autoAdvanceMs": 0,
+        "customCss": "",
+        "slidesSource": "",
+        "slides": [
+          {
+            "id": "plan_1",
+            "type": "card",
+            "eyebrow": "Popular choice",
+            "icon": "plus",
+            "title": "Starter Plan",
+            "heading": "Xpert Health Basic",
+            "description": "Best for quick launches and pilot teams.",
+            "paragraphs": [
+              "Home collection support is included.",
+              "Use this plan when speed matters more than customization."
+            ],
+            "badges": [
+              "Home Collection",
+              "Fast Launch"
+            ],
+            "fields": {
+              "Price": "Rs 1,899",
+              "SLA": "Business hours"
+            },
+            "bullets": [
+              "WhatsApp support",
+              "Operator dashboard"
+            ],
+            "footer": "Best for first deployments.",
+            "cta": {
+              "label": "Book Demo",
+              "value": "book_demo"
+            }
+          },
+          {
+            "id": "slide_2",
+            "type": "text",
+            "title": "Need Enterprise?",
+            "description": "Enable SSO, audit logs, and advanced orchestration."
+          }
+        ],
+        "slidesJson": "[\n  {\n    \"id\": \"plan_1\",\n    \"type\": \"card\",\n    \"eyebrow\": \"Popular choice\",\n    \"icon\": \"plus\",\n    \"title\": \"Starter Plan\",\n    \"heading\": \"Xpert Health Basic\",\n    \"description\": \"Best for quick launches and pilot teams.\",\n    \"paragraphs\": [\n      \"Home collection support is included.\",\n      \"Use this plan when speed matters more than customization.\"\n    ],\n    \"badges\": [\n      \"Home Collection\",\n      \"Fast Launch\"\n    ],\n    \"fields\": {\n      \"Price\": \"Rs 1,899\",\n      \"SLA\": \"Business hours\"\n    },\n    \"bullets\": [\n      \"WhatsApp support\",\n      \"Operator dashboard\"\n    ],\n    \"footer\": \"Best for first deployments.\",\n    \"cta\": {\n      \"label\": \"Book Demo\",\n      \"value\": \"book_demo\"\n    }\n  },\n  {\n    \"id\": \"slide_2\",\n    \"type\": \"text\",\n    \"title\": \"Need Enterprise?\",\n    \"description\": \"Enable SSO, audit logs, and advanced orchestration.\"\n  }\n]",
+        "slideTemplateJson": "{\n  \"id\": \"slide_template\",\n  \"type\": \"card\",\n  \"eyebrow\": \"{{item.category}}\",\n  \"heading\": \"{{item.title}}\",\n  \"title\": \"{{item.subtitle}}\",\n  \"description\": \"{{item.description}}\",\n  \"paragraphs\": [\n    \"{{item.summary}}\"\n  ],\n  \"badges\": [\n    \"{{item.tag}}\"\n  ],\n  \"imageUrl\": \"{{item.imageUrl}}\",\n  \"fields\": {\n    \"Price\": \"{{item.price}}\"\n  },\n  \"actions\": [\n    {\n      \"label\": \"Select\",\n      \"value\": \"{{item.id}}\"\n    }\n  ]\n}"
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "form",
+      "label": "Form Intake",
+      "category": "basic",
+      "summary": "Collects structured multi-field input, stores it as a reusable payload, and maps fields into conversation variables when enabled.",
+      "useCases": [
+        "Capture lead qualification and profile details in one step.",
+        "Collect registration or admission data with required fields.",
+        "Gather standardized data before API submission or escalation.",
+        "Map each submitted field into reusable variables for later nodes."
+      ],
+      "limitations": [
+        "Large forms reduce completion rates and increase user drop-off.",
+        "Field design quality directly impacts response quality.",
+        "Advanced validation rules should be configured carefully so retry guidance stays understandable.",
+        "The node is linear and should continue to exactly one next step after capture.",
+        "The chat textbox should stay disabled while the form bubble is active so users submit through the form controls instead of free text.",
+        "Structured form replies are stored as readable internal transcript rows instead of raw JSON blobs in the visible chat."
+      ],
+      "edgeConfig": {
+        "summary": "Form is a linear capture step. It waits for the user payload, validates required fields, stores the structured object, and then continues to exactly one next node.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on form itself",
+          "Default edge: required to continue the flow",
+          "Best next nodes: message, api, decision, handover, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-form",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Prompt Messages",
+          "type": "messages",
+          "required": false
+        },
+        {
+          "key": "fieldsJson",
+          "label": "Form Fields JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Form As",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "mapToVariables",
+          "label": "Map Fields To Vars",
+          "type": "boolean",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "messages": [
+          "Please submit the form details as JSON."
+        ],
+        "fields": [
+          {
+            "key": "name",
+            "label": "Full Name",
+            "type": "text",
+            "required": true
+          },
+          {
+            "key": "email",
+            "label": "Email",
+            "type": "email",
+            "required": true
+          }
+        ],
+        "fieldsJson": "[\n  {\n    \"key\": \"name\",\n    \"label\": \"Full Name\",\n    \"type\": \"text\",\n    \"required\": true\n  },\n  {\n    \"key\": \"email\",\n    \"label\": \"Email\",\n    \"type\": \"email\",\n    \"required\": true\n  }\n]",
+        "outputVar": "formData",
+        "mapToVariables": true,
+        "submitLabel": "Submit",
+        "selectPlaceholder": "Select",
+        "formErrorMessage": "Please fix the highlighted fields."
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`",
+          "field keys when `mapToVariables` is enabled"
+        ],
+        "reads": [],
+        "notes": [
+          "Form writes a full payload and can optionally fan out field-level variables."
+        ]
+      }
+    },
+    {
+      "type": "appointment",
+      "label": "Appointment Booking",
+      "category": "basic",
+      "summary": "Captures a user-selected date and time slot, stores appointment metadata, and continues to exactly one next step.",
+      "useCases": [
+        "Book clinic consultations, site visits, or service appointments.",
+        "Collect preferred schedule details before agent confirmation.",
+        "Store booking details for confirmation, CRM sync, or agent review.",
+        "Guide users through date selection first and slot selection second."
+      ],
+      "limitations": [
+        "Slot logic depends on valid slot configuration and IDs.",
+        "Timezone handling must be explicit and drives the generated date chips for multi-region users.",
+        "Needs clear retry guidance when no suitable slot is available.",
+        "The node is linear and should continue to one downstream step after a booking is chosen."
+      ],
+      "edgeConfig": {
+        "summary": "Appointment is a linear booking step. It validates the date and slot inside the node, stores the booking payload, and then continues to exactly one next node.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on appointment itself",
+          "Default edge: required to continue the flow",
+          "Best next nodes: message, api, handover, decision, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-appointment",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Prompt Messages",
+          "type": "messages",
+          "required": false
+        },
+        {
+          "key": "slotMode",
+          "label": "Slot Source Mode",
+          "type": "select",
+          "required": false,
+          "options": [
+            "dynamic",
+            "static"
+          ]
+        },
+        {
+          "key": "timezone",
+          "label": "Timezone (IANA)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "slotIntervalMins",
+          "label": "Slot Gap (mins)",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "slotDurationMins",
+          "label": "Slot Duration (mins)",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "horizonDays",
+          "label": "Bookable Days Ahead",
+          "type": "number",
+          "required": false,
+          "showIf": {
+            "key": "slotMode",
+            "notIn": [
+              "static"
+            ]
+          }
+        },
+        {
+          "key": "maxSlotsPerDay",
+          "label": "Max Slots Per Day",
+          "type": "number",
+          "required": false,
+          "showIf": {
+            "key": "slotMode",
+            "notIn": [
+              "static"
+            ]
+          }
+        },
+        {
+          "key": "workingHoursStart",
+          "label": "Working Hours Start (HH:mm)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "slotMode",
+            "notIn": [
+              "static"
+            ]
+          }
+        },
+        {
+          "key": "workingHoursEnd",
+          "label": "Working Hours End (HH:mm)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "slotMode",
+            "notIn": [
+              "static"
+            ]
+          }
+        },
+        {
+          "key": "availableWeekdays",
+          "label": "Available Weekdays (0-6 csv)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "slotMode",
+            "notIn": [
+              "static"
+            ]
+          }
+        },
+        {
+          "key": "dynamicSlotsVar",
+          "label": "Dynamic Slots Variable",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "slotMode",
+            "equals": "dynamic"
+          }
+        },
+        {
+          "key": "dynamicSlotsPath",
+          "label": "Dynamic Slots Path",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "slotMode",
+            "equals": "dynamic"
+          }
+        },
+        {
+          "key": "slotsJson",
+          "label": "Static Slots JSON",
+          "type": "textarea",
+          "required": false,
+          "showIf": {
+            "key": "slotMode",
+            "equals": "static"
+          }
+        },
+        {
+          "key": "dateVar",
+          "label": "Save Date As",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Booking As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "messages": [
+          "Please choose your appointment date and preferred time slot."
+        ],
+        "slotMode": "dynamic",
+        "timezone": "Asia/Kolkata",
+        "slotIntervalMins": 15,
+        "slotDurationMins": 15,
+        "horizonDays": 30,
+        "maxSlotsPerDay": 16,
+        "workingHoursStart": "09:00",
+        "workingHoursEnd": "18:00",
+        "availableWeekdays": "1,2,3,4,5,6",
+        "dynamicSlotsVar": "",
+        "dynamicSlotsPath": "",
+        "slots": [
+          {
+            "id": "slot_1",
+            "label": "10:00 AM",
+            "start": "10:00",
+            "end": "10:15"
+          },
+          {
+            "id": "slot_2",
+            "label": "03:00 PM",
+            "start": "15:00",
+            "end": "15:15"
+          }
+        ],
+        "slotsJson": "[\n  {\n    \"id\": \"slot_1\",\n    \"label\": \"10:00 AM\",\n    \"start\": \"10:00\",\n    \"end\": \"10:15\"\n  },\n  {\n    \"id\": \"slot_2\",\n    \"label\": \"03:00 PM\",\n    \"start\": \"15:00\",\n    \"end\": \"15:15\"\n  }\n]",
+        "outputVar": "appointmentBooking",
+        "dateVar": "appointmentDate"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.dateVar`",
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "slot source variables and templated messages"
+        ],
+        "notes": [
+          "Appointment flows should define date and booking result variables explicitly."
+        ]
+      }
+    },
+    {
+      "type": "payment",
+      "label": "Payment Collection",
+      "category": "integration",
+      "summary": "Collects payment acknowledgment, stores the result, and routes the flow after the payment is marked paid or failed.",
+      "useCases": [
+        "Collect admission, booking, or subscription payments.",
+        "Share payment links and branch on paid or failed outcomes.",
+        "Store payment status for downstream fulfillment or escalation.",
+        "Verify payment links with Razorpay or manual user confirmation."
+      ],
+      "limitations": [
+        "Manual mode relies on user confirmation instead of gateway validation.",
+        "Provider auto-verify needs valid gateway credentials and API access.",
+        "Incorrect amount/currency config can block payment completion.",
+        "Pending Razorpay checks stay in the node until the payment is verified or marked failed."
+      ],
+      "edgeConfig": {
+        "summary": "Payment is an acknowledgment step with two routed outcomes after completion: paid or failed. Pending verification is handled inside the node as awaiting input, not as a separate outgoing branch.",
+        "items": [
+          "Outgoing edges: 2",
+          "Route outcomes: paid, failed",
+          "Conditional edges: route paid/failed after the payment result is confirmed",
+          "Best next nodes: message, api, handover, decision, or end"
+        ]
+      },
+      "routes": [
+        "paid",
+        "failed"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-payment",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Prompt Messages",
+          "type": "messages",
+          "required": false
+        },
+        {
+          "key": "amount",
+          "label": "Amount",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "currency",
+          "label": "Currency",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "provider",
+          "label": "Provider",
+          "type": "select",
+          "required": false,
+          "options": [
+            "manual",
+            "razorpay"
+          ]
+        },
+        {
+          "key": "autoVerify",
+          "label": "Auto Verify (Gateway Status)",
+          "type": "boolean",
+          "required": false,
+          "showIf": {
+            "key": "provider",
+            "equals": "razorpay"
+          }
+        },
+        {
+          "key": "paymentLink",
+          "label": "Payment Link",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "description",
+          "label": "Payment Description",
+          "type": "text",
+          "required": false,
+          "optional": true,
+          "showIf": {
+            "key": "provider",
+            "equals": "razorpay"
+          }
+        },
+        {
+          "key": "customerName",
+          "label": "Customer Name (optional)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "provider",
+            "equals": "razorpay"
+          }
+        },
+        {
+          "key": "customerEmail",
+          "label": "Customer Email (optional)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "provider",
+            "equals": "razorpay"
+          }
+        },
+        {
+          "key": "customerContact",
+          "label": "Customer Phone (optional)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "provider",
+            "equals": "razorpay"
+          }
+        },
+        {
+          "key": "notifySms",
+          "label": "Notify by SMS",
+          "type": "boolean",
+          "required": false,
+          "showIf": {
+            "key": "provider",
+            "equals": "razorpay"
+          }
+        },
+        {
+          "key": "notifyEmail",
+          "label": "Notify by Email",
+          "type": "boolean",
+          "required": false,
+          "showIf": {
+            "key": "provider",
+            "equals": "razorpay"
+          }
+        },
+        {
+          "key": "expireMinutes",
+          "label": "Link Expiry (minutes)",
+          "type": "number",
+          "required": false,
+          "showIf": {
+            "key": "provider",
+            "equals": "razorpay"
+          }
+        },
+        {
+          "key": "callbackUrl",
+          "label": "Callback URL (optional)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "provider",
+            "equals": "razorpay"
+          }
+        },
+        {
+          "key": "notesJson",
+          "label": "Provider Notes JSON (optional)",
+          "type": "textarea",
+          "required": false,
+          "showIf": {
+            "key": "provider",
+            "equals": "razorpay"
+          }
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Payment As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "messages": [
+          "Complete payment and reply: PAID <reference>."
+        ],
+        "amount": "0",
+        "currency": "INR",
+        "paymentLink": "",
+        "outputVar": "paymentStatus",
+        "provider": "manual",
+        "autoVerify": true,
+        "description": "",
+        "customerName": "",
+        "customerEmail": "",
+        "customerContact": "",
+        "notifySms": false,
+        "notifyEmail": false,
+        "expireMinutes": 30,
+        "callbackUrl": "",
+        "notesJson": ""
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "templated amount, customer, and callback fields"
+        ],
+        "notes": [
+          "Do not assume payment metadata exists unless it is written earlier in the same path."
+        ]
+      }
+    },
+    {
+      "type": "document-intake",
+      "label": "Document Collection",
+      "category": "basic",
+      "summary": "Collects and validates user-submitted documents, stores the accepted files, and continues to exactly one next step.",
+      "useCases": [
+        "Run KYC or compliance document intake flows.",
+        "Collect admission, onboarding, or claims paperwork.",
+        "Enforce minimum document count before escalation.",
+        "Normalize document uploads into a reusable variable for verification or review."
+      ],
+      "limitations": [
+        "Web chat renders the upload picker as a message-level capture card and disables the global text input while documents are required.",
+        "Programmatic callers can still send JSON arrays, but web chat expects real uploaded files.",
+        "Type checks are extension-based and not deep file inspection.",
+        "Should include retry/help messaging for upload errors.",
+        "The node is linear and should continue to one downstream step after valid documents are captured."
+      ],
+      "edgeConfig": {
+        "summary": "Document Intake is a linear capture step. It validates uploaded files, stores accepted documents, and then continues to exactly one next node.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on document-intake itself",
+          "Default edge: required to continue the flow",
+          "Best next nodes: message, api, handover, decision, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-document-intake",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Prompt Messages",
+          "type": "messages",
+          "required": false
+        },
+        {
+          "key": "acceptedTypesText",
+          "label": "Accepted Types (csv)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "minDocuments",
+          "label": "Minimum Documents",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Documents As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "messages": [
+          "Upload the required documents using the file picker."
+        ],
+        "acceptedTypes": [
+          "pdf",
+          "jpg",
+          "png",
+          "webp",
+          "bmp",
+          "tiff",
+          "gif"
+        ],
+        "acceptedTypesText": "pdf,jpg,jpeg,png,webp,bmp,tiff,gif",
+        "minDocuments": 1,
+        "outputVar": "documents"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [],
+        "notes": [
+          "Use the saved document payload downstream for OCR, records, or approvals."
+        ]
+      }
+    },
+    {
+      "type": "file-processor",
+      "label": "File Processing / OCR",
+      "category": "integration",
+      "summary": "Reads uploaded files for OCR/classification/field extraction and routes by success, partial, low confidence, invalid file, manual review, or failure.",
+      "useCases": [
+        "Extract KYC fields from ID proofs and invoices.",
+        "Validate uploaded document type before downstream processing.",
+        "Compare extracted document values against form-provided values."
+      ],
+      "limitations": [
+        "Low quality scans require retry/manual review routing.",
+        "Sensitive docs need masking and retention controls.",
+        "Extraction confidence must be tuned for production data quality."
+      ],
+      "edgeConfig": {
+        "summary": "File Processor is a fan-out document step. Connect success-like outcomes to the next business action and send review or failure outcomes to explicit recovery branches.",
+        "items": [
+          "Outgoing edges: 6",
+          "Route outcomes: success, partial, low_confidence, invalid_file, manual_review_required, failed",
+          "Conditional edges: not on file-processor itself",
+          "Default edge: not used",
+          "Best next nodes: record, approval, message, decision, fallback, or end"
+        ]
+      },
+      "routes": [
+        "success",
+        "partial",
+        "low_confidence",
+        "invalid_file",
+        "manual_review_required",
+        "failed"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-file-processor",
+      "uiFields": [
+        {
+          "key": "inputFiles",
+          "label": "Input Files Variable/Template",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "processingMode",
+          "label": "Processing Mode",
+          "type": "select",
+          "required": false,
+          "options": [
+            "ocr",
+            "classify",
+            "extract_fields",
+            "validate",
+            "summarize"
+          ]
+        },
+        {
+          "key": "acceptedTypesText",
+          "label": "Accepted Types (csv)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "maxFileSizeMb",
+          "label": "Max File Size (MB)",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "schemaJson",
+          "label": "Field Schema JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "expectedDocumentType",
+          "label": "Expected Document Type",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "confidenceThreshold",
+          "label": "Confidence Threshold",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "strictExtraction",
+          "label": "Strict Extraction",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "pageMode",
+          "label": "Page Mode",
+          "type": "select",
+          "required": false,
+          "options": [
+            "process_first_page",
+            "process_all_pages",
+            "extract_selected_pages"
+          ]
+        },
+        {
+          "key": "selectedPagesText",
+          "label": "Selected Pages (csv)",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "inputFiles": "{{documents.documents}}",
+        "processingMode": "extract_fields",
+        "acceptedTypes": [
+          "pdf",
+          "jpg",
+          "png",
+          "webp",
+          "bmp",
+          "tiff",
+          "gif"
+        ],
+        "acceptedTypesText": "pdf,jpg,jpeg,png,webp,bmp,tiff,gif",
+        "maxFileSizeMb": 10,
+        "schema": {},
+        "schemaJson": "{\n  \"name\": \"string\",\n  \"document_number\": \"string\",\n  \"date_of_birth\": \"date\",\n  \"address\": \"string\"\n}",
+        "expectedDocumentType": "",
+        "confidenceThreshold": 0.8,
+        "strictExtraction": true,
+        "pageMode": "process_all_pages",
+        "selectedPagesText": "",
+        "outputVar": "doc_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "`data.inputFiles` and extraction templates"
+        ],
+        "notes": [
+          "Upstream document variables must exist before file processing begins."
+        ]
+      }
+    },
+    {
+      "type": "script",
+      "label": "Custom Script",
+      "category": "advanced",
+      "summary": "Runs custom JavaScript for transformations, generated IDs, and route-control signals, then routes by success or failure.",
+      "useCases": [
+        "Generate appointment IDs, reference numbers, or other business identifiers.",
+        "Normalize and reshape payloads before record, API, or AI nodes.",
+        "Compute scoring, flags, or composite objects for downstream routing.",
+        "Persist shared runtime variables with vars.some_key for later nodes."
+      ],
+      "limitations": [
+        "Keep logic deterministic and testable where possible.",
+        "Avoid long-running or heavy network work inside the script body.",
+        "Scripts run inside a sandbox and should return JSON-safe values.",
+        "Failure writes a lastScriptError entry and routes to the failure branch."
+      ],
+      "edgeConfig": {
+        "summary": "Script is a branching logic step with two outcomes: success and failure. Use success for the computed result path and failure for errors or invalid script output.",
+        "items": [
+          "Outgoing edges: 2",
+          "Route outcomes: success, failure",
+          "Conditional edges: based on the script execution result",
+          "Best next nodes: condition, setVariable, api, message, fallback, or end"
+        ]
+      },
+      "routes": [
+        "success",
+        "failure"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-script",
+      "uiFields": [
+        {
+          "key": "script",
+          "label": "Script Code",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Script Output As",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "timeoutMs",
+          "label": "Timeout (ms)",
+          "type": "number",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "script": "const amount = Number(vars.amount ?? 0);\\nconst appointmentId = `APT-${helpers.nowIso().slice(0, 10).replace(/-/g, '')}-${helpers.randomInt(1000, 9999)}`;\\nreturn { eligible: amount >= 1000, score: amount, appointmentId };",
+        "outputVar": "scriptResult",
+        "timeoutMs": 50
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`",
+          "any `vars.*` assignment inside the script",
+          "`lastScriptError`"
+        ],
+        "reads": [
+          "script body templates and runtime context"
+        ],
+        "notes": [
+          "Prefer explicit, stable variable names when a script writes to `vars`."
+        ]
+      }
+    },
+    {
+      "type": "track-event",
+      "label": "Analytics / Track Event",
+      "category": "integration",
+      "summary": "Emits business analytics events from flow execution with non-blocking failure handling and safe property masking.",
+      "useCases": [
+        "Track lead capture, appointment booking, and payment outcomes.",
+        "Record AI fallback/handover/drop-off events for funnel diagnostics.",
+        "Feed tenant-level analytics dashboards with consistent event schema."
+      ],
+      "limitations": [
+        "Event quality depends on stable event naming taxonomy.",
+        "Sensitive fields must be masked or omitted before ingestion.",
+        "Over-tracking without dedupe/throttle can create noisy dashboards."
+      ],
+      "edgeConfig": {
+        "summary": "Track Event is usually a non-blocking telemetry step. Connect success to the next business node, and use a failure branch only when analytics must be enforced.",
+        "items": [
+          "Outgoing edges: 2",
+          "Route outcomes: tracked, failed",
+          "Conditional edges: only when failurePolicy is route_failed",
+          "Best next nodes: end, message, decision, or fallback"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-track-event",
+      "uiFields": [
+        {
+          "key": "eventName",
+          "label": "Event Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "propertiesJson",
+          "label": "Event Properties JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "failurePolicy",
+          "label": "Failure Policy",
+          "type": "select",
+          "required": false,
+          "options": [
+            "fire_and_continue",
+            "route_failed"
+          ]
+        },
+        {
+          "key": "dedupeKey",
+          "label": "Dedupe Key",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "throttleSeconds",
+          "label": "Throttle Seconds",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "piiMasking",
+          "label": "Mask Sensitive Properties",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "eventName": "lead_created",
+        "properties": {},
+        "propertiesJson": "{\n  \"department\": \"{{department}}\",\n  \"source\": \"{{source}}\",\n  \"payment_status\": \"{{payment_status}}\"\n}",
+        "outputVar": "track_result",
+        "failurePolicy": "fire_and_continue",
+        "dedupeKey": "",
+        "throttleSeconds": 60,
+        "piiMasking": true
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar` when configured"
+        ],
+        "reads": [
+          "event name, properties, dedupe key"
+        ],
+        "notes": [
+          "Event properties must not rely on undefined placeholders or unstored business metadata."
+        ]
+      }
+    },
+    {
+      "type": "audit-log",
+      "label": "Audit Log",
+      "category": "integration",
+      "summary": "Writes append-only audit events for regulated actions with configurable failure policy and metadata masking.",
+      "useCases": [
+        "Capture consent acceptance with actor and channel details.",
+        "Record payment, approval, and profile update state transitions.",
+        "Log high-risk AI/handover actions for compliance and investigations."
+      ],
+      "limitations": [
+        "Meaningful entity/action taxonomy is required for usable reporting.",
+        "Misconfigured failure policy can block customer-facing flows unexpectedly.",
+        "Sensitive metadata should be masked or minimized before persistence."
+      ],
+      "edgeConfig": {
+        "summary": "Audit Log should usually continue the journey after a successful write, but it can block and branch on failure for regulated actions. Wire the logged path to the next business step and reserve the failed path for strict-policy flows.",
+        "items": [
+          "Outgoing edges: 2",
+          "Route outcomes: logged, failed",
+          "Conditional edges: failed only when failurePolicy is block",
+          "Best next nodes: end, message, decision, or fallback"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-audit-log",
+      "uiFields": [
+        {
+          "key": "action",
+          "label": "Action",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "entityType",
+          "label": "Entity Type",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "entityId",
+          "label": "Entity ID",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "metadataJson",
+          "label": "Metadata JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "sensitivity",
+          "label": "Sensitivity",
+          "type": "select",
+          "required": false,
+          "options": [
+            "normal",
+            "pii",
+            "financial",
+            "medical"
+          ]
+        },
+        {
+          "key": "failurePolicy",
+          "label": "Failure Policy",
+          "type": "select",
+          "required": false,
+          "options": [
+            "continue",
+            "block"
+          ]
+        },
+        {
+          "key": "piiMasking",
+          "label": "Mask Sensitive Metadata",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "action": "consent_captured",
+        "entityType": "customer",
+        "entityId": "{{customer_id}}",
+        "metadata": {},
+        "metadataJson": "{\n  \"consent_text\": \"{{consent_text}}\",\n  \"ip\": \"{{ip_address}}\",\n  \"channel\": \"{{system.channel}}\"\n}",
+        "sensitivity": "normal",
+        "failurePolicy": "continue",
+        "piiMasking": true,
+        "outputVar": "audit_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar` when configured"
+        ],
+        "reads": [
+          "action, entity, metadata, sensitivity templates"
+        ],
+        "notes": [
+          "Never invent consent, IP, tenant, or actor metadata without an upstream writer."
+        ]
+      }
+    },
+    {
+      "type": "record",
+      "label": "Database / Record",
+      "category": "integration",
+      "summary": "Performs native database-style CRUD actions over tenant-isolated flow collections with schema validation and routeable outcomes.",
+      "useCases": [
+        "Capture and upsert lead records from web/WhatsApp/Telegram journeys.",
+        "Store and update appointment, payment, and ticket lifecycle states.",
+        "Persist repeatable business objects with booking-specific unique keys instead of forcing every person to be one row.",
+        "Fetch profile/history records for personalized response routing."
+      ],
+      "limitations": [
+        "Collection schema quality determines validation reliability.",
+        "Complex relational joins should still use API/connector integrations.",
+        "PII encryption requires runtime key management and indexing strategy.",
+        "A phone number is not always the right unique key; repeat bookings need appointment/booking IDs or another stable business key."
+      ],
+      "edgeConfig": {
+        "summary": "Record routes by CRUD result. Keep the success path direct, send duplicate and not_found into explicit correction or reuse branches, and reserve validation_failed/failed for recovery handling.",
+        "items": [
+          "Outgoing edges: 5",
+          "Route outcomes: success, not_found, duplicate, validation_failed, failed",
+          "Conditional edges: based on action type, schema checks, uniqueness checks, and query results",
+          "Best next nodes: message, decision, setVariable, fallback, or end"
+        ]
+      },
+      "routes": [
+        "success",
+        "not_found",
+        "duplicate",
+        "validation_failed",
+        "failed"
+      ],
+      "docsHref": "/docs/record-node-database-configuration",
+      "uiFields": [
+        {
+          "key": "action",
+          "label": "Action",
+          "type": "select",
+          "required": false,
+          "options": [
+            "create",
+            "find",
+            "update",
+            "upsert",
+            "delete",
+            "list"
+          ]
+        },
+        {
+          "key": "collection",
+          "label": "Collection",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "whereJson",
+          "label": "Where JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "dataJson",
+          "label": "Data JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "collectionSchema",
+          "label": "Collection Schema JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "uniqueKey",
+          "label": "Unique Key",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "idempotencyKey",
+          "label": "Idempotency Key (create/upsert)",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "limit",
+          "label": "List Limit",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "offset",
+          "label": "List Offset",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "sortBy",
+          "label": "Sort By",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "sortOrder",
+          "label": "Sort Order",
+          "type": "select",
+          "required": false,
+          "options": [
+            "asc",
+            "desc"
+          ]
+        },
+        {
+          "key": "softDelete",
+          "label": "Soft Delete",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "encryptPii",
+          "label": "Encrypt PII",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "piiFields",
+          "label": "PII Fields (comma-separated)",
+          "type": "text",
+          "required": false,
+          "optional": true
+        }
+      ],
+      "defaults": {
+        "action": "upsert",
+        "collection": "leads",
+        "where": {},
+        "whereJson": "{\n  \"phone\": \"{{customer_phone}}\"\n}",
+        "data": {},
+        "dataJson": "{\n  \"name\": \"{{customer_name}}\",\n  \"phone\": \"{{customer_phone}}\",\n  \"source\": \"whatsapp\",\n  \"status\": \"new\"\n}",
+        "collectionSchema": "{\n  \"collection\": \"leads\",\n  \"fields\": {\n    \"name\": { \"type\": \"string\", \"required\": true },\n    \"phone\": { \"type\": \"phone\", \"required\": true, \"unique\": true },\n    \"email\": { \"type\": \"email\", \"required\": false },\n    \"status\": { \"type\": \"enum\", \"values\": [\"new\", \"contacted\", \"converted\", \"lost\"] }\n  }\n}",
+        "uniqueKey": "phone",
+        "outputVar": "record_result",
+        "limit": 20,
+        "offset": 0,
+        "sortBy": "updatedAt",
+        "sortOrder": "desc",
+        "softDelete": true,
+        "encryptPii": false,
+        "piiFields": "phone,email",
+        "idempotencyKey": ""
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "`whereJson`, `dataJson`, schema JSON, and idempotency templates"
+        ],
+        "notes": [
+          "Record nodes are a frequent source of undefined variables; validate every template path."
+        ]
+      }
+    },
+    {
+      "type": "connector",
+      "label": "Integration Action",
+      "category": "integration",
+      "summary": "Executes standardized integration actions for external systems with mapped responses.",
+      "useCases": [
+        "Push/update records in CRM, ERP, ticketing, or backend systems.",
+        "Trigger downstream automations with normalized payloads.",
+        "Centralize integration actions with reusable endpoint patterns."
+      ],
+      "limitations": [
+        "Requires stable API contracts and secure auth management.",
+        "Invalid response mappings can corrupt downstream variables.",
+        "External service latency or outages directly affect flow speed."
+      ],
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-connector",
+      "uiFields": [
+        {
+          "key": "connectorName",
+          "label": "Connector Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "action",
+          "label": "Action Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "endpoint",
+          "label": "Endpoint URL",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "method",
+          "label": "HTTP Method",
+          "type": "select",
+          "required": false,
+          "options": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        {
+          "key": "headers",
+          "label": "Headers",
+          "type": "kv",
+          "required": false
+        },
+        {
+          "key": "body",
+          "label": "Body (JSON)",
+          "type": "textarea",
+          "required": false,
+          "showIf": {
+            "key": "method",
+            "notIn": [
+              "GET"
+            ]
+          }
+        },
+        {
+          "key": "responseMap",
+          "label": "Response Mapping",
+          "type": "responseMap",
+          "required": false
+        },
+        {
+          "key": "saveAs",
+          "label": "Save result as",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "timeoutMs",
+          "label": "Timeout (ms)",
+          "type": "number",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "connectorName": "custom",
+        "action": "invoke",
+        "endpoint": "",
+        "method": "POST",
+        "headers": [],
+        "body": "",
+        "responseMap": [],
+        "saveAs": "connectorResult",
+        "timeoutMs": 10000
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.saveAs`"
+        ],
+        "reads": [
+          "endpoint, headers, body, and response map templates"
+        ],
+        "notes": [
+          "Connector actions follow the same variable discipline as API nodes."
+        ]
+      }
+    },
+    {
+      "type": "event-trigger",
+      "label": "Event Matcher",
+      "category": "integration",
+      "summary": "Matches incoming events and routes execution based on event identity and strictness.",
+      "useCases": [
+        "Drive webhook-first automations from external systems.",
+        "Route differently for matched vs unmatched operational events.",
+        "Build event-driven processing for asynchronous workflows."
+      ],
+      "limitations": [
+        "Strict match depends on stable event naming conventions.",
+        "Needs clear fallback behavior when event does not match.",
+        "Not ideal as primary entrypoint for direct user chat flows."
+      ],
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-event-trigger",
+      "uiFields": [
+        {
+          "key": "eventName",
+          "label": "Event Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "strictMatch",
+          "label": "Strict Match",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "mismatchMessage",
+          "label": "Mismatch Message",
+          "type": "textarea",
+          "required": false,
+          "optional": true
+        }
+      ],
+      "defaults": {
+        "eventName": "lead_created",
+        "strictMatch": false,
+        "mismatchMessage": ""
+      },
+      "variableBehavior": {
+        "writes": [
+          "event match result in runtime context"
+        ],
+        "reads": [
+          "event name and mismatch message"
+        ],
+        "notes": [
+          "Use this only when the flow starts from a matched inbound event contract."
+        ]
+      }
+    },
+    {
+      "type": "webhook-trigger",
+      "label": "Webhook Trigger",
+      "category": "integration",
+      "summary": "Receives provider callbacks with auth, signature, idempotency, and payload mapping controls, then routes by received, duplicate, unauthorized, invalid_payload, or failed.",
+      "useCases": [
+        "Trigger flows from payment, CRM, commerce, and lab system webhook events.",
+        "Continue conversation state after asynchronous external updates.",
+        "Normalize external payloads into mapped variables for downstream routing."
+      ],
+      "limitations": [
+        "Requires reliable signature/auth configuration per provider.",
+        "Payload/schema drift must be monitored and updated.",
+        "Idempotency strategy depends on stable event IDs from source systems."
+      ],
+      "edgeConfig": {
+        "summary": "Webhook Trigger is an ingress node with five explicit outcomes. Connect received to the main business path and reserve duplicate, unauthorized, invalid_payload, and failed for dedicated handling branches.",
+        "items": [
+          "Outgoing edges: 5",
+          "Route outcomes: received, duplicate, unauthorized, invalid_payload, failed",
+          "Conditional edges: not on webhook-trigger itself",
+          "Default edge: not used",
+          "Best next nodes: record, decision, message, audit-log, fallback, or end"
+        ]
+      },
+      "routes": [
+        "received",
+        "duplicate",
+        "unauthorized",
+        "invalid_payload",
+        "failed"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-webhook-trigger",
+      "uiFields": [
+        {
+          "key": "method",
+          "label": "Method",
+          "type": "select",
+          "required": false,
+          "options": [
+            "POST",
+            "PUT",
+            "PATCH"
+          ]
+        },
+        {
+          "key": "path",
+          "label": "Path",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "authType",
+          "label": "Auth Type",
+          "type": "select",
+          "required": false,
+          "options": [
+            "none",
+            "secret",
+            "hmac",
+            "basic",
+            "bearer"
+          ]
+        },
+        {
+          "key": "secret",
+          "label": "Secret / Token",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "verifySignature",
+          "label": "Verify Signature",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "signatureHeader",
+          "label": "Signature Header",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "timestampHeader",
+          "label": "Timestamp Header",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "timestampPath",
+          "label": "Timestamp JSONPath",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "maxAgeSeconds",
+          "label": "Max Age (seconds)",
+          "type": "number",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "idempotencyKeyPath",
+          "label": "Idempotency Key Path",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "provider",
+          "label": "Provider",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "requiredFieldsJson",
+          "label": "Required Fields JSON",
+          "type": "textarea",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "payloadMappingJson",
+          "label": "Payload Mapping JSON",
+          "type": "textarea",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "ipAllowlist",
+          "label": "IP Allowlist",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "allowSecretQueryParam",
+          "label": "Allow Secret Query Param",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "secretQueryKey",
+          "label": "Secret Query Key",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "basicUsername",
+          "label": "Basic Username",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "basicPassword",
+          "label": "Basic Password",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "bearerToken",
+          "label": "Bearer Token",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "method": "POST",
+        "path": "/webhooks/{{tenant_id}}/event",
+        "authType": "hmac",
+        "secret": "{{WEBHOOK_SECRET}}",
+        "verifySignature": true,
+        "signatureHeader": "x-signature",
+        "timestampHeader": "x-timestamp",
+        "timestampPath": "$.timestamp",
+        "maxAgeSeconds": 300,
+        "idempotencyKeyPath": "$.event_id",
+        "provider": "generic",
+        "requiredFieldsJson": "[\"event_id\", \"event_type\", \"payload.payment.id\"]",
+        "payloadMappingJson": "{\n  \"payment_id\": \"$.payload.payment.id\",\n  \"payment_status\": \"$.payload.payment.status\",\n  \"customer_phone\": \"$.payload.customer.phone\"\n}",
+        "outputVar": "webhook_event",
+        "ipAllowlist": "",
+        "allowSecretQueryParam": false,
+        "secretQueryKey": "secret",
+        "basicUsername": "",
+        "basicPassword": "",
+        "bearerToken": ""
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "path, auth, payload mapping, required field, and idempotency templates"
+        ],
+        "notes": [
+          "Webhook trigger contracts must be precise; do not invent provider payload shapes."
+        ]
+      }
+    },
+    {
+      "type": "approval",
+      "label": "Human Approval",
+      "category": "logic",
+      "summary": "Pauses automation for authorized human decision, then resumes with approved, rejected, more-info, timeout, or failed outcomes.",
+      "useCases": [
+        "Refund, discount, and claim approval gates before irreversible actions.",
+        "Manager approval for custom pricing or high-value exceptions.",
+        "Manual compliance/legal response checks in regulated workflows."
+      ],
+      "limitations": [
+        "Requires approver identity/role to be present in runtime context.",
+        "Timeout and escalation policy must be configured explicitly.",
+        "Late approval handling depends on expiry policy configuration."
+      ],
+      "edgeConfig": {
+        "summary": "Approval is a blocking human-decision step. Connect each route to an explicit next branch so timeout, escalation, and failed paths are handled safely.",
+        "items": [
+          "Outgoing edges: 5",
+          "Route outcomes: approved, rejected, more_info_required, timeout, failed",
+          "Conditional edges: not on approval itself",
+          "Default edge: not used",
+          "Best next nodes: message, record, handover, decision, fallback, or end"
+        ]
+      },
+      "routes": [
+        "approved",
+        "rejected",
+        "more_info_required",
+        "timeout",
+        "failed"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-approval",
+      "uiFields": [
+        {
+          "key": "approvalTitle",
+          "label": "Approval Title",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "approvalMessage",
+          "label": "Approval Message",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "approversJson",
+          "label": "Approvers JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "approvalMode",
+          "label": "Approval Mode",
+          "type": "select",
+          "required": false,
+          "options": [
+            "any_one",
+            "all",
+            "majority",
+            "specific_role_required"
+          ]
+        },
+        {
+          "key": "timeoutValue",
+          "label": "Timeout Value",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "timeoutUnit",
+          "label": "Timeout Unit",
+          "type": "select",
+          "required": false,
+          "options": [
+            "minutes",
+            "hours",
+            "days"
+          ]
+        },
+        {
+          "key": "onTimeout",
+          "label": "On Timeout",
+          "type": "select",
+          "required": false,
+          "options": [
+            "auto_reject",
+            "auto_approve",
+            "escalate"
+          ]
+        },
+        {
+          "key": "buttonsCsv",
+          "label": "Buttons (comma-separated)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "approvalExpiryPolicy",
+          "label": "Late Approval Policy",
+          "type": "select",
+          "required": false,
+          "options": [
+            "reject_late_action",
+            "accept_late_action"
+          ]
+        },
+        {
+          "key": "waitingMessage",
+          "label": "Waiting Message",
+          "type": "textarea",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "approvalTitle": "Approve request",
+        "approvalMessage": "Please review and approve this request.",
+        "approversJson": "[\n  {\n    \"type\": \"user\",\n    \"id\": \"admin_123\"\n  },\n  {\n    \"type\": \"role\",\n    \"id\": \"manager\"\n  }\n]",
+        "approvers": [],
+        "approvalMode": "any_one",
+        "timeoutValue": 4,
+        "timeoutUnit": "hours",
+        "onTimeout": "auto_reject",
+        "buttonsCsv": "approve,reject,request_more_info",
+        "buttons": [
+          "approve",
+          "reject",
+          "request_more_info"
+        ],
+        "outputVar": "approval_result",
+        "approvalExpiryPolicy": "reject_late_action",
+        "waitingMessage": "Your request is under review. We will continue once approved."
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "approval title, message, approver config, waiting message"
+        ],
+        "notes": [
+          "Approval branches must include explicit timeout and terminal behavior."
+        ]
+      }
+    },
+    {
+      "type": "auth-consent",
+      "label": "Consent Verification",
+      "category": "integration",
+      "summary": "Collects explicit consent and optional OTP confirmation before sensitive actions, then routes by accepted or denied.",
+      "useCases": [
+        "Capture policy/privacy acceptance with auditable result.",
+        "Protect high-risk actions with one-time verification.",
+        "Branch approved vs denied users into compliant paths."
+      ],
+      "limitations": [
+        "The runtime shows Yes and No buttons, but typed consent replies are still accepted.",
+        "OTP checks depend on correctly pre-populated OTP variables.",
+        "Invalid OTP or ambiguous input re-prompts instead of routing to failure.",
+        "Prompt wording should clearly explain why consent is required."
+      ],
+      "edgeConfig": {
+        "summary": "Auth Consent is a binary human-response step. Connect accepted to the protected action and denied to a safe fallback or handoff path.",
+        "items": [
+          "Outgoing edges: 2",
+          "Route outcomes: accepted, denied",
+          "Conditional edges: not on auth-consent itself",
+          "Default edge: not used",
+          "Best next nodes: api, message, handover, fallback, or end"
+        ]
+      },
+      "routes": [
+        "accepted",
+        "denied"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-auth-consent",
+      "uiFields": [
+        {
+          "key": "consentText",
+          "label": "Consent Prompt",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "requireOtp",
+          "label": "Require OTP",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "otpVar",
+          "label": "OTP Variable",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "requireOtp",
+            "equals": true
+          }
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Consent As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "consentText": "Please review and confirm to continue.",
+        "requireOtp": false,
+        "otpVar": "otp",
+        "outputVar": "consentStatus"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "consent text and OTP-related configuration"
+        ],
+        "notes": [
+          "Do not reference consent-related placeholders elsewhere unless this node writes them."
+        ]
+      }
+    },
+    {
+      "type": "input",
+      "label": "User Prompt",
+      "category": "basic",
+      "summary": "Collects a user response and stores it as a named variable for later steps.",
+      "useCases": [
+        "Capture complaint, account number, or free-text requirement.",
+        "Ask a focused question before routing or classification.",
+        "Collect data needed for API calls, AI nodes, or escalation."
+      ],
+      "limitations": [
+        "Variable key must be valid and consistently reused.",
+        "Ambiguous prompts produce low-quality user responses.",
+        "Should include retries/help if response format is important.",
+        "Buttons default to click-only mode; turn off Disable Chat Input Box if the step should also accept typed replies."
+      ],
+      "edgeConfig": {
+        "summary": "Input captures one user response and then continues to the next step. When buttons are configured, the default behavior locks the chat box to button choices, but you can allow typed input by disabling that lock in the node settings.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on input itself",
+          "Default edge: required to continue the flow",
+          "Best next nodes: condition, switch, ai-extract, setVariable, api, or decision"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-input",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Prompt Messages",
+          "type": "messages",
+          "required": false
+        },
+        {
+          "key": "variable",
+          "label": "Save input as",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "buttons",
+          "label": "Optional Buttons",
+          "type": "buttons",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "disableChatInput",
+          "label": "Disable Chat Input Box",
+          "type": "boolean",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "messages": [
+          "Please enter a value"
+        ],
+        "variable": "input",
+        "buttons": [],
+        "disableChatInput": true
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.variable`"
+        ],
+        "reads": [],
+        "notes": [
+          "The input node captures user text and stores it under the configured variable name."
+        ]
+      }
+    },
+    {
+      "type": "decision",
+      "label": "Decision",
+      "category": "logic",
+      "summary": "Presents a binary choice and routes the conversation to one of two branches.",
+      "useCases": [
+        "Yes/No qualification before collecting deeper details.",
+        "Simple triage pathing such as urgent vs non-urgent.",
+        "Quick confirmation steps before irreversible actions."
+      ],
+      "limitations": [
+        "Best used for clear binary outcomes only.",
+        "Unclear option text can cause misrouting.",
+        "Needs explicit default/fallback behavior for unexpected replies."
+      ],
+      "edgeConfig": {
+        "summary": "Decision is a strict two-branch node. Keep the routing values fixed as yes and no, and customize the visible button labels per branch from the node properties or edge routing panel when you need user-friendly wording.",
+        "items": [
+          "Outgoing edges: 2",
+          "Route outcomes: yes, no",
+          "Conditional edges: use yes/no values only; button labels can be customized without changing the branch values",
+          "Best next nodes: message, api, handover, setVariable, or end"
+        ]
+      },
+      "routes": [
+        "yes",
+        "no"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-decision",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Decision Question",
+          "type": "messages",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Selection As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "messages": [
+          "Yes or No?"
+        ],
+        "outputVar": "decision_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "implicit branch result only"
+        ],
+        "reads": [
+          "fresh user input"
+        ],
+        "notes": [
+          "Decision does not persist a variable by itself unless downstream nodes write one."
+        ]
+      }
+    },
+    {
+      "type": "faq",
+      "label": "Knowledge Base Search",
+      "category": "integration",
+      "summary": "Searches curated knowledge content to answer common informational questions.",
+      "useCases": [
+        "Handle repetitive policy and process questions automatically.",
+        "Deflect common support load before human escalation.",
+        "Provide immediate self-serve answers from approved KB content."
+      ],
+      "limitations": [
+        "Answer quality depends on KB coverage and freshness.",
+        "Account-specific cases may still require API or agent support.",
+        "Should include fallback when confidence is low."
+      ],
+      "edgeConfig": {
+        "summary": "FAQ answers from curated knowledge and can optionally stay active for multiple user turns before continuing to its next node. Add a not_found route when unanswered questions should leave the loop early.",
+        "items": [
+          "Outgoing edges: 1 normal route, plus optional not_found route",
+          "Conditional edges: use equals not_found for unanswered or failed RAG lookups",
+          "Loop count: total FAQ answers this node should handle before moving on",
+          "Default edge: required for answered questions after the final loop",
+          "Best next nodes: fallback, handover, ai-sentiment, message, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-faq",
+      "uiFields": [
+        {
+          "key": "loopCount",
+          "label": "FAQ Loop Count",
+          "type": "number",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "loopCount": 1
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "api",
+      "label": "API Call",
+      "category": "integration",
+      "summary": "Calls an external API endpoint and maps selected response fields into runtime variables.",
+      "useCases": [
+        "Fetch real-time status such as order, claim, or ticket state.",
+        "Create/update records in backend systems during conversation.",
+        "Enrich context before routing to message or AI nodes."
+      ],
+      "limitations": [
+        "External downtime or latency can delay user responses.",
+        "Incorrect request/response mapping breaks downstream logic.",
+        "Needs strong error handling and fallback routing."
+      ],
+      "edgeConfig": {
+        "summary": "API should usually route success to the next business step, failure to a safe fallback, and default to a catch-all path when the response cannot be matched cleanly.",
+        "items": [
+          "Outgoing edges: 3",
+          "Route outcomes: success, failure, default",
+          "Conditional edges: based on the API result and any downstream checks",
+          "Best next nodes: condition, message, setVariable, error, fallback, or end"
+        ]
+      },
+      "routes": [
+        "success",
+        "failure"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-api",
+      "uiFields": [
+        {
+          "key": "url",
+          "label": "API URL",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "method",
+          "label": "HTTP Method",
+          "type": "select",
+          "required": false,
+          "options": [
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ]
+        },
+        {
+          "key": "headers",
+          "label": "Headers",
+          "type": "kv",
+          "required": false
+        },
+        {
+          "key": "body",
+          "label": "Body (JSON)",
+          "type": "textarea",
+          "required": false,
+          "showIf": {
+            "key": "method",
+            "notIn": [
+              "GET"
+            ]
+          }
+        },
+        {
+          "key": "responseMap",
+          "label": "Response Mapping",
+          "type": "responseMap",
+          "required": false
+        },
+        {
+          "key": "saveAs",
+          "label": "Save result as",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "method": "GET",
+        "headers": {},
+        "body": "",
+        "responseMap": [],
+        "saveAs": "apiResult",
+        "timeoutMs": 5000
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.saveAs`",
+          "`data.responseMap[].variable`"
+        ],
+        "reads": [
+          "URL, headers, body, and response map templates"
+        ],
+        "notes": [
+          "API payload templates must only use variables already available on that branch."
+        ]
+      }
+    },
+    {
+      "type": "condition",
+      "label": "Condition Check",
+      "category": "logic",
+      "summary": "Evaluates a single rule and routes flow based on true/false outcome.",
+      "useCases": [
+        "Apply eligibility checks before pricing or booking steps.",
+        "Protect restricted paths with business policy conditions.",
+        "Gate premium features by role, plan, or account state."
+      ],
+      "limitations": [
+        "Invalid variable/operator setup can break routing.",
+        "Needs safe fallback/default behavior for non-matching values.",
+        "Complex multi-rule logic is better split into smaller checks."
+      ],
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-condition",
+      "uiFields": [
+        {
+          "key": "variable",
+          "label": "Variable",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "operator",
+          "label": "Operator",
+          "type": "select",
+          "required": false,
+          "options": [
+            "equals",
+            "contains",
+            "regex"
+          ]
+        },
+        {
+          "key": "value",
+          "label": "Compare value",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "variable": "",
+        "operator": "equals",
+        "value": ""
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [
+          "`data.variable`"
+        ],
+        "notes": [
+          "Condition checks an existing variable and requires a default edge."
+        ]
+      }
+    },
+    {
+      "type": "end",
+      "label": "Conversation End",
+      "category": "basic",
+      "summary": "Closes the active journey path after the final user-visible step and ends execution for that branch.",
+      "useCases": [
+        "Confirm successful completion of a booking, payment, or support request.",
+        "Gracefully close a conversation after fulfillment or handoff.",
+        "Mark terminal branches for analytics, audits, and clean exits."
+      ],
+      "limitations": [
+        "Terminal node and cannot have outgoing edges.",
+        "Critical branches should always be able to reach an end state.",
+        "If used before the final confirmation, it can end the journey too early."
+      ],
+      "edgeConfig": {
+        "summary": "End should be the last node in a branch. It accepts incoming paths but must not connect to any next node.",
+        "items": [
+          "Outgoing edges: 0",
+          "Incoming edges: 1 or more",
+          "Conditional edges: not supported",
+          "Use after the final confirmation, handover acknowledgement, or timeout close message"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-end",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Final Messages",
+          "type": "messages",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "messages": [
+          "Thanks for chatting!"
+        ]
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "delay",
+      "label": "Delay",
+      "category": "logic",
+      "summary": "Pauses execution for a configured duration before continuing to the next step.",
+      "useCases": [
+        "Throttle responses to avoid flooding users with messages.",
+        "Create timed wait windows before reminders or retries.",
+        "Sequence multi-step responses in readable intervals."
+      ],
+      "limitations": [
+        "Long delays can make the bot feel unresponsive.",
+        "Excessive delay chaining creates poor user experience.",
+        "Should be used with clear business intent and messaging."
+      ],
+      "edgeConfig": {
+        "summary": "Delay is a linear pause node. It should connect to exactly one next step after the wait, without any branching inside the node itself.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on delay itself",
+          "Default edge: required to continue the flow",
+          "Best next nodes: message, api, timeout, retry, handover, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-delay",
+      "uiFields": [
+        {
+          "key": "delayMs",
+          "label": "Delay (ms)",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "delayMs": 1000
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "language",
+      "label": "Language Detect / Translate",
+      "category": "logic",
+      "summary": "Detects user language or translates text for multilingual routing and localized replies.",
+      "useCases": [
+        "Route Telugu/Hindi/English users to localized branches.",
+        "Translate inbound text to English before extraction/classification.",
+        "Translate outbound responses back to preferred user language."
+      ],
+      "limitations": [
+        "Mixed-language text can produce low-confidence detection.",
+        "Translation quality for medical/legal terms should be reviewed in high-risk flows.",
+        "Unsupported language codes must be handled via fallback routes."
+      ],
+      "edgeConfig": {
+        "summary": "Language detection and translation usually fan out into four outcomes. Route the successful path forward, and use fallback branches for low confidence or unsupported input.",
+        "items": [
+          "Outgoing edges: 4",
+          "Route outcomes: detected, low_confidence, unsupported, failed",
+          "Conditional edges: based on confidence and supported language checks",
+          "Best next nodes: message, switch, condition, fallback, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-language",
+      "uiFields": [
+        {
+          "key": "action",
+          "label": "Action",
+          "type": "select",
+          "required": false,
+          "options": [
+            "detect",
+            "translate"
+          ]
+        },
+        {
+          "key": "inputText",
+          "label": "Input Text",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "targetLanguage",
+          "label": "Target Language (for translate)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "action",
+            "equals": "translate"
+          }
+        },
+        {
+          "key": "supportedLanguagesCsv",
+          "label": "Supported Languages (csv)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "lowConfidenceThreshold",
+          "label": "Low Confidence Threshold (0-1)",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "preferredLanguageVar",
+          "label": "Preferred Language Var",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "action": "detect",
+        "inputText": "{{input}}",
+        "targetLanguage": "en",
+        "supportedLanguagesCsv": "en,hi,te,ta,kn,ml,mr,bn,gu,pa,ur",
+        "lowConfidenceThreshold": 0.7,
+        "outputVar": "language_result",
+        "preferredLanguageVar": "preferred_language"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "input text and supported language templates"
+        ],
+        "notes": [
+          "Language nodes often feed downstream switch/condition logic through a saved result."
+        ]
+      }
+    },
+    {
+      "type": "queue",
+      "label": "Queue / Assignment",
+      "category": "integration",
+      "summary": "Assigns conversations/tickets to support queues using strategy-based agent selection and SLA metadata.",
+      "useCases": [
+        "Assign billing issues to billing queue with round-robin distribution.",
+        "Route emergency/high-priority users to urgent team queues.",
+        "Match language/department skills before human handover."
+      ],
+      "limitations": [
+        "Assignment quality depends on accurate agent availability and skill data.",
+        "Skill gaps or offline teams may leave tickets queued.",
+        "Duplicate checks require stable dedupe keys."
+      ],
+      "edgeConfig": {
+        "summary": "Queue usually routes to assignment success, overflow queueing, or failure. Wire the assigned path to the next human-support step and reserve queued for escalation or retry handling.",
+        "items": [
+          "Outgoing edges: 3",
+          "Route outcomes: assigned, queued, failed",
+          "Conditional edges: based on staffing, skills, or queueing policy",
+          "Best next nodes: message, handover, notification, decision, or end"
+        ]
+      },
+      "routes": [
+        "assigned",
+        "queued",
+        "failed"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-queue",
+      "uiFields": [
+        {
+          "key": "queueName",
+          "label": "Queue Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "assignmentStrategy",
+          "label": "Assignment Strategy",
+          "type": "select",
+          "required": false,
+          "options": [
+            "round_robin",
+            "least_busy",
+            "skill_based",
+            "priority"
+          ]
+        },
+        {
+          "key": "priority",
+          "label": "Priority",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "skillsRequiredCsv",
+          "label": "Skills Required (csv)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "slaFirstResponseMinutes",
+          "label": "SLA First Response (mins)",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "dedupeKey",
+          "label": "Dedupe Key",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "queueName": "billing_support",
+        "assignmentStrategy": "round_robin",
+        "priority": "{{priority}}",
+        "skillsRequired": [
+          "telugu",
+          "billing"
+        ],
+        "skillsRequiredCsv": "telugu,billing",
+        "slaFirstResponseMinutes": 15,
+        "dedupeKey": "{{system.sessionId}}:billing_support",
+        "outputVar": "queue_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "queue name, priority, skills, dedupe key"
+        ],
+        "notes": [
+          "Queue assignment usually writes a result object consumed by later escalation nodes."
+        ]
+      }
+    },
+    {
+      "type": "dedupe",
+      "label": "Dedupe",
+      "category": "logic",
+      "summary": "Prevents duplicate business actions within a configured time window using an idempotent key.",
+      "useCases": [
+        "Block duplicate lead submissions from repeated clicks.",
+        "Ignore duplicate payment/ticket webhooks and retries.",
+        "Avoid duplicate appointment or complaint creation."
+      ],
+      "limitations": [
+        "Dedupe quality depends on correct business-key design.",
+        "Over-broad keys can suppress legitimate new requests.",
+        "Window settings must match business expectations."
+      ],
+      "edgeConfig": {
+        "summary": "Dedupe usually sends new requests forward, duplicate requests to a reuse/correction path, and failures to a safe fallback. Connect each outcome explicitly so retries do not create duplicate side effects.",
+        "items": [
+          "Outgoing edges: 3",
+          "Route outcomes: new, duplicate, failed",
+          "Conditional edges: based on key validation and duplicate policy",
+          "Best next nodes: message, update, decision, fallback, or end"
+        ]
+      },
+      "routes": [
+        "new",
+        "duplicate",
+        "failed"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-dedupe",
+      "uiFields": [
+        {
+          "key": "dedupeKey",
+          "label": "Dedupe Key",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "windowValue",
+          "label": "Window Value",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "windowUnit",
+          "label": "Window Unit",
+          "type": "select",
+          "required": false,
+          "options": [
+            "minutes",
+            "hours",
+            "days"
+          ]
+        },
+        {
+          "key": "onDuplicate",
+          "label": "On Duplicate",
+          "type": "select",
+          "required": false,
+          "options": [
+            "route_duplicate",
+            "reuse_existing",
+            "update_existing"
+          ]
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "dedupeKey": "{{customer_phone}}:{{flow_id}}:{{intent}}",
+        "windowValue": 24,
+        "windowUnit": "hours",
+        "onDuplicate": "route_duplicate",
+        "outputVar": "dedupe_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "dedupe key"
+        ],
+        "notes": [
+          "Dedupe keys must be business-stable and fully defined upstream."
+        ]
+      }
+    },
+    {
+      "type": "rate-limit",
+      "label": "Rate Limit / Abuse Protection",
+      "category": "logic",
+      "summary": "Applies per-key request limits to prevent spam, loops, OTP abuse, and cost spikes.",
+      "useCases": [
+        "Limit AI-heavy paths per user in a rolling time window.",
+        "Throttle repeated OTP/payment actions to reduce abuse.",
+        "Protect webhook or user-triggered flows from replay floods."
+      ],
+      "limitations": [
+        "Shared keys (e.g., family phone numbers) may block legitimate traffic.",
+        "Limits should be tuned for emergency or compliance-critical journeys.",
+        "Requires thoughtful bypass policy for trusted internal roles."
+      ],
+      "edgeConfig": {
+        "summary": "Rate Limit usually lets traffic continue, blocks abusive traffic, and falls back on configuration errors. Wire each outcome explicitly so blocked users get a safe path instead of a dead end.",
+        "items": [
+          "Outgoing edges: 3",
+          "Route outcomes: allowed, blocked, failed",
+          "Conditional edges: based on count threshold, bypass policy, and key validity",
+          "Best next nodes: message, fallback, decision, handover, or end"
+        ]
+      },
+      "routes": [
+        "allowed",
+        "blocked",
+        "failed"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-rate-limit",
+      "uiFields": [
+        {
+          "key": "key",
+          "label": "Limit Key",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "limit",
+          "label": "Limit Count",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "windowValue",
+          "label": "Window Value",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "windowUnit",
+          "label": "Window Unit",
+          "type": "select",
+          "required": false,
+          "options": [
+            "minute",
+            "hour",
+            "day"
+          ]
+        },
+        {
+          "key": "bypassForRolesCsv",
+          "label": "Bypass Roles (csv)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "emergencyBypass",
+          "label": "Emergency Bypass",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "key": "{{customer_phone}}",
+        "limit": 10,
+        "windowValue": 1,
+        "windowUnit": "hour",
+        "bypassForRolesCsv": "admin,agent",
+        "emergencyBypass": true,
+        "outputVar": "rate_limit_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "limit key and bypass role configuration"
+        ],
+        "notes": [
+          "Limit keys often use user/session context and must not rely on undefined placeholders."
+        ]
+      }
+    },
+    {
+      "type": "template-message",
+      "label": "Template Message",
+      "category": "integration",
+      "summary": "Sends approved channel templates (especially WhatsApp) with variable binding and compliance checks.",
+      "useCases": [
+        "Send appointment/payment/order reminders outside session windows.",
+        "Run approved promotional re-engagement templates.",
+        "Deliver transactional updates with language-specific variants."
+      ],
+      "limitations": [
+        "Templates must be approved and available for selected language.",
+        "Missing variables or header media can block delivery.",
+        "Opt-out and regulatory rules must be respected before send."
+      ],
+      "edgeConfig": {
+        "summary": "Template Message should branch by send status, not by the template body itself. Connect each delivery outcome to the next business step so approval and fallback paths stay explicit.",
+        "items": [
+          "Outgoing edges: 4",
+          "Route outcomes: sent, template_not_approved, variable_missing, failed",
+          "Conditional edges: supported through route outcomes",
+          "Best next nodes: end, message, sms, notification, fallback, or decision"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-template-message",
+      "uiFields": [
+        {
+          "key": "channel",
+          "label": "Channel",
+          "type": "select",
+          "required": false,
+          "options": [
+            "whatsapp",
+            "telegram",
+            "sms",
+            "email"
+          ]
+        },
+        {
+          "key": "templateName",
+          "label": "Template Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "language",
+          "label": "Template Language",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "variablesJson",
+          "label": "Variables JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "to",
+          "label": "Recipient",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "category",
+          "label": "Category",
+          "type": "select",
+          "required": false,
+          "options": [
+            "transactional",
+            "promotional",
+            "service"
+          ]
+        },
+        {
+          "key": "approvedTemplatesCsv",
+          "label": "Approved Templates (csv)",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "requiresMediaHeader",
+          "label": "Requires Media Header",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "mediaHeader",
+          "label": "Media Header URL",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "requiresMediaHeader",
+            "equals": true
+          }
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "channel": "whatsapp",
+        "templateName": "appointment_reminder",
+        "language": "{{preferred_language}}",
+        "variables": {
+          "1": "{{customer_name}}",
+          "2": "{{slot_label}}",
+          "3": "{{hospital_name}}"
+        },
+        "variablesJson": "{\n  \"1\": \"{{customer_name}}\",\n  \"2\": \"{{slot_label}}\",\n  \"3\": \"{{hospital_name}}\"\n}",
+        "to": "{{customer_phone}}",
+        "category": "transactional",
+        "approvedTemplatesCsv": "",
+        "requiresMediaHeader": false,
+        "mediaHeader": "",
+        "outputVar": "template_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "channel, template, variables, recipient, and media header templates"
+        ],
+        "notes": [
+          "Approved template names and variables must be supplied explicitly."
+        ]
+      }
+    },
+    {
+      "type": "wait-until",
+      "label": "Wait Until",
+      "category": "logic",
+      "summary": "Pauses flow progression until a computed date-time window with timezone and business-hour controls.",
+      "useCases": [
+        "Wait until a pre-appointment reminder threshold before continuing.",
+        "Route after-hours leads into next business-day handling.",
+        "Delay payment or renewal follow-ups until valid send windows."
+      ],
+      "limitations": [
+        "Long waits require durable runtime/session persistence strategy.",
+        "Timezone/date parsing errors will route failures if not validated.",
+        "User early-reply policy behavior depends on runtime orchestration hooks."
+      ],
+      "edgeConfig": {
+        "summary": "Wait Until routes by computed wait outcome, so each result should lead to a clear downstream path instead of a second wait inside the same branch.",
+        "items": [
+          "Outgoing edges: 3",
+          "Route outcomes: resumed, skipped, failed",
+          "Conditional edges: driven by the computed wait result and past-time policy",
+          "Best next nodes: message, scheduler, notification, fallback, handover, or end"
+        ]
+      },
+      "routes": [
+        "resumed",
+        "skipped",
+        "failed"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-wait-until",
+      "uiFields": [
+        {
+          "key": "targetTime",
+          "label": "Target Time Template/Value",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "offsetValue",
+          "label": "Offset Value",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "offsetUnit",
+          "label": "Offset Unit",
+          "type": "select",
+          "required": false,
+          "options": [
+            "minutes",
+            "hours",
+            "days"
+          ]
+        },
+        {
+          "key": "offsetDirection",
+          "label": "Offset Direction",
+          "type": "select",
+          "required": false,
+          "options": [
+            "before",
+            "after"
+          ]
+        },
+        {
+          "key": "timezone",
+          "label": "Timezone (IANA)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "businessHoursEnabled",
+          "label": "Restrict to Business Hours",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "businessDaysCsv",
+          "label": "Business Days (csv)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "businessHoursEnabled",
+            "equals": true
+          }
+        },
+        {
+          "key": "businessStart",
+          "label": "Business Start (HH:mm)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "businessHoursEnabled",
+            "equals": true
+          }
+        },
+        {
+          "key": "businessEnd",
+          "label": "Business End (HH:mm)",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "businessHoursEnabled",
+            "equals": true
+          }
+        },
+        {
+          "key": "pastTimePolicy",
+          "label": "Past Time Policy",
+          "type": "select",
+          "required": false,
+          "options": [
+            "continue_now",
+            "skip",
+            "fail"
+          ]
+        },
+        {
+          "key": "userEarlyReplyPolicy",
+          "label": "User Early Reply Policy",
+          "type": "select",
+          "required": false,
+          "options": [
+            "resume_early",
+            "ignore",
+            "cancel_wait",
+            "branch_to_new_intent"
+          ]
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "targetTime": "",
+        "offsetValue": 1,
+        "offsetUnit": "days",
+        "offsetDirection": "before",
+        "timezone": "Asia/Kolkata",
+        "businessHoursEnabled": true,
+        "businessDaysCsv": "mon,tue,wed,thu,fri,sat",
+        "businessStart": "09:00",
+        "businessEnd": "18:00",
+        "pastTimePolicy": "continue_now",
+        "userEarlyReplyPolicy": "resume_early",
+        "outputVar": "wait_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar` when configured"
+        ],
+        "reads": [
+          "target time and business-hours templates"
+        ],
+        "notes": [
+          "Wait Until is time-based; ensure all referenced date/time variables are already known."
+        ]
+      }
+    },
+    {
+      "type": "scheduler",
+      "label": "Scheduler / Reminder",
+      "category": "logic",
+      "summary": "Schedules future reminders/follow-ups with timezone control, dedupe protection, and status-based routing.",
+      "useCases": [
+        "Schedule appointment reminders before visit time.",
+        "Trigger payment pending nudges after configurable offsets.",
+        "Run lead and post-visit follow-up automations after defined intervals."
+      ],
+      "limitations": [
+        "Production reliability depends on durable background job storage.",
+        "Invalid timestamps, cron strings, or timezone values will fail scheduling.",
+        "Channel windows and session policies must be handled in downstream execution."
+      ],
+      "edgeConfig": {
+        "summary": "Scheduler creates a durable job and then routes by scheduling outcome. Keep the success path simple and send failures to a safe retry, fallback, or manual-review branch.",
+        "items": [
+          "Outgoing edges: 4",
+          "Route outcomes: scheduled, skipped, failed, expired",
+          "Conditional edges: based on dedupe, past-time, expiry, and provider/job-store checks",
+          "Best next nodes: notification, message, handover, retry, fallback, or end"
+        ]
+      },
+      "routes": [
+        "scheduled",
+        "skipped",
+        "failed",
+        "expired"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-scheduler",
+      "uiFields": [
+        {
+          "key": "scheduleType",
+          "label": "Schedule Mode",
+          "type": "select",
+          "required": false,
+          "options": [
+            "relative",
+            "absolute",
+            "cron",
+            "business_time"
+          ]
+        },
+        {
+          "key": "runAt",
+          "label": "When to Run",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "offsetValue",
+          "label": "Reminder Offset",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "offsetUnit",
+          "label": "Offset Unit",
+          "type": "select",
+          "required": false,
+          "options": [
+            "minutes",
+            "hours",
+            "days"
+          ]
+        },
+        {
+          "key": "offsetDirection",
+          "label": "Offset Direction",
+          "type": "select",
+          "required": false,
+          "options": [
+            "before",
+            "after"
+          ]
+        },
+        {
+          "key": "timezone",
+          "label": "Timezone",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "dedupeKey",
+          "label": "Duplicate Prevention Key",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "payload",
+          "label": "Payload",
+          "type": "textarea",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "maxExecutions",
+          "label": "Runs Per Job",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "expiryAt",
+          "label": "Expire After",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "pastTimePolicy",
+          "label": "If Time Already Passed",
+          "type": "select",
+          "required": false,
+          "options": [
+            "skip",
+            "send_immediately",
+            "fail"
+          ]
+        },
+        {
+          "key": "sendWindowStart",
+          "label": "Send Window Start",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "sendWindowEnd",
+          "label": "Send Window End",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "sendWindowTimezone",
+          "label": "Send Window Timezone",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "outsideWindowPolicy",
+          "label": "Outside Window Policy",
+          "type": "select",
+          "required": false,
+          "options": [
+            "send_next_window",
+            "skip",
+            "fail"
+          ]
+        },
+        {
+          "key": "outputVar",
+          "label": "Store Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "scheduleType": "relative",
+        "runAt": "",
+        "offset": {
+          "value": 24,
+          "unit": "hours",
+          "direction": "before"
+        },
+        "timezone": "Asia/Kolkata",
+        "dedupeKey": "{{flow_id}}:{{customer_phone}}:appointment_reminder",
+        "payload": {},
+        "maxExecutions": 1,
+        "expiryAt": "",
+        "pastTimePolicy": "skip",
+        "sendWindow": {
+          "start": "09:00",
+          "end": "20:00",
+          "timezone": "Asia/Kolkata",
+          "outsideWindowPolicy": "send_next_window"
+        },
+        "outputVar": "scheduler_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "run time, payload, dedupe key, expiry, and send-window templates"
+        ],
+        "notes": [
+          "Scheduler inputs should be deterministic and timezone-aware."
+        ]
+      }
+    },
+    {
+      "type": "timeout",
+      "label": "Response Timeout",
+      "category": "logic",
+      "summary": "Waits for user input until a time limit, then routes to timeout handling.",
+      "useCases": [
+        "Recover abandoned conversations with reminder or fallback paths.",
+        "Set response windows for time-sensitive actions.",
+        "Escalate idle sessions to alternate channels or human support."
+      ],
+      "limitations": [
+        "Aggressive timeout values can frustrate genuine users.",
+        "Needs explicit timeout messaging and next-step handling.",
+        "Should align with channel expectations and business SLAs."
+      ],
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-timeout",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Prompt Messages",
+          "type": "messages",
+          "required": false
+        },
+        {
+          "key": "timeoutMs",
+          "label": "Timeout (ms)",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "timeoutMs": 5000,
+        "messages": [
+          "Please respond"
+        ]
+      },
+      "variableBehavior": {
+        "writes": [
+          "implicit timeout outcome only"
+        ],
+        "reads": [
+          "prompt messages"
+        ],
+        "notes": [
+          "Timeout behavior is defined by graph routing rather than stored variables."
+        ]
+      }
+    },
+    {
+      "type": "retry",
+      "label": "Retry Policy",
+      "category": "logic",
+      "summary": "Tracks repeated attempts and routes based on max-retry policy.",
+      "useCases": [
+        "Retry validation prompts when user input is invalid.",
+        "Retry integration-dependent steps before fallback.",
+        "Prevent infinite loops by enforcing controlled attempt limits."
+      ],
+      "limitations": [
+        "Missing retry target configuration causes runtime errors.",
+        "Too many retries degrade completion and user trust.",
+        "Counter variable naming must be consistent across flows."
+      ],
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-retry",
+      "uiFields": [
+        {
+          "key": "maxRetries",
+          "label": "Max retries",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "counterVar",
+          "label": "Counter variable",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "maxRetries": 3,
+        "counterVar": "retryCount"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.counterVar`"
+        ],
+        "reads": [
+          "retry counter variable"
+        ],
+        "notes": [
+          "Retry loops must stay bounded and use an explicit counter variable."
+        ]
+      }
+    },
+    {
+      "type": "setVariable",
+      "label": "Variable Assignment",
+      "category": "logic",
+      "summary": "Creates or updates variables used by downstream routing, templates, and integrations.",
+      "useCases": [
+        "Store normalized values such as plan type, city, or account tier.",
+        "Set internal flags for branch control and eligibility checks.",
+        "Prepare payload fragments for API, email, or AI nodes."
+      ],
+      "limitations": [
+        "Inconsistent naming causes mapping and reporting confusion.",
+        "Unintended overwrites can break branch logic later in flow.",
+        "Complex derivations should be done via script/AI, not manual constants."
+      ],
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-setVariable",
+      "uiFields": [
+        {
+          "key": "assignments",
+          "label": "Variables",
+          "type": "kv",
+          "required": false,
+          "meta": {
+            "fields": [
+              {
+                "key": "key",
+                "type": "text",
+                "label": "Variable Name"
+              },
+              {
+                "key": "value",
+                "type": "text",
+                "label": "Value"
+              },
+              {
+                "key": "scope",
+                "type": "select",
+                "label": "Scope",
+                "options": [
+                  "session",
+                  "conversation",
+                  "global"
+                ],
+                "default": "conversation"
+              }
+            ]
+          }
+        }
+      ],
+      "defaults": {
+        "assignments": [
+          {
+            "key": "",
+            "value": ""
+          }
+        ]
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.assignments[].key`"
+        ],
+        "reads": [
+          "templated assignment values"
+        ],
+        "notes": [
+          "Use this node to create deterministic internal variables before routing or integration nodes."
+        ]
+      }
+    },
+    {
+      "type": "handover",
+      "label": "Human Escalation",
+      "category": "integration",
+      "summary": "Transfers the conversation from automation to a human or external support channel.",
+      "useCases": [
+        "Escalate sensitive, high-risk, or unresolved cases.",
+        "Hand off long-running or account-specific issues to agents.",
+        "Move VIP or urgent conversations to priority support teams."
+      ],
+      "limitations": [
+        "Terminal handoff step and should not continue automated branching.",
+        "Requires real support coverage to meet escalation SLAs.",
+        "Handover context quality determines agent resolution speed."
+      ],
+      "edgeConfig": {
+        "summary": "Handover ends the bot turn after the transfer payload is emitted. Do not branch out of this node in the runtime path; use End only as a visual close-out pattern if your flow design requires one.",
+        "items": [
+          "Outgoing edges: 0",
+          "Conditional edges: not supported",
+          "Default edge: not used",
+          "Best next step: none in runtime; close the branch after transfer logging"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-handover",
+      "uiFields": [
+        {
+          "key": "channel",
+          "label": "Handover Channel",
+          "type": "select",
+          "required": false,
+          "options": [
+            "human",
+            "email",
+            "whatsapp",
+            "crm"
+          ]
+        },
+        {
+          "key": "messages",
+          "label": "Bot Messages",
+          "type": "messages",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "channel": "human",
+        "messages": [
+          "Connecting you to an agent…"
+        ]
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "agent-handoff",
+      "label": "Specialist AI Delegation",
+      "category": "AI",
+      "summary": "Delegates execution to another bot/agent and returns handoff metadata plus any selected context variables.",
+      "useCases": [
+        "Route specialized tasks to domain-specific AI agents.",
+        "Split complex journeys into orchestrated multi-agent subflows.",
+        "Reuse expert bots across multiple parent workflows."
+      ],
+      "limitations": [
+        "Target bot must be valid and accessible in the same workspace.",
+        "Deep handoff chains are restricted by max-depth guardrails.",
+        "Poor context-sharing design can produce inconsistent outcomes.",
+        "This node is a transfer step, not a branching router."
+      ],
+      "edgeConfig": {
+        "summary": "Agent Handoff is a linear transfer step. It delegates to the target bot, emits any returned messages, and then continues to exactly one next node.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on agent-handoff itself",
+          "Default edge: required to continue the flow",
+          "Best next nodes: message, decision, handover, fallback, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-agent-handoff",
+      "uiFields": [
+        {
+          "key": "targetBotId",
+          "label": "Target Bot ID",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "inputTemplate",
+          "label": "Input Template (optional)",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "outputKey",
+          "label": "Output Variable",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "sessionVar",
+          "label": "Child Session Variable",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "shareContextKeys",
+          "label": "Share Context Keys (comma-separated)",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "returnContextKeys",
+          "label": "Return Context Keys (comma-separated)",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "emitTargetMessages",
+          "label": "Emit Target Messages",
+          "type": "select",
+          "required": false,
+          "options": [
+            "true",
+            "false"
+          ]
+        },
+        {
+          "key": "maxDepth",
+          "label": "Max Handoff Depth",
+          "type": "number",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "targetBotId": "",
+        "outputKey": "agentHandoff",
+        "sessionVar": "",
+        "inputTemplate": "",
+        "shareContextKeys": [],
+        "returnContextKeys": [],
+        "emitTargetMessages": true,
+        "maxDepth": 3
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`",
+          "`data.childSessionVar` when configured"
+        ],
+        "reads": [
+          "target bot, input template, shared/returned context keys"
+        ],
+        "notes": [
+          "Agent handoff requires an exact target bot contract and bounded depth."
+        ]
+      }
+    },
+    {
+      "type": "fallback",
+      "label": "Fallback Response",
+      "category": "logic",
+      "summary": "Provides a controlled safe response when no confident route is available.",
+      "useCases": [
+        "Handle unmatched user inputs without exposing internal errors.",
+        "Provide generic recovery guidance and next best action.",
+        "Route uncertain AI/integration outcomes to stable handling."
+      ],
+      "limitations": [
+        "Overuse can hide real design gaps in primary branches.",
+        "Often terminal, so keep copy clear and actionable.",
+        "Should include escalation options for repeated fallback loops."
+      ],
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-fallback",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Fallback Messages",
+          "type": "messages",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "messages": [
+          "Sorry, I didn’t understand that."
+        ]
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "switch",
+      "label": "Rule Router",
+      "category": "logic",
+      "summary": "Routes execution to branch edges by matching the value of a chosen variable.",
+      "useCases": [
+        "Route by department, plan, intent, or payment status.",
+        "Build multi-outcome pathing from one normalized variable.",
+        "Create deterministic business routing for operations teams."
+      ],
+      "limitations": [
+        "Requires clean and predictable variable values.",
+        "Missing default branch can create dead ends.",
+        "Value mismatches due to casing/format can cause wrong routing."
+      ],
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-switch",
+      "uiFields": [
+        {
+          "key": "variable",
+          "label": "Variable to evaluate",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "variable": "input"
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [
+          "`data.variable`"
+        ],
+        "notes": [
+          "Switch routes on an existing variable and must preserve a deterministic fallback path."
+        ]
+      }
+    },
+    {
+      "type": "intent-router",
+      "label": "User Intent Routing",
+      "category": "AI",
+      "summary": "Uses intent classification to route user messages into specialized business branches and stores the chosen intent for downstream steps.",
+      "useCases": [
+        "Drive multi-intent support bots from one shared entrypoint.",
+        "Reduce manual rule complexity in large routing trees.",
+        "Separate billing, technical, and onboarding requests early."
+      ],
+      "limitations": [
+        "Needs one conditional edge per supported intent plus exactly one default fallback edge.",
+        "Low-confidence predictions need explicit recovery logic and a safe fallback intent.",
+        "Intent quality depends on prompt, examples, labels, and user phrasing.",
+        "Use specific intent keys and labels because shared words alone are treated as ambiguous.",
+        "Ambiguous shared-token matches pause with matching intent buttons before falling back.",
+        "Conditional edge values must exactly match configured intent keys."
+      ],
+      "edgeConfig": {
+        "summary": "Intent Router is a classifier node. Wire one conditional edge for each supported intent and one default edge for unknown or low-confidence cases. The runtime stores the chosen intent in session context so downstream nodes can branch on it.",
+        "items": [
+          "Outgoing edges: one conditional edge per supported intent, plus exactly 1 default edge",
+          "Conditional edges: required for each intent branch",
+          "Default edge: required for unknown or low-confidence cases",
+          "Best next nodes: faq, api, message, input, handover, fallback, or end depending on the matched intent"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-intent-router",
+      "uiFields": [
+        {
+          "key": "intents",
+          "label": "Supported Intents",
+          "type": "kv",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "intents": [
+          {
+            "key": "order_status",
+            "label": "Order Status"
+          },
+          {
+            "key": "pricing",
+            "label": "Pricing"
+          }
+        ],
+        "fallbackIntent": "unknown",
+        "threshold": 0.6
+      },
+      "variableBehavior": {
+        "writes": [
+          "`intent`"
+        ],
+        "reads": [
+          "latest user input"
+        ],
+        "notes": [
+          "Intent Router stores the matched intent in the readonly `intent` variable."
+        ]
+      }
+    },
+    {
+      "type": "loop",
+      "label": "Loop Controller",
+      "category": "logic",
+      "summary": "Repeats part of the flow with iteration guardrails until exit condition is met.",
+      "useCases": [
+        "Run reminder loops until user provides required input.",
+        "Repeat collection/verification steps with bounded attempts.",
+        "Build controlled re-engagement sequences for incomplete tasks."
+      ],
+      "limitations": [
+        "Weak exit criteria can cause loop exhaustion errors.",
+        "Must have explicit max-iteration safety controls.",
+        "Overuse can make conversation feel repetitive."
+      ],
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-loop",
+      "uiFields": [
+        {
+          "key": "count",
+          "label": "Times",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "count": 1
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "error",
+      "label": "Error Handler",
+      "category": "error",
+      "summary": "Displays a controlled error response when a critical runtime or integration step fails.",
+      "useCases": [
+        "Handle API/provider failures with user-safe messaging.",
+        "Prevent raw technical errors from reaching end users.",
+        "Standardize incident messaging across many branches."
+      ],
+      "limitations": [
+        "Usually terminal and should not continue normal flow.",
+        "Overly generic error copy can reduce user trust.",
+        "Must be paired with logging/observability for debugging."
+      ],
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-error",
+      "uiFields": [
+        {
+          "key": "messages",
+          "label": "Error Messages",
+          "type": "messages",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "messages": [
+          "Something went wrong. Please try again later."
+        ]
+      },
+      "variableBehavior": {
+        "writes": [],
+        "reads": [],
+        "notes": [
+          "This node mainly controls graph flow rather than introducing new runtime variables."
+        ]
+      }
+    },
+    {
+      "type": "ai-extract",
+      "label": "Structured Data Capture",
+      "category": "AI",
+      "summary": "Extracts structured fields from unstructured user text using AI schema guidance, then writes the extracted keys into session variables.",
+      "useCases": [
+        "Extract names, dates, IDs, symptoms, or location fields.",
+        "Convert free-text complaints into machine-usable variables.",
+        "Reduce manual form friction in conversational intake."
+      ],
+      "limitations": [
+        "Extraction quality depends on schema clarity and user input.",
+        "Missing/invalid schema config blocks useful extraction.",
+        "Ambiguous inputs may require retries or human confirmation.",
+        "Branching should happen after extraction using the stored variables, not inside this node."
+      ],
+      "edgeConfig": {
+        "summary": "AI Extract is usually a straight-through enrichment step. It does not emit special route outcomes; it writes extracted keys to session scope and then continues to one next node.",
+        "items": [
+          "Outgoing edges: 1 recommended",
+          "Conditional edges: not on ai-extract itself",
+          "Default edge: recommended for a linear flow",
+          "Best next nodes: setVariable, condition, switch, api, decision, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-ai-extract",
+      "uiFields": [
+        {
+          "key": "schema",
+          "label": "Extraction Schema",
+          "type": "kv",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "schema": {
+          "field": "string"
+        }
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "input text and extraction schema"
+        ],
+        "notes": [
+          "AI Extract should be followed by validation or fallback when extracted structure matters."
+        ]
+      }
+    },
+    {
+      "type": "ai-generate",
+      "label": "Smart Response Composer",
+      "category": "AI",
+      "summary": "Generates dynamic LLM responses from prompt templates and runtime variables, then stores the result and optionally sends it to the user.",
+      "useCases": [
+        "Create personalized replies based on user and session context.",
+        "Generate dynamic campaign, outreach, or follow-up text.",
+        "Produce context-aware responses when static copy is insufficient."
+      ],
+      "limitations": [
+        "Prompt quality directly determines output quality and consistency.",
+        "Needs fallback/guardrails for low-confidence generations.",
+        "Should not be used without business policy constraints."
+      ],
+      "edgeConfig": {
+        "summary": "AI Generate is a linear response-composition step. It writes the generated text to outputKey, may emit it to the user when respond=true, and then continues to one next node.",
+        "items": [
+          "Outgoing edges: 1 recommended",
+          "Conditional edges: not on ai-generate itself",
+          "Default edge: recommended for a simple response flow",
+          "Best next nodes: message, condition, ai-memory, api, setVariable, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-ai-generate",
+      "uiFields": [
+        {
+          "key": "template",
+          "label": "Prompt Template",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "outputKey",
+          "label": "Store Output As",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "respond",
+          "label": "Send As Message",
+          "type": "select",
+          "required": false,
+          "options": [
+            "true",
+            "false"
+          ]
+        }
+      ],
+      "defaults": {
+        "template": "Hello {{name}}",
+        "outputKey": "generatedText",
+        "respond": true
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "prompt template"
+        ],
+        "notes": [
+          "Do not ask AI Generate to invent business facts that are absent from the flow context."
+        ]
+      }
+    },
+    {
+      "type": "ai-grounded",
+      "label": "Concern Resolution AI",
+      "category": "AI",
+      "summary": "Generates an LLM answer constrained to provided context and user input, then routes by grounded or fallback.",
+      "useCases": [
+        "Run grounded Q&A for policy, SOP, pricing, or clinical routing context.",
+        "Return deterministic answers using known text/JSON documents only.",
+        "Reduce hallucinations in high-stakes support and operations flows."
+      ],
+      "limitations": [
+        "Insufficient context often triggers fallback or low-confidence output.",
+        "Large unstructured context can increase latency and reduce precision.",
+        "Output format should align with executor expectations for routing.",
+        "For branch routing, use edge conditions with values \"grounded\" and \"fallback\"."
+      ],
+      "edgeConfig": {
+        "summary": "AI Grounded is a grounded-answer step with two explicit outcomes. Wire grounded to the success path and fallback to a safe recovery or handover path.",
+        "items": [
+          "Outgoing edges: 1 or 2",
+          "Route outcomes: grounded, fallback",
+          "Conditional edges: supported via grounded/fallback route handles",
+          "Default edge: optional when only one edge is used; recommended as a safe fallback path when branching",
+          "Best next nodes: message, handover, api, setVariable, condition, or end"
+        ]
+      },
+      "routes": [
+        "grounded",
+        "fallback"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-ai-grounded",
+      "uiFields": [
+        {
+          "key": "contextTemplate",
+          "label": "Context Template",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "inputTemplate",
+          "label": "Input Template",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "instructions",
+          "label": "Instructions",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "responseContract",
+          "label": "Response Contract",
+          "type": "select",
+          "required": false,
+          "options": [
+            "grounded-envelope",
+            "single-key-json",
+            "single-key-text"
+          ]
+        },
+        {
+          "key": "responseStyle",
+          "label": "Response Style",
+          "type": "select",
+          "required": false,
+          "options": [
+            "concise",
+            "detailed",
+            "bullet",
+            "json"
+          ]
+        },
+        {
+          "key": "strictGrounding",
+          "label": "Strict Grounding",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "includeCitations",
+          "label": "Include Citations",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "includeCitationsInResponse",
+          "label": "Show Citations In Response",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "responseTemplate",
+          "label": "Response Template",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "fallbackResponseTemplate",
+          "label": "Fallback Response Template",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "fallbackMessage",
+          "label": "Fallback Message",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Store Result As",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "answerVar",
+          "label": "Store Answer As",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "answerKeyValueVar",
+          "label": "Store Answer KeyValue As (for buttons)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "emitResponse",
+          "label": "Send As Message",
+          "type": "boolean",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "contextTemplate": "Paste grounded context here (text, JSON, or templated data).",
+        "inputTemplate": "{{input}}",
+        "instructions": "Answer only using provided context. If context is insufficient, clearly say so.",
+        "responseContract": "grounded-envelope",
+        "responseStyle": "concise",
+        "strictGrounding": true,
+        "includeCitations": true,
+        "includeCitationsInResponse": false,
+        "responseTemplate": "You can consult {{answer}}",
+        "fallbackResponseTemplate": "",
+        "fallbackMessage": "I don't have enough grounded context to answer that confidently.",
+        "outputVar": "groundedResult",
+        "answerVar": "groundedAnswer",
+        "answerKeyValueVar": "deptOption",
+        "emitResponse": true
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`",
+          "`data.answerVar` when configured",
+          "`data.answerKeyValueVar` when configured"
+        ],
+        "reads": [
+          "context, input, instruction, fallback, and response templates"
+        ],
+        "notes": [
+          "Grounded AI nodes must still obey the same upstream variable proof rules."
+        ]
+      }
+    },
+    {
+      "type": "web-crawl",
+      "label": "Website Answer Search",
+      "category": "AI",
+      "summary": "Crawls a configured website, asks an LLM to answer the current question from the crawled content, and routes by answered, not_found, or failed.",
+      "useCases": [
+        "Answer user questions from a public website without manually copying page text into the flow.",
+        "Search a configured help center, product site, or policy page during a chat.",
+        "Escalate to an agent when the website does not contain enough information."
+      ],
+      "limitations": [
+        "Only public HTTP/HTTPS pages from the configured website origin are crawled.",
+        "Crawl size is intentionally bounded by maxPages, maxDepth, and maxCharsPerPage.",
+        "Dynamic pages that require browser rendering, login, or blocked network access may return little usable text.",
+        "A not_found or failed route should be wired for safe fallback and handover."
+      ],
+      "edgeConfig": {
+        "summary": "Web Crawl has three explicit outcomes. Wire answered to the normal response path, not_found to fallback or agent handover, and failed to a technical recovery path.",
+        "items": [
+          "Outgoing edges: 1 to 3",
+          "Route outcomes: answered, not_found, failed",
+          "Conditional edges: supported via answered/not_found/failed route values",
+          "Default edge: allowed when using a simple linear path",
+          "Best next nodes: message, handover, fallback, condition, setVariable, or end"
+        ]
+      },
+      "routes": [
+        "answered",
+        "not_found",
+        "failed"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-web-crawl",
+      "uiFields": [
+        {
+          "key": "websiteUrl",
+          "label": "Website URL",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "inputTemplate",
+          "label": "Question Template",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "instructions",
+          "label": "Answer Instructions",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "provider",
+          "label": "LLM Provider",
+          "type": "select",
+          "required": false,
+          "options": [
+            "workspace",
+            "openrouter",
+            "groq",
+            "openai",
+            "gemini",
+            "ollama"
+          ]
+        },
+        {
+          "key": "model",
+          "label": "LLM Model Override",
+          "type": "text",
+          "required": false,
+          "optional": true
+        },
+        {
+          "key": "maxPages",
+          "label": "Max Pages",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "maxDepth",
+          "label": "Max Link Depth",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "maxCharsPerPage",
+          "label": "Max Characters Per Page",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Store Result As",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "answerVar",
+          "label": "Store Answer As",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "emitResponse",
+          "label": "Send As Message",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "includeSourcesInResponse",
+          "label": "Show Sources In Response",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "notFoundMessage",
+          "label": "Not Found Message",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "failureMessage",
+          "label": "Failure Message",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "websiteUrl": "https://example.com",
+        "inputTemplate": "{{input}}",
+        "instructions": "Answer the user's question using only the crawled website content.",
+        "provider": "workspace",
+        "model": "",
+        "maxPages": 5,
+        "maxDepth": 1,
+        "maxCharsPerPage": 4000,
+        "outputVar": "webCrawlResult",
+        "answerVar": "webCrawlAnswer",
+        "emitResponse": true,
+        "includeSourcesInResponse": false,
+        "notFoundMessage": "I could not find enough information on the configured website to answer that.",
+        "failureMessage": "I could not search the configured website right now. Please try again later."
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`",
+          "`data.answerVar` when configured"
+        ],
+        "reads": [
+          "website URL, question, instructions, and response templates"
+        ],
+        "notes": [
+          "Web Crawl requires an explicit target website contract and fallback messaging."
+        ]
+      }
+    },
+    {
+      "type": "ai-sentiment",
+      "label": "Emotion-Based Escalation",
+      "category": "AI",
+      "summary": "Classifies user sentiment into positive, negative, or neutral and enables priority routing based on emotional tone.",
+      "useCases": [
+        "Detect frustration and escalate urgent conversations earlier.",
+        "Tune response tone for negative vs neutral interactions.",
+        "Prioritize service queues by emotional urgency signals.",
+        "Collect one-tap satisfaction feedback with clickable emoji choices before routing."
+      ],
+      "limitations": [
+        "Short or ambiguous text can reduce classification accuracy.",
+        "Threshold tuning is required for production stability.",
+        "Low-confidence results collapse to neutral, so the neutral path must be safe.",
+        "Emoji feedback is coarse-grained and should not replace structured CSAT or issue-category capture."
+      ],
+      "edgeConfig": {
+        "summary": "AI Sentiment is a label-based classifier. Route positive, negative, and neutral outcomes explicitly, and keep a default edge as a safety net for unexpected values or future changes.",
+        "items": [
+          "Outgoing edges: 4 recommended",
+          "Route outcomes: positive, negative, neutral, default",
+          "Conditional edges: one each for positive, negative, and neutral labels",
+          "Default edge: required when conditional edges are used; route it to a safe fallback or recovery path",
+          "Best next nodes: handover, message, setVariable, decision, fallback, or end"
+        ]
+      },
+      "routes": [
+        "positive",
+        "negative",
+        "neutral"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-ai-sentiment",
+      "uiFields": [
+        {
+          "key": "threshold",
+          "label": "Confidence Threshold",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "emojiFeedbackEnabled",
+          "label": "Show Clickable Emoji Feedback",
+          "type": "boolean",
+          "required": false
+        },
+        {
+          "key": "feedbackPrompt",
+          "label": "Feedback Prompt",
+          "type": "text",
+          "required": false,
+          "showIf": {
+            "key": "emojiFeedbackEnabled",
+            "equals": true
+          }
+        }
+      ],
+      "defaults": {
+        "threshold": 0.5,
+        "emojiFeedbackEnabled": false,
+        "feedbackPrompt": "How was your experience?"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar` when configured"
+        ],
+        "reads": [
+          "feedback prompt and thresholds"
+        ],
+        "notes": [
+          "Sentiment results should be consumed downstream rather than assumed implicitly."
+        ]
+      }
+    },
+    {
+      "type": "ai-memory",
+      "label": "Customer Context Memory",
+      "category": "AI",
+      "summary": "Persists selected session variables into durable memory so they can be restored on later turns and reused for personalization.",
+      "useCases": [
+        "Remember profile preferences and recurring user details.",
+        "Carry forward prior context to reduce repetitive questioning.",
+        "Store durable state for cross-session conversational continuity and handover prep."
+      ],
+      "limitations": [
+        "Only keys listed in assignments are persisted.",
+        "Blank or stale session vars can overwrite good memory values.",
+        "Sensitive memory fields require compliance-aware handling and retention rules."
+      ],
+      "edgeConfig": {
+        "summary": "AI Memory is a linear persistence step. It upserts the selected keys into durable memory and then continues to one next node; it is not a branching node.",
+        "items": [
+          "Outgoing edges: 1",
+          "Conditional edges: not on ai-memory itself",
+          "Default edge: required to continue the flow",
+          "Best next nodes: ai-generate, handover, switch, message, setVariable, or end"
+        ]
+      },
+      "routes": [],
+      "docsHref": "/docs/flow-node-playbook#node-ai-memory",
+      "uiFields": [
+        {
+          "key": "assignments",
+          "label": "Variables to persist",
+          "type": "kv",
+          "required": false,
+          "meta": {
+            "fields": [
+              {
+                "key": "key",
+                "type": "text",
+                "label": "Variable Name"
+              },
+              {
+                "key": "value",
+                "type": "text",
+                "label": "Default Value"
+              }
+            ]
+          }
+        }
+      ],
+      "defaults": {
+        "assignments": [
+          {
+            "key": "name",
+            "value": ""
+          }
+        ]
+      },
+      "variableBehavior": {
+        "writes": [
+          "assignment keys in `data.assignments`"
+        ],
+        "reads": [
+          "stored context and assignment defaults"
+        ],
+        "notes": [
+          "AI Memory persists deliberate context; do not use vague or overloaded keys."
+        ]
+      }
+    }
+  ]
+}

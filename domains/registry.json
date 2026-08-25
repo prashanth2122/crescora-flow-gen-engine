@@ -1,0 +1,23 @@
+{
+  "defaultDomain": "hospital",
+  "domains": [
+    {
+      "id": "hospital",
+      "displayName": "Hospital",
+      "sourceFlow": "domains/hospital/templates-source/hospital-full-automation.source.flow.json",
+      "builtFlow": "domains/hospital/templates/hospital-full-automation.flow.json",
+      "buildScript": "scripts/build-hospital-full-automation.mjs",
+      "validateScript": "scripts/validate-flow-export.mjs",
+      "journeyAuditScript": "scripts/audit-hospital-journeys.mjs",
+      "contentAuditScript": "scripts/audit-hospital-content.mjs"
+    },
+    {
+      "id": "real-estate",
+      "displayName": "Real Estate",
+      "sourceFlow": "domains/real-estate/templates-source/real-estate-lead-to-site-visit.source.flow.json",
+      "builtFlow": "domains/real-estate/templates/real-estate-lead-to-site-visit.flow.json",
+      "buildScript": "scripts/build-real-estate-lead-to-site-visit.mjs",
+      "validateScript": "scripts/validate-flow-export.mjs"
+    }
+  ]
+}

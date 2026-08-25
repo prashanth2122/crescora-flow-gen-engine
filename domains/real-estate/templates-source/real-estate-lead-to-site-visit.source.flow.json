@@ -1,0 +1,4173 @@
+{
+  "version": "1.0",
+  "exportedAt": "2026-08-20T00:00:00.000Z",
+  "bot": {
+    "name": "Real Estate Lead to Site Visit",
+    "description": "Automation-first real-estate buyer journey that captures requirements, matches live inventory, shares brochures, qualifies intent, books site visits, queues CRM sync, schedules reminders, and alerts sales on hot leads.",
+    "headerTitle": "Real Estate Lead to Site Visit",
+    "headerTagline": "AI buyer qualification and site-visit conversion",
+    "globalVariables": [
+      {
+        "key": "brand_name",
+        "value": "Crescora.ai"
+      },
+      {
+        "key": "default_currency",
+        "value": "INR"
+      },
+      {
+        "key": "default_timezone",
+        "value": "Asia/Kolkata"
+      },
+      {
+        "key": "crm_provider",
+        "value": "generic_crm"
+      },
+      {
+        "key": "sales_alert_phone",
+        "value": "+91-90000-45000"
+      },
+      {
+        "key": "sales_alert_email",
+        "value": "sales@builder.example.com"
+      },
+      {
+        "key": "site_visit_support_phone",
+        "value": "+91-90000-46000"
+      },
+      {
+        "key": "brochure_email",
+        "value": "brochures@builder.example.com"
+      }
+    ]
+  },
+  "flow": {
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "nodes": [
+      {
+        "id": "start_1",
+        "type": "start",
+        "position": {
+          "x": 120,
+          "y": 220
+        },
+        "data": {
+          "messages": []
+        }
+      },
+      {
+        "id": "set_template_defaults",
+        "type": "setVariable",
+        "position": {
+          "x": 360,
+          "y": 220
+        },
+        "data": {
+          "assignments": [
+            {
+              "key": "service_context",
+              "value": "real_estate_lead_to_site_visit"
+            },
+            {
+              "key": "escalation_policy",
+              "value": "human_only_for_true_system_failure_or_explicit_sales_request"
+            },
+            {
+              "key": "brochure_requested",
+              "value": "no"
+            },
+            {
+              "key": "site_visit_requested",
+              "value": "no"
+            },
+            {
+              "key": "mobile_otp_status",
+              "value": ""
+            }
+          ]
+        }
+      },
+      {
+        "id": "welcome_message",
+        "type": "message",
+        "position": {
+          "x": 600,
+          "y": 220
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Hi! 👋 I can help you find the right property based on your budget, preferred location, configuration, and timeline.\n\nI can also help you compare projects, view brochures and floor plans, check pricing, shortlist properties, and schedule a site visit."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "main_menu_input",
+        "type": "input",
+        "position": {
+          "x": 840,
+          "y": 220
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "What would you like to do?\n\nYou can also type your requirement directly. For example: \"3 BHK in Kokapet around ₹1.2 Cr.\""
+            }
+          ],
+          "variable": "main_menu_choice",
+          "buttons": [
+            {
+              "label": "🏠 Find a Property",
+              "value": "find_property"
+            },
+            {
+              "label": "🏢 Explore Projects",
+              "value": "explore_projects"
+            },
+            {
+              "label": "📄 Brochure & Floor Plans",
+              "value": "get_brochure"
+            },
+            {
+              "label": "⚖️ Compare Properties",
+              "value": "compare_properties"
+            },
+            {
+              "label": "❤️ My Shortlist",
+              "value": "my_shortlist"
+            },
+            {
+              "label": "📅 Book / Manage Site Visit",
+              "value": "book_site_visit"
+            },
+            {
+              "label": "💰 Pricing & Offers",
+              "value": "pricing_offers"
+            },
+            {
+              "label": "👤 Talk to Sales",
+              "value": "talk_to_sales"
+            }
+          ],
+          "disableChatInput": false
+        }
+      },
+      {
+        "id": "capture_requirement_from_menu",
+        "type": "setVariable",
+        "position": {
+          "x": 1080,
+          "y": 220
+        },
+        "data": {
+          "assignments": [
+            {
+              "key": "buyer_requirement_text",
+              "value": "{{main_menu_choice}}"
+            }
+          ]
+        }
+      },
+      {
+        "id": "requirement_input",
+        "type": "input",
+        "position": {
+          "x": 1320,
+          "y": 220
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Great. Tell me what you're looking for.\n\nYou can type something like:\n\"3 BHK apartment in Kokapet around ₹1.2 Cr.\""
+            }
+          ],
+          "variable": "buyer_requirement_text",
+          "buttons": [],
+          "disableChatInput": false
+        }
+      },
+      {
+        "id": "brochure_menu_message",
+        "type": "message",
+        "position": {
+          "x": 1320,
+          "y": 420
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "I can share brochures and floor plans once I know the project or requirement. Tell me the location, budget, configuration, or project name you want."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "compare_menu_message",
+        "type": "message",
+        "position": {
+          "x": 1320,
+          "y": 620
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "I can compare shortlisted properties once I know what to evaluate. Tell me the location, budget, configuration, or project names you want compared."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "shortlist_menu_message",
+        "type": "message",
+        "position": {
+          "x": 1320,
+          "y": 820
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "I can pull your saved shortlist and continue from there. Share your mobile number to load your buyer profile."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "site_visit_menu_message",
+        "type": "message",
+        "position": {
+          "x": 1320,
+          "y": 1020
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "I can help you book or manage a site visit. Share your mobile number first so I can load your saved lead, shortlist, and visit history."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "pricing_menu_message",
+        "type": "message",
+        "position": {
+          "x": 1320,
+          "y": 1220
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "I can help with pricing, payment plans, and active offers once I know the project or requirement. Tell me the location, budget, configuration, or project name you want priced."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "sales_request_message",
+        "type": "message",
+        "position": {
+          "x": 1320,
+          "y": 1420
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Connecting you to the sales team now. I am forwarding your enquiry for direct follow-up."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "sales_request_handover",
+        "type": "handover",
+        "position": {
+          "x": 1560,
+          "y": 1420
+        },
+        "data": {
+          "channel": "human",
+          "messages": [
+            "Connecting this enquiry to the sales team."
+          ]
+        }
+      },
+      {
+        "id": "parse_requirement",
+        "type": "script",
+        "position": {
+          "x": 1560,
+          "y": 220
+        },
+        "data": {
+          "script": "\nconst rawText = String(vars.buyer_requirement_text || \"\").trim();\nconst lowered = rawText.toLowerCase();\nconst knownLocations = [\n  \"kokapet\",\n  \"financial district\",\n  \"tellapur\",\n  \"narsingi\",\n  \"gachibowli\",\n  \"kondapur\",\n  \"hitech city\"\n];\nconst crorePattern = /(\\d+(?:\\.\\d+)?)\\s*(?:cr|crore|crores)/i;\nconst lakhPattern = /(\\d+(?:\\.\\d+)?)\\s*(?:l|lac|lakh|lakhs)/i;\nfunction toMinorFromCrore(value) {\n  return Math.round(Number(value) * 10000000 * 100);\n}\nfunction toMinorFromLakh(value) {\n  return Math.round(Number(value) * 100000 * 100);\n}\nfunction formatBudgetLabel(min, max) {\n  if (min && max) {\n    return \"₹\" + Math.round(min / 10000000) / 100 + \" Cr - ₹\" + Math.round(max / 10000000) / 100 + \" Cr\";\n  }\n  if (max) {\n    return \"Up to ₹\" + Math.round(max / 10000000) / 100 + \" Cr\";\n  }\n  return \"\";\n}\nlet preferredLocation = \"\";\nfor (const location of knownLocations) {\n  if (lowered.includes(location)) {\n    preferredLocation = location\n      .split(\" \")\n      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))\n      .join(\" \");\n    break;\n  }\n}\nlet propertyType = \"\";\nif (/(villa|villas)/i.test(rawText)) propertyType = \"Villa\";\nelse if (/(plot|plots|land)/i.test(rawText)) propertyType = \"Plot\";\nelse if (/(independent house|house)/i.test(rawText)) propertyType = \"Independent House\";\nelse if (/(apartment|flat|bhk)/i.test(rawText)) propertyType = \"Apartment\";\nlet bhk = \"\";\nconst bhkMatch = rawText.match(/(2|3|4|5)\\s*(?:\\+\\s*)?bhk/i);\nif (bhkMatch) {\n  bhk = bhkMatch[1] === \"5\" ? \"4+ BHK\" : bhkMatch[1] + \" BHK\";\n}\nlet budgetMinMinor = vars.budget_min_minor ? Number(vars.budget_min_minor) : 0;\nlet budgetMaxMinor = vars.budget_max_minor ? Number(vars.budget_max_minor) : 0;\nconst rangeMatch = rawText.match(/(\\d+(?:\\.\\d+)?)\\s*(?:cr|crore|crores|lakh|lakhs|lac|l)\\s*(?:to|-|–)\\s*(\\d+(?:\\.\\d+)?)\\s*(?:cr|crore|crores|lakh|lakhs|lac|l)/i);\nif (rangeMatch) {\n  const first = Number(rangeMatch[1]);\n  const second = Number(rangeMatch[2]);\n  if (/crore|cr/i.test(rangeMatch[0])) {\n    budgetMinMinor = toMinorFromCrore(first);\n    budgetMaxMinor = toMinorFromCrore(second);\n  } else {\n    budgetMinMinor = toMinorFromLakh(first);\n    budgetMaxMinor = toMinorFromLakh(second);\n  }\n} else {\n  const croreMatch = rawText.match(crorePattern);\n  const lakhMatch = rawText.match(lakhPattern);\n  if (croreMatch) {\n    budgetMaxMinor = toMinorFromCrore(croreMatch[1]);\n    budgetMinMinor = Math.round(budgetMaxMinor * 0.85);\n  } else if (lakhMatch) {\n    budgetMaxMinor = toMinorFromLakh(lakhMatch[1]);\n    budgetMinMinor = Math.round(budgetMaxMinor * 0.85);\n  }\n}\nlet purchaseTimeline = \"\";\nif (/immediate|immediately|this month/i.test(rawText)) purchaseTimeline = \"Immediately\";\nelse if (/1\\s*-\\s*3\\s*month/i.test(rawText) || /within 3 months/i.test(rawText)) purchaseTimeline = \"1-3 Months\";\nelse if (/3\\s*-\\s*6\\s*month/i.test(rawText) || /within 6 months/i.test(rawText)) purchaseTimeline = \"3-6 Months\";\nelse if (/exploring|just looking/i.test(rawText)) purchaseTimeline = \"Just Exploring\";\nlet purchasePurpose = \"\";\nif (/investment|investor/i.test(rawText)) purchasePurpose = \"Investment\";\nelse if (/family|self use|own use|live in/i.test(rawText)) purchasePurpose = \"Self Use\";\nlet possessionPreference = \"\";\nif (/ready to move|ready/i.test(rawText)) possessionPreference = \"Ready to Move\";\nelse if (/under construction/i.test(rawText)) possessionPreference = \"Under Construction is Fine\";\nvars.preferred_location = preferredLocation || vars.preferred_location || \"\";\nvars.property_type = propertyType || vars.property_type || \"\";\nvars.bhk = bhk || vars.bhk || \"\";\nvars.budget_min_minor = budgetMinMinor || Number(vars.budget_min_minor || 0) || 0;\nvars.budget_max_minor = budgetMaxMinor || Number(vars.budget_max_minor || 0) || 0;\nvars.budget_range_label = formatBudgetLabel(vars.budget_min_minor, vars.budget_max_minor) || vars.budget_range_label || \"\";\nvars.purchase_timeline = purchaseTimeline || vars.purchase_timeline || \"\";\nvars.purchase_purpose = purchasePurpose || vars.purchase_purpose || \"\";\nvars.possession_preference = possessionPreference || vars.possession_preference || \"\";\nreturn {\n  preferred_location: vars.preferred_location,\n  property_type: vars.property_type,\n  bhk: vars.bhk,\n  budget_range_label: vars.budget_range_label,\n  purchase_timeline: vars.purchase_timeline,\n  purchase_purpose: vars.purchase_purpose,\n  possession_preference: vars.possession_preference\n};\n",
+          "outputVar": "parsed_requirement",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "mobile_form",
+        "type": "form",
+        "position": {
+          "x": 1800,
+          "y": 220
+        },
+        "data": {
+          "messages": [
+            "Please share your mobile number.\n\nWe'll use it to securely save your property preferences, shortlist, brochure requests, and site-visit details."
+          ],
+          "fields": [
+            {
+              "key": "buyer_mobile",
+              "label": "Mobile number",
+              "type": "phone",
+              "required": true
+            }
+          ],
+          "fieldsJson": "[\n  {\n    \"key\": \"buyer_mobile\",\n    \"label\": \"Mobile number\",\n    \"type\": \"phone\",\n    \"required\": true\n  }\n]",
+          "outputVar": "buyer_mobile_form",
+          "mapToVariables": true
+        }
+      },
+      {
+        "id": "mobile_otp_input",
+        "type": "input",
+        "position": {
+          "x": 2040,
+          "y": 220
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "We've sent a 6-digit verification code to your mobile number.\n\nPlease enter the OTP to continue."
+            }
+          ],
+          "variable": "mobile_otp_input",
+          "buttons": [],
+          "disableChatInput": false
+        }
+      },
+      {
+        "id": "validate_mobile_otp",
+        "type": "script",
+        "position": {
+          "x": 2280,
+          "y": 220
+        },
+        "data": {
+          "script": "\nconst otp = String(vars.mobile_otp_input || \"\").trim();\nvars.mobile_otp_status = /^\\d{6}$/.test(otp) ? \"valid\" : \"invalid\";\nreturn {\n  mobile_otp_status: vars.mobile_otp_status\n};\n",
+          "outputVar": "mobile_otp_validation_result",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "mobile_otp_status_switch",
+        "type": "switch",
+        "position": {
+          "x": 2520,
+          "y": 220
+        },
+        "data": {
+          "variable": "mobile_otp_status"
+        }
+      },
+      {
+        "id": "mobile_otp_invalid_message_1",
+        "type": "message",
+        "position": {
+          "x": 2760,
+          "y": 360
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "That OTP doesn't look valid. Please enter a 6-digit OTP to continue."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "mobile_otp_input_2",
+        "type": "input",
+        "position": {
+          "x": 3000,
+          "y": 360
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "We've sent a 6-digit verification code to your mobile number.\n\nPlease enter the OTP to continue."
+            }
+          ],
+          "variable": "mobile_otp_input",
+          "buttons": [],
+          "disableChatInput": false
+        }
+      },
+      {
+        "id": "validate_mobile_otp_2",
+        "type": "script",
+        "position": {
+          "x": 3240,
+          "y": 360
+        },
+        "data": {
+          "script": "\nconst otp = String(vars.mobile_otp_input || \"\").trim();\nvars.mobile_otp_status = /^\\d{6}$/.test(otp) ? \"valid\" : \"invalid\";\nreturn {\n  mobile_otp_status: vars.mobile_otp_status\n};\n",
+          "outputVar": "mobile_otp_validation_result",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "mobile_otp_status_switch_2",
+        "type": "switch",
+        "position": {
+          "x": 3480,
+          "y": 360
+        },
+        "data": {
+          "variable": "mobile_otp_status"
+        }
+      },
+      {
+        "id": "mobile_otp_invalid_message_2",
+        "type": "message",
+        "position": {
+          "x": 3720,
+          "y": 500
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "That OTP doesn't look valid. Please enter a 6-digit OTP to continue."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "mobile_otp_input_3",
+        "type": "input",
+        "position": {
+          "x": 3960,
+          "y": 500
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "We've sent a 6-digit verification code to your mobile number.\n\nPlease enter the OTP to continue."
+            }
+          ],
+          "variable": "mobile_otp_input",
+          "buttons": [],
+          "disableChatInput": false
+        }
+      },
+      {
+        "id": "validate_mobile_otp_3",
+        "type": "script",
+        "position": {
+          "x": 4200,
+          "y": 500
+        },
+        "data": {
+          "script": "\nconst otp = String(vars.mobile_otp_input || \"\").trim();\nvars.mobile_otp_status = /^\\d{6}$/.test(otp) ? \"valid\" : \"invalid\";\nreturn {\n  mobile_otp_status: vars.mobile_otp_status\n};\n",
+          "outputVar": "mobile_otp_validation_result",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "mobile_otp_status_switch_3",
+        "type": "switch",
+        "position": {
+          "x": 4440,
+          "y": 500
+        },
+        "data": {
+          "variable": "mobile_otp_status"
+        }
+      },
+      {
+        "id": "mobile_otp_max_attempts_message",
+        "type": "message",
+        "position": {
+          "x": 4680,
+          "y": 640
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "You entered an invalid OTP 3 times. The verification flow is now closed."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "mobile_otp_max_attempts_end",
+        "type": "end",
+        "position": {
+          "x": 4920,
+          "y": 640
+        },
+        "data": {
+          "messages": []
+        }
+      },
+      {
+        "id": "contact_find",
+        "type": "record",
+        "position": {
+          "x": 4680,
+          "y": 220
+        },
+        "data": {
+          "action": "find",
+          "collection": "real_estate_contacts",
+          "where": {
+            "phone_e164": "{{buyer_mobile}}"
+          },
+          "whereJson": "{\n  \"phone_e164\": \"{{buyer_mobile}}\"\n}",
+          "data": {},
+          "dataJson": "{}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_contacts\",\n  \"fields\": {\n    \"contact_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"full_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"phone_e164\": {\n      \"type\": \"phone\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"email\": {\n      \"type\": \"email\",\n      \"required\": false\n    },\n    \"first_source\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"last_source\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"first_seen_at\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_seen_at\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_requirement_summary\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_preferred_location\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_budget_min_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"last_budget_max_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"last_property_type\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_bhk\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_purchase_timeline\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_purchase_purpose\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_financing_status\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_active_lead_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "",
+          "idempotencyKey": "",
+          "outputVar": "existing_contact_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": "phone_e164,email,full_name"
+        }
+      },
+      {
+        "id": "returning_contact_message",
+        "type": "message",
+        "position": {
+          "x": 1800,
+          "y": 60
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Welcome back, {{existing_contact_result.data.full_name}} 👋\n\nYour previous property preference was:\n\n📍 Location: {{existing_contact_result.data.last_preferred_location}}\n🏠 Configuration: {{existing_contact_result.data.last_bhk}}\n🏢 Property Type: {{existing_contact_result.data.last_property_type}}\n📝 Summary: {{existing_contact_result.data.last_requirement_summary}}\n\nWould you like to continue with these preferences?"
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "reuse_saved_preferences_input",
+        "type": "input",
+        "position": {
+          "x": 2040,
+          "y": 60
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Choose how you'd like to continue."
+            }
+          ],
+          "variable": "reuse_saved_preferences",
+          "buttons": [
+            {
+              "label": "Use Saved Preferences",
+              "value": "yes"
+            },
+            {
+              "label": "Start a New Search",
+              "value": "no"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "hydrate_saved_preferences",
+        "type": "setVariable",
+        "position": {
+          "x": 2280,
+          "y": 60
+        },
+        "data": {
+          "assignments": [
+            {
+              "key": "buyer_name",
+              "value": "{{existing_contact_result.data.full_name}}"
+            },
+            {
+              "key": "buyer_email",
+              "value": "{{existing_contact_result.data.email}}"
+            },
+            {
+              "key": "preferred_location",
+              "value": "{{existing_contact_result.data.last_preferred_location}}"
+            },
+            {
+              "key": "budget_min_minor",
+              "value": "{{existing_contact_result.data.last_budget_min_minor}}"
+            },
+            {
+              "key": "budget_max_minor",
+              "value": "{{existing_contact_result.data.last_budget_max_minor}}"
+            },
+            {
+              "key": "property_type",
+              "value": "{{existing_contact_result.data.last_property_type}}"
+            },
+            {
+              "key": "bhk",
+              "value": "{{existing_contact_result.data.last_bhk}}"
+            },
+            {
+              "key": "purchase_timeline",
+              "value": "{{existing_contact_result.data.last_purchase_timeline}}"
+            },
+            {
+              "key": "purchase_purpose",
+              "value": "{{existing_contact_result.data.last_purchase_purpose}}"
+            },
+            {
+              "key": "financing_status",
+              "value": "{{existing_contact_result.data.last_financing_status}}"
+            },
+            {
+              "key": "lead_id",
+              "value": "{{existing_contact_result.data.last_active_lead_id}}"
+            }
+          ]
+        }
+      },
+      {
+        "id": "new_contact_form",
+        "type": "form",
+        "position": {
+          "x": 1800,
+          "y": 340
+        },
+        "data": {
+          "messages": [
+            "I couldn't find a saved buyer profile for this number. Please share your name and email so I can send brochures, pricing updates, and visit confirmations."
+          ],
+          "fields": [
+            {
+              "key": "buyer_name",
+              "label": "Full name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "key": "buyer_email",
+              "label": "Email",
+              "type": "email",
+              "required": false
+            }
+          ],
+          "fieldsJson": "[\n  {\n    \"key\": \"buyer_name\",\n    \"label\": \"Full name\",\n    \"type\": \"text\",\n    \"required\": true\n  },\n  {\n    \"key\": \"buyer_email\",\n    \"label\": \"Email\",\n    \"type\": \"email\",\n    \"required\": false\n  }\n]",
+          "outputVar": "new_contact_form_result",
+          "mapToVariables": true
+        }
+      },
+      {
+        "id": "refresh_requirement_flags",
+        "type": "script",
+        "position": {
+          "x": 2520,
+          "y": 220
+        },
+        "data": {
+          "script": "\nfunction present(value) {\n  return String(value || \"\").trim().length > 0;\n}\nconst propertyType = String(vars.property_type || \"\").trim().toLowerCase();\nconst needsBhk = propertyType && propertyType !== \"plot\" ? \"yes\" : propertyType === \"plot\" ? \"no\" : \"unknown\";\nconst budgetKnown = Number(vars.budget_max_minor || 0) > 0;\nvars.has_preferred_location = present(vars.preferred_location) ? \"yes\" : \"no\";\nvars.has_property_type = present(vars.property_type) ? \"yes\" : \"no\";\nvars.needs_bhk = needsBhk;\nvars.has_bhk_or_na = needsBhk === \"no\" || present(vars.bhk) ? \"yes\" : \"no\";\nvars.has_budget_range = budgetKnown ? \"yes\" : \"no\";\nvars.has_purchase_purpose = present(vars.purchase_purpose) ? \"yes\" : \"no\";\nvars.has_purchase_timeline = present(vars.purchase_timeline) ? \"yes\" : \"no\";\nvars.has_possession_preference = present(vars.possession_preference) ? \"yes\" : \"no\";\nvars.has_financing_status = present(vars.financing_status) ? \"yes\" : \"no\";\nvars.requirement_summary =\n  (present(vars.bhk) ? vars.bhk + \" \" : \"\") +\n  (present(vars.property_type) ? vars.property_type : \"Property\") +\n  (present(vars.preferred_location) ? \" in \" + vars.preferred_location : \"\") +\n  (present(vars.budget_range_label) ? \" within \" + vars.budget_range_label : \"\");\nreturn {\n  requirement_summary: vars.requirement_summary,\n  flags: {\n    has_preferred_location: vars.has_preferred_location,\n    has_property_type: vars.has_property_type,\n    has_bhk_or_na: vars.has_bhk_or_na,\n    has_budget_range: vars.has_budget_range,\n    has_purchase_purpose: vars.has_purchase_purpose,\n    has_purchase_timeline: vars.has_purchase_timeline,\n    has_possession_preference: vars.has_possession_preference,\n    has_financing_status: vars.has_financing_status\n  }\n};\n",
+          "outputVar": "requirement_flags",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "location_switch",
+        "type": "switch",
+        "position": {
+          "x": 2760,
+          "y": 220
+        },
+        "data": {
+          "variable": "has_preferred_location"
+        }
+      },
+      {
+        "id": "location_input",
+        "type": "input",
+        "position": {
+          "x": 3000,
+          "y": 340
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Which location or micro-market are you considering?"
+            }
+          ],
+          "variable": "preferred_location",
+          "buttons": [],
+          "disableChatInput": false
+        }
+      },
+      {
+        "id": "property_type_switch",
+        "type": "switch",
+        "position": {
+          "x": 3240,
+          "y": 220
+        },
+        "data": {
+          "variable": "has_property_type"
+        }
+      },
+      {
+        "id": "property_type_input",
+        "type": "input",
+        "position": {
+          "x": 3480,
+          "y": 340
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "What type of property are you looking for?"
+            }
+          ],
+          "variable": "property_type",
+          "buttons": [
+            {
+              "label": "Apartment",
+              "value": "Apartment"
+            },
+            {
+              "label": "Villa",
+              "value": "Villa"
+            },
+            {
+              "label": "Independent House",
+              "value": "Independent House"
+            },
+            {
+              "label": "Plot",
+              "value": "Plot"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "refresh_after_property_type",
+        "type": "script",
+        "position": {
+          "x": 3720,
+          "y": 340
+        },
+        "data": {
+          "script": "\nfunction present(value) {\n  return String(value || \"\").trim().length > 0;\n}\nconst propertyType = String(vars.property_type || \"\").trim().toLowerCase();\nconst needsBhk = propertyType && propertyType !== \"plot\" ? \"yes\" : propertyType === \"plot\" ? \"no\" : \"unknown\";\nconst budgetKnown = Number(vars.budget_max_minor || 0) > 0;\nvars.has_preferred_location = present(vars.preferred_location) ? \"yes\" : \"no\";\nvars.has_property_type = present(vars.property_type) ? \"yes\" : \"no\";\nvars.needs_bhk = needsBhk;\nvars.has_bhk_or_na = needsBhk === \"no\" || present(vars.bhk) ? \"yes\" : \"no\";\nvars.has_budget_range = budgetKnown ? \"yes\" : \"no\";\nvars.has_purchase_purpose = present(vars.purchase_purpose) ? \"yes\" : \"no\";\nvars.has_purchase_timeline = present(vars.purchase_timeline) ? \"yes\" : \"no\";\nvars.has_possession_preference = present(vars.possession_preference) ? \"yes\" : \"no\";\nvars.has_financing_status = present(vars.financing_status) ? \"yes\" : \"no\";\nvars.requirement_summary =\n  (present(vars.bhk) ? vars.bhk + \" \" : \"\") +\n  (present(vars.property_type) ? vars.property_type : \"Property\") +\n  (present(vars.preferred_location) ? \" in \" + vars.preferred_location : \"\") +\n  (present(vars.budget_range_label) ? \" within \" + vars.budget_range_label : \"\");\nreturn {\n  requirement_summary: vars.requirement_summary,\n  flags: {\n    has_preferred_location: vars.has_preferred_location,\n    has_property_type: vars.has_property_type,\n    has_bhk_or_na: vars.has_bhk_or_na,\n    has_budget_range: vars.has_budget_range,\n    has_purchase_purpose: vars.has_purchase_purpose,\n    has_purchase_timeline: vars.has_purchase_timeline,\n    has_possession_preference: vars.has_possession_preference,\n    has_financing_status: vars.has_financing_status\n  }\n};\n",
+          "outputVar": "requirement_flags_after_property",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "bhk_switch",
+        "type": "switch",
+        "position": {
+          "x": 3960,
+          "y": 220
+        },
+        "data": {
+          "variable": "has_bhk_or_na"
+        }
+      },
+      {
+        "id": "bhk_input",
+        "type": "input",
+        "position": {
+          "x": 4200,
+          "y": 340
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "What configuration would you prefer?"
+            }
+          ],
+          "variable": "bhk",
+          "buttons": [
+            {
+              "label": "2 BHK",
+              "value": "2 BHK"
+            },
+            {
+              "label": "3 BHK",
+              "value": "3 BHK"
+            },
+            {
+              "label": "4 BHK",
+              "value": "4 BHK"
+            },
+            {
+              "label": "4+ BHK",
+              "value": "4+ BHK"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "budget_switch",
+        "type": "switch",
+        "position": {
+          "x": 4440,
+          "y": 220
+        },
+        "data": {
+          "variable": "has_budget_range"
+        }
+      },
+      {
+        "id": "budget_input",
+        "type": "input",
+        "position": {
+          "x": 4680,
+          "y": 340
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "What budget range should I stay within?"
+            }
+          ],
+          "variable": "budget_range_choice",
+          "buttons": [
+            {
+              "label": "Under ₹75L",
+              "value": "under_75_lakh"
+            },
+            {
+              "label": "₹75L to ₹1 Cr",
+              "value": "75_lakh_to_1_cr"
+            },
+            {
+              "label": "₹1 Cr to ₹1.5 Cr",
+              "value": "1_cr_to_1_5_cr"
+            },
+            {
+              "label": "₹1.5 Cr to ₹2 Cr",
+              "value": "1_5_cr_to_2_cr"
+            },
+            {
+              "label": "₹2 Cr+",
+              "value": "2_cr_plus"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "normalize_budget",
+        "type": "script",
+        "position": {
+          "x": 4920,
+          "y": 340
+        },
+        "data": {
+          "script": "\nconst raw = String(vars.budget_range_choice || \"\").trim();\nconst ranges = {\n  \"under_75_lakh\": [0, 7500000 * 100, \"Under ₹75L\"],\n  \"75_lakh_to_1_cr\": [7500000 * 100, 10000000 * 100, \"₹75L - ₹1 Cr\"],\n  \"1_cr_to_1_5_cr\": [10000000 * 100, 15000000 * 100, \"₹1 Cr - ₹1.5 Cr\"],\n  \"1_5_cr_to_2_cr\": [15000000 * 100, 20000000 * 100, \"₹1.5 Cr - ₹2 Cr\"],\n  \"2_cr_plus\": [20000000 * 100, 35000000 * 100, \"₹2 Cr+\"]\n};\nconst selected = ranges[raw] || [0, 0, \"\"];\nvars.budget_min_minor = selected[0];\nvars.budget_max_minor = selected[1];\nvars.budget_range_label = selected[2];\nvars.has_budget_range = selected[1] > 0 ? \"yes\" : \"no\";\nreturn {\n  budget_min_minor: vars.budget_min_minor,\n  budget_max_minor: vars.budget_max_minor,\n  budget_range_label: vars.budget_range_label\n};\n",
+          "outputVar": "budget_normalized",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "purpose_switch",
+        "type": "switch",
+        "position": {
+          "x": 5160,
+          "y": 220
+        },
+        "data": {
+          "variable": "has_purchase_purpose"
+        }
+      },
+      {
+        "id": "purpose_input",
+        "type": "input",
+        "position": {
+          "x": 5400,
+          "y": 340
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Is this property mainly for your own use or investment?"
+            }
+          ],
+          "variable": "purchase_purpose",
+          "buttons": [
+            {
+              "label": "Self Use",
+              "value": "Self Use"
+            },
+            {
+              "label": "Investment",
+              "value": "Investment"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "timeline_switch",
+        "type": "switch",
+        "position": {
+          "x": 5640,
+          "y": 220
+        },
+        "data": {
+          "variable": "has_purchase_timeline"
+        }
+      },
+      {
+        "id": "timeline_input",
+        "type": "input",
+        "position": {
+          "x": 5880,
+          "y": 340
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "When are you planning to make a purchase?"
+            }
+          ],
+          "variable": "purchase_timeline",
+          "buttons": [
+            {
+              "label": "Immediately",
+              "value": "Immediately"
+            },
+            {
+              "label": "Within 1 Month",
+              "value": "Within 1 Month"
+            },
+            {
+              "label": "1-3 Months",
+              "value": "1-3 Months"
+            },
+            {
+              "label": "3-6 Months",
+              "value": "3-6 Months"
+            },
+            {
+              "label": "Just Exploring",
+              "value": "Just Exploring"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "possession_switch",
+        "type": "switch",
+        "position": {
+          "x": 6120,
+          "y": 220
+        },
+        "data": {
+          "variable": "has_possession_preference"
+        }
+      },
+      {
+        "id": "possession_input",
+        "type": "input",
+        "position": {
+          "x": 6360,
+          "y": 340
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "When would you ideally like the property to be ready?"
+            }
+          ],
+          "variable": "possession_preference",
+          "buttons": [
+            {
+              "label": "Ready to Move",
+              "value": "Ready to Move"
+            },
+            {
+              "label": "Within 1 Year",
+              "value": "Within 1 Year"
+            },
+            {
+              "label": "1-2 Years",
+              "value": "1-2 Years"
+            },
+            {
+              "label": "Under Construction is Fine",
+              "value": "Under Construction is Fine"
+            },
+            {
+              "label": "No Preference",
+              "value": "No Preference"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "financing_switch",
+        "type": "switch",
+        "position": {
+          "x": 6600,
+          "y": 220
+        },
+        "data": {
+          "variable": "has_financing_status"
+        }
+      },
+      {
+        "id": "financing_input",
+        "type": "input",
+        "position": {
+          "x": 6840,
+          "y": 340
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "How are you planning the purchase?"
+            }
+          ],
+          "variable": "financing_status",
+          "buttons": [
+            {
+              "label": "Self-Funded",
+              "value": "Self-Funded"
+            },
+            {
+              "label": "Home Loan",
+              "value": "Home Loan"
+            },
+            {
+              "label": "Loan Pre-Approved",
+              "value": "Loan Pre-Approved"
+            },
+            {
+              "label": "Need Loan Assistance",
+              "value": "Need Loan Assistance"
+            },
+            {
+              "label": "Not Decided",
+              "value": "Not Decided"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "prepare_identity",
+        "type": "script",
+        "position": {
+          "x": 7080,
+          "y": 220
+        },
+        "data": {
+          "script": "\nfunction digits(value) {\n  return String(value || \"\").replace(/\\D+/g, \"\");\n}\nconst nowIso = new Date().toISOString();\nconst runtimeSeed = String(Date.now()).slice(-8);\nconst phoneDigits = digits(vars.buyer_mobile).slice(-10) || \"0000000000\";\nconst existingContactId = String(vars.existing_contact_result?.data?.contact_id || \"\").trim();\nconst existingName = String(vars.existing_contact_result?.data?.full_name || \"\").trim();\nconst existingEmail = String(vars.existing_contact_result?.data?.email || \"\").trim();\nconst existingFirstSeenAt = String(vars.existing_contact_result?.data?.first_seen_at || \"\").trim();\nvars.contact_id = existingContactId || \"CNT-\" + phoneDigits;\nvars.lead_id = String(vars.lead_id || \"\").trim() || \"LD-\" + phoneDigits.slice(-4) + runtimeSeed;\nvars.buyer_name = String(vars.buyer_name || \"\").trim() || existingName;\nvars.buyer_email = String(vars.buyer_email || \"\").trim() || existingEmail;\nvars.contact_first_seen_at = existingFirstSeenAt || nowIso;\nvars.interaction_time_iso = nowIso;\nvars.lead_status = \"open\";\nvars.lead_stage = \"requirements_captured\";\nvars.brochure_requested = String(vars.brochure_requested || \"no\");\nvars.site_visit_requested = String(vars.site_visit_requested || \"no\");\nreturn {\n  contact_id: vars.contact_id,\n  lead_id: vars.lead_id,\n  buyer_name: vars.buyer_name,\n  buyer_email: vars.buyer_email,\n  contact_first_seen_at: vars.contact_first_seen_at,\n  interaction_time_iso: vars.interaction_time_iso\n};\n",
+          "outputVar": "identity_result",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "contact_upsert",
+        "type": "record",
+        "position": {
+          "x": 7320,
+          "y": 220
+        },
+        "data": {
+          "action": "upsert",
+          "collection": "real_estate_contacts",
+          "where": {
+            "phone_e164": "{{buyer_mobile}}"
+          },
+          "whereJson": "{\n  \"phone_e164\": \"{{buyer_mobile}}\"\n}",
+          "data": {
+            "contact_id": "{{contact_id}}",
+            "full_name": "{{buyer_name}}",
+            "phone_e164": "{{buyer_mobile}}",
+            "email": "{{buyer_email}}",
+            "first_source": "{{system.channel}}",
+            "last_source": "{{system.channel}}",
+            "first_seen_at": "{{contact_first_seen_at}}",
+            "last_seen_at": "{{interaction_time_iso}}",
+            "last_requirement_summary": "{{requirement_summary}}",
+            "last_preferred_location": "{{preferred_location}}",
+            "last_budget_min_minor": "{{budget_min_minor}}",
+            "last_budget_max_minor": "{{budget_max_minor}}",
+            "last_property_type": "{{property_type}}",
+            "last_bhk": "{{bhk}}",
+            "last_purchase_timeline": "{{purchase_timeline}}",
+            "last_purchase_purpose": "{{purchase_purpose}}",
+            "last_financing_status": "{{financing_status}}",
+            "last_active_lead_id": "{{lead_id}}"
+          },
+          "dataJson": "{\n  \"contact_id\": \"{{contact_id}}\",\n  \"full_name\": \"{{buyer_name}}\",\n  \"phone_e164\": \"{{buyer_mobile}}\",\n  \"email\": \"{{buyer_email}}\",\n  \"first_source\": \"{{system.channel}}\",\n  \"last_source\": \"{{system.channel}}\",\n  \"first_seen_at\": \"{{contact_first_seen_at}}\",\n  \"last_seen_at\": \"{{interaction_time_iso}}\",\n  \"last_requirement_summary\": \"{{requirement_summary}}\",\n  \"last_preferred_location\": \"{{preferred_location}}\",\n  \"last_budget_min_minor\": \"{{budget_min_minor}}\",\n  \"last_budget_max_minor\": \"{{budget_max_minor}}\",\n  \"last_property_type\": \"{{property_type}}\",\n  \"last_bhk\": \"{{bhk}}\",\n  \"last_purchase_timeline\": \"{{purchase_timeline}}\",\n  \"last_purchase_purpose\": \"{{purchase_purpose}}\",\n  \"last_financing_status\": \"{{financing_status}}\",\n  \"last_active_lead_id\": \"{{lead_id}}\"\n}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_contacts\",\n  \"fields\": {\n    \"contact_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"full_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"phone_e164\": {\n      \"type\": \"phone\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"email\": {\n      \"type\": \"email\",\n      \"required\": false\n    },\n    \"first_source\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"last_source\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"first_seen_at\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_seen_at\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_requirement_summary\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_preferred_location\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_budget_min_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"last_budget_max_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"last_property_type\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_bhk\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_purchase_timeline\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_purchase_purpose\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_financing_status\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_active_lead_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "phone_e164",
+          "idempotencyKey": "{{contact_id}}",
+          "outputVar": "contact_upsert_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": "phone_e164,email,full_name"
+        }
+      },
+      {
+        "id": "lead_upsert_initial",
+        "type": "record",
+        "position": {
+          "x": 7560,
+          "y": 220
+        },
+        "data": {
+          "action": "upsert",
+          "collection": "real_estate_leads",
+          "where": {
+            "lead_id": "{{lead_id}}"
+          },
+          "whereJson": "{\n  \"lead_id\": \"{{lead_id}}\"\n}",
+          "data": {
+            "lead_id": "{{lead_id}}",
+            "contact_id": "{{contact_id}}",
+            "buyer_mobile": "{{buyer_mobile}}",
+            "buyer_name": "{{buyer_name}}",
+            "buyer_email": "{{buyer_email}}",
+            "source_channel": "{{system.channel}}",
+            "status": "open",
+            "stage": "requirements_captured",
+            "preferred_location": "{{preferred_location}}",
+            "budget_min_minor": "{{budget_min_minor}}",
+            "budget_max_minor": "{{budget_max_minor}}",
+            "budget_range_label": "{{budget_range_label}}",
+            "property_type": "{{property_type}}",
+            "bhk": "{{bhk}}",
+            "purchase_purpose": "{{purchase_purpose}}",
+            "purchase_timeline": "{{purchase_timeline}}",
+            "possession_preference": "{{possession_preference}}",
+            "financing_status": "{{financing_status}}",
+            "requirement_summary": "{{requirement_summary}}",
+            "lead_score": 0,
+            "lead_temperature": "nurture",
+            "last_activity_at": "{{interaction_time_iso}}"
+          },
+          "dataJson": "{\n  \"lead_id\": \"{{lead_id}}\",\n  \"contact_id\": \"{{contact_id}}\",\n  \"buyer_mobile\": \"{{buyer_mobile}}\",\n  \"buyer_name\": \"{{buyer_name}}\",\n  \"buyer_email\": \"{{buyer_email}}\",\n  \"source_channel\": \"{{system.channel}}\",\n  \"status\": \"open\",\n  \"stage\": \"requirements_captured\",\n  \"preferred_location\": \"{{preferred_location}}\",\n  \"budget_min_minor\": \"{{budget_min_minor}}\",\n  \"budget_max_minor\": \"{{budget_max_minor}}\",\n  \"budget_range_label\": \"{{budget_range_label}}\",\n  \"property_type\": \"{{property_type}}\",\n  \"bhk\": \"{{bhk}}\",\n  \"purchase_purpose\": \"{{purchase_purpose}}\",\n  \"purchase_timeline\": \"{{purchase_timeline}}\",\n  \"possession_preference\": \"{{possession_preference}}\",\n  \"financing_status\": \"{{financing_status}}\",\n  \"requirement_summary\": \"{{requirement_summary}}\",\n  \"lead_score\": 0,\n  \"lead_temperature\": \"nurture\",\n  \"last_activity_at\": \"{{interaction_time_iso}}\"\n}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_leads\",\n  \"fields\": {\n    \"lead_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"contact_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"buyer_mobile\": {\n      \"type\": \"phone\",\n      \"required\": true\n    },\n    \"buyer_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"buyer_email\": {\n      \"type\": \"email\",\n      \"required\": false\n    },\n    \"source_channel\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"status\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"open\",\n        \"nurture\",\n        \"site_visit_booked\",\n        \"closed\"\n      ]\n    },\n    \"stage\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"requirements_captured\",\n        \"projects_shared\",\n        \"brochure_shared\",\n        \"site_visit_pending_confirmation\",\n        \"site_visit_booked\",\n        \"nurture\"\n      ]\n    },\n    \"preferred_location\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"budget_min_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"budget_max_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"budget_range_label\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"property_type\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"bhk\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"purchase_purpose\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"purchase_timeline\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"possession_preference\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"financing_status\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"requirement_summary\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"lead_score\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"lead_temperature\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"hot\",\n        \"warm\",\n        \"nurture\"\n      ]\n    },\n    \"selected_project_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"selected_project_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"site_visit_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"site_visit_status\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_activity_at\": {\n      \"type\": \"string\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "lead_id",
+          "idempotencyKey": "{{lead_id}}:initial",
+          "outputVar": "lead_upsert_initial_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": "buyer_mobile,buyer_email,buyer_name"
+        }
+      },
+      {
+        "id": "lead_activity_requirements",
+        "type": "record",
+        "position": {
+          "x": 7800,
+          "y": 220
+        },
+        "data": {
+          "action": "upsert",
+          "collection": "real_estate_lead_activities",
+          "where": {
+            "activity_id": "{{lead_id}}-requirements"
+          },
+          "whereJson": "{\n  \"activity_id\": \"{{lead_id}}-requirements\"\n}",
+          "data": {
+            "activity_id": "{{lead_id}}-requirements",
+            "lead_id": "{{lead_id}}",
+            "contact_id": "{{contact_id}}",
+            "activity_type": "requirements_captured",
+            "channel": "{{system.channel}}",
+            "summary": "{{requirement_summary}}",
+            "occurred_at": "{{interaction_time_iso}}"
+          },
+          "dataJson": "{\n  \"activity_id\": \"{{lead_id}}-requirements\",\n  \"lead_id\": \"{{lead_id}}\",\n  \"contact_id\": \"{{contact_id}}\",\n  \"activity_type\": \"requirements_captured\",\n  \"channel\": \"{{system.channel}}\",\n  \"summary\": \"{{requirement_summary}}\",\n  \"occurred_at\": \"{{interaction_time_iso}}\"\n}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_lead_activities\",\n  \"fields\": {\n    \"activity_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"lead_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"contact_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"project_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"activity_type\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"channel\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"occurred_at\": {\n      \"type\": \"string\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "activity_id",
+          "idempotencyKey": "{{lead_id}}:requirements",
+          "outputVar": "lead_activity_requirements_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": ""
+        }
+      },
+      {
+        "id": "inventory_list",
+        "type": "record",
+        "position": {
+          "x": 8040,
+          "y": 220
+        },
+        "data": {
+          "action": "list",
+          "collection": "property_inventory",
+          "where": {
+            "active": true
+          },
+          "whereJson": "{\n  \"active\": true\n}",
+          "data": {},
+          "dataJson": "{}",
+          "collectionSchema": "{\n  \"collection\": \"property_inventory\",\n  \"fields\": {\n    \"project_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"project_code\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"project_name\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"developer_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"location\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"micro_market\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"property_type\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"bhk_options\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"min_price_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"max_price_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"min_area_sqft\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"max_area_sqft\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"possession_label\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"project_status\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"rera_number\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"highlights\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"brochure_url\": {\n      \"type\": \"url\",\n      \"required\": false\n    },\n    \"image_url\": {\n      \"type\": \"url\",\n      \"required\": false\n    },\n    \"location_url\": {\n      \"type\": \"url\",\n      \"required\": false\n    },\n    \"sales_owner_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"sales_owner_phone\": {\n      \"type\": \"phone\",\n      \"required\": false\n    },\n    \"sales_owner_email\": {\n      \"type\": \"email\",\n      \"required\": false\n    },\n    \"active\": {\n      \"type\": \"boolean\",\n      \"required\": true\n    }\n  }\n}",
+          "uniqueKey": "",
+          "idempotencyKey": "",
+          "outputVar": "property_inventory_result",
+          "limit": 100,
+          "offset": 0,
+          "sortBy": "project_name",
+          "sortOrder": "asc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": ""
+        }
+      },
+      {
+        "id": "match_projects",
+        "type": "script",
+        "position": {
+          "x": 8280,
+          "y": 220
+        },
+        "data": {
+          "script": "\nfunction normalize(value) {\n  return String(value || \"\").trim().toLowerCase();\n}\nfunction titleCase(value) {\n  return String(value || \"\")\n    .split(/\\s+/)\n    .filter(Boolean)\n    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))\n    .join(\" \");\n}\nfunction formatCrorePrice(amountMinor) {\n  const crores = Number(amountMinor || 0) / 1000000000;\n  if (!Number.isFinite(crores) || crores <= 0) {\n    return \"Price on request\";\n  }\n  const formatted = (crores >= 10 ? crores.toFixed(1) : crores.toFixed(2))\n    .replace(/\\.0$/, \"\")\n    .replace(/(\\.\\d*[1-9])0$/, \"$1\");\n  return \"₹\" + formatted + \" Cr\";\n}\nconst defaultPropertyImageUrl = \"https://ik.imagekit.io/uzhmjh0td/RealEstate/Flat.png?updatedAt=1787290187232\";\nconst nearbyMap = {\n  kokapet: [\"financial district\", \"narsingi\", \"gachibowli\"],\n  \"financial district\": [\"kokapet\", \"gachibowli\", \"narsingi\"],\n  tellapur: [\"kondapur\", \"gachibowli\"],\n  narsingi: [\"kokapet\", \"financial district\"],\n  gachibowli: [\"financial district\", \"kondapur\", \"tellapur\"]\n};\nconst requestedLocation = normalize(vars.preferred_location);\nconst requestedType = normalize(vars.property_type);\nconst requestedBhk = normalize(vars.bhk);\nconst budgetMin = Number(vars.budget_min_minor || 0);\nconst budgetMax = Number(vars.budget_max_minor || 0);\nconst requestedPurpose = normalize(vars.purchase_purpose);\nconst requestedPossession = normalize(vars.possession_preference);\nconst rows = Array.isArray(vars.property_inventory_result?.data) ? vars.property_inventory_result.data : [];\nconst exact = [];\nconst alternative = [];\nfor (const row of rows) {\n  if (String(row.active ?? \"true\").toLowerCase() === \"false\") continue;\n  const projectLocation = normalize(row.location || row.micro_market);\n  const projectType = normalize(row.property_type);\n  const bhkOptions = normalize(row.bhk_options);\n  const minPrice = Number(row.min_price_minor || 0);\n  const maxPrice = Number(row.max_price_minor || row.min_price_minor || 0);\n  const possessionLabel = normalize(row.possession_label || row.project_status);\n  let score = 0;\n  let exactLocation = false;\n  let exactBudget = false;\n  const reasons = [];\n  if (requestedLocation && projectLocation === requestedLocation) {\n    score += 35;\n    exactLocation = true;\n    reasons.push(\"Exact preferred location\");\n  } else if (requestedLocation && (nearbyMap[requestedLocation] || []).includes(projectLocation)) {\n    score += 20;\n    reasons.push(\"Nearby micro-market\");\n  }\n  if (requestedType && projectType === requestedType) {\n    score += 15;\n    reasons.push(\"Requested property type\");\n  }\n  if (requestedBhk && bhkOptions.includes(normalize(vars.bhk).replace(/\\s+/g, \"\")) || bhkOptions.includes(requestedBhk.replace(/\\s+/g, \"\")) || bhkOptions.includes(requestedBhk)) {\n    score += 15;\n    reasons.push(\"Requested configuration\");\n  } else if (!requestedBhk && requestedType === \"plot\") {\n    score += 10;\n  }\n  if (budgetMax > 0 && minPrice > 0) {\n    if (minPrice <= budgetMax && (maxPrice === 0 || maxPrice >= budgetMin)) {\n      score += 25;\n      exactBudget = true;\n      reasons.push(\"Within stated budget\");\n    } else if (minPrice <= Math.round(budgetMax * 1.15)) {\n      score += 12;\n      reasons.push(\"Slight stretch above budget\");\n    }\n  }\n  if (requestedPurpose === \"investment\" && /growth|rental|invest/i.test(String(row.highlights || \"\"))) {\n    score += 5;\n    reasons.push(\"Investment-friendly positioning\");\n  }\n  if (requestedPossession === \"ready to move\" && /ready/i.test(possessionLabel)) {\n    score += 5;\n    reasons.push(\"Ready possession\");\n  } else if (requestedPossession === \"within 1 year\" && /(2026|2027|12 month)/i.test(String(row.possession_label || \"\"))) {\n    score += 5;\n    reasons.push(\"Near-term possession\");\n  } else if (requestedPossession === \"under construction is fine\" && requestedPossession) {\n    score += 2;\n  }\n  const item = {\n    id: String(row.project_id || row.project_code || \"\"),\n    projectId: String(row.project_id || row.project_code || \"\"),\n    projectCode: String(row.project_code || row.project_id || \"\"),\n    title: String(row.project_name || \"Project\"),\n    subtitle: titleCase(row.location || row.micro_market || \"\"),\n    description: String(row.highlights || row.project_status || \"Recommended project option.\"),\n    summary: \"Why it matches: \" + (reasons[0] || \"Good fit for the captured requirement.\"),\n    category: String(row.property_type || \"\"),\n    tag: String(score) + \"% match\",\n    price: formatCrorePrice(minPrice),\n    imageUrl: defaultPropertyImageUrl,\n    brochureUrl: String(row.brochure_url || \"\"),\n    locationUrl: String(row.location_url || \"\"),\n    score,\n    location: titleCase(row.location || row.micro_market || \"\"),\n    propertyType: String(row.property_type || \"\"),\n    bhk: String(row.bhk_options || \"\"),\n    possession: String(row.possession_label || row.project_status || \"\"),\n    rera: String(row.rera_number || \"\"),\n    reason: reasons.join(\", \"),\n    salesOwnerName: String(row.sales_owner_name || \"\"),\n    salesOwnerPhone: String(row.sales_owner_phone || \"\"),\n    salesOwnerEmail: String(row.sales_owner_email || \"\")\n  };\n  if (exactLocation && exactBudget && score >= 70) {\n    exact.push(item);\n  } else if (score >= 45) {\n    alternative.push(item);\n  }\n}\nconst shortlist = (exact.length > 0 ? exact : alternative)\n  .sort((a, b) => b.score - a.score)\n  .slice(0, 5);\nvars.project_carousel_items = shortlist;\nvars.matched_projects = shortlist;\nvars.selected_project_default_id = shortlist[0]?.projectCode || shortlist[0]?.projectId || \"\";\nvars.project_selection_prompt = shortlist\n  .map((item, index) => (index + 1) + \". \" + item.projectCode + \" - \" + item.title + \" (\" + item.tag + \")\")\n  .join(\"\\n\");\nvars.project_match_status = exact.length > 0 ? \"exact\" : shortlist.length > 0 ? \"alternative\" : \"none\";\nreturn {\n  match_status: vars.project_match_status,\n  project_count: shortlist.length,\n  prompt: vars.project_selection_prompt\n};\n",
+          "outputVar": "project_match_result",
+          "timeoutMs": 160
+        }
+      },
+      {
+        "id": "match_status_switch",
+        "type": "switch",
+        "position": {
+          "x": 8520,
+          "y": 220
+        },
+        "data": {
+          "variable": "project_match_status"
+        }
+      },
+      {
+        "id": "close_match_message",
+        "type": "message",
+        "position": {
+          "x": 8760,
+          "y": 120
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "I found close alternatives because there was no exact inventory match for every requirement. These are the best nearby or budget-adjacent projects to keep your search moving forward."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "no_inventory_followup_record",
+        "type": "record",
+        "position": {
+          "x": 8760,
+          "y": 420
+        },
+        "data": {
+          "action": "upsert",
+          "collection": "real_estate_followup_jobs",
+          "where": {
+            "followup_id": "{{lead_id}}-inventory-refresh"
+          },
+          "whereJson": "{\n  \"followup_id\": \"{{lead_id}}-inventory-refresh\"\n}",
+          "data": {
+            "followup_id": "{{lead_id}}-inventory-refresh",
+            "lead_id": "{{lead_id}}",
+            "followup_type": "inventory_refresh",
+            "scheduled_for": "{{interaction_time_iso}}",
+            "channel": "{{system.channel}}",
+            "status": "scheduled",
+            "notes": "No exact project match. Refresh alternatives or widen search."
+          },
+          "dataJson": "{\n  \"followup_id\": \"{{lead_id}}-inventory-refresh\",\n  \"lead_id\": \"{{lead_id}}\",\n  \"followup_type\": \"inventory_refresh\",\n  \"scheduled_for\": \"{{interaction_time_iso}}\",\n  \"channel\": \"{{system.channel}}\",\n  \"status\": \"scheduled\",\n  \"notes\": \"No exact project match. Refresh alternatives or widen search.\"\n}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_followup_jobs\",\n  \"fields\": {\n    \"followup_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"lead_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"project_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"followup_type\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"scheduled_for\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"channel\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"status\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"scheduled\",\n        \"sent\",\n        \"failed\",\n        \"cancelled\"\n      ]\n    },\n    \"notes\": {\n      \"type\": \"string\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "followup_id",
+          "idempotencyKey": "{{lead_id}}:inventory-refresh",
+          "outputVar": "no_inventory_followup_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": ""
+        }
+      },
+      {
+        "id": "no_inventory_message",
+        "type": "message",
+        "position": {
+          "x": 9000,
+          "y": 420
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "I could not find a live project match for that combination right now. I have saved your requirement and queued an automated follow-up so newer inventory or nearby options can be shared without restarting the conversation."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "no_inventory_end",
+        "type": "end",
+        "position": {
+          "x": 9240,
+          "y": 420
+        },
+        "data": {
+          "messages": []
+        }
+      },
+      {
+        "id": "project_carousel",
+        "type": "carousel",
+        "position": {
+          "x": 9000,
+          "y": 220
+        },
+        "data": {
+          "introText": "I found these projects based on your requirement.",
+          "slides": [],
+          "slidesJson": "[]",
+          "slidesMode": "dynamic",
+          "slidesSource": "project_carousel_items",
+          "designPreset": "modern",
+          "cardLayout": "spotlight",
+          "cardSize": "comfortable",
+          "showPagination": true,
+          "autoAdvanceMs": 0,
+          "customCss": "",
+          "slideTemplate": {
+            "id": "{{item.projectCode}}",
+            "type": "card",
+            "eyebrow": "{{item.tag}}",
+            "heading": "{{item.title}}",
+            "title": "{{item.subtitle}}",
+            "description": "{{item.description}}",
+            "paragraphs": [
+              "{{item.summary}}"
+            ],
+            "badges": [
+              "{{item.category}}",
+              "{{item.propertyType}}"
+            ],
+            "imageUrl": "{{item.imageUrl}}",
+            "fields": {
+              "Price": "{{item.price}}",
+              "BHK": "{{item.bhk}}",
+              "Possession": "{{item.possession}}"
+            },
+            "actions": [
+              {
+                "label": "{{item.title}}",
+                "value": "{{item.projectCode}}"
+              }
+            ]
+          },
+          "slideTemplateJson": "{\n  \"id\": \"{{item.projectCode}}\",\n  \"type\": \"card\",\n  \"eyebrow\": \"{{item.tag}}\",\n  \"heading\": \"{{item.title}}\",\n  \"title\": \"{{item.subtitle}}\",\n  \"description\": \"{{item.description}}\",\n  \"paragraphs\": [\n    \"{{item.summary}}\"\n  ],\n  \"badges\": [\n    \"{{item.category}}\",\n    \"{{item.propertyType}}\"\n  ],\n  \"imageUrl\": \"{{item.imageUrl}}\",\n  \"fields\": {\n    \"Price\": \"{{item.price}}\",\n    \"BHK\": \"{{item.bhk}}\",\n    \"Possession\": \"{{item.possession}}\"\n  },\n  \"actions\": [\n    {\n      \"label\": \"{{item.title}}\",\n      \"value\": \"{{item.projectCode}}\"\n    }\n  ]\n}"
+        }
+      },
+      {
+        "id": "project_select_input",
+        "type": "input",
+        "position": {
+          "x": 9240,
+          "y": 220
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Reply with the project name, project code, or the list number you want to explore next.\n{{project_selection_prompt}}"
+            }
+          ],
+          "variable": "selected_project_choice",
+          "buttons": [],
+          "disableChatInput": false
+        }
+      },
+      {
+        "id": "select_project",
+        "type": "script",
+        "position": {
+          "x": 9480,
+          "y": 220
+        },
+        "data": {
+          "script": "\nfunction normalize(value) {\n  return String(value || \"\").trim().toLowerCase();\n}\nconst choice = normalize(vars.selected_project_choice);\nconst projects = Array.isArray(vars.matched_projects) ? vars.matched_projects : [];\nlet selected = projects[0] || {};\nconst numericChoice = Number(choice);\nif (Number.isInteger(numericChoice) && numericChoice >= 1 && numericChoice <= projects.length) {\n  selected = projects[numericChoice - 1];\n} else {\n  const exact = projects.find((item) => {\n    return normalize(item.projectCode) === choice\n      || normalize(item.projectId) === choice\n      || normalize(item.title) === choice;\n  });\n  if (exact) selected = exact;\n}\nvars.selected_project_id = String(selected.projectId || selected.id || \"\");\nvars.selected_project_code = String(selected.projectCode || selected.projectId || \"\");\nvars.selected_project_name = String(selected.title || \"\");\nvars.selected_project_location = String(selected.location || selected.subtitle || \"\");\nvars.selected_project_match_score = Number(selected.score || 0);\nvars.selected_project_reason = String(selected.reason || selected.summary || \"\");\nvars.selected_project_price = String(selected.price || \"\");\nvars.selected_project_property_type = String(selected.propertyType || \"\");\nvars.selected_project_bhk = String(selected.bhk || \"\");\nvars.selected_project_possession = String(selected.possession || \"\");\nvars.selected_project_rera = String(selected.rera || \"\");\nvars.selected_project_brochure_url = String(selected.brochureUrl || \"\");\nvars.selected_project_location_url = String(selected.locationUrl || \"\");\nvars.selected_project_sales_name = String(selected.salesOwnerName || \"\");\nvars.selected_project_sales_phone = String(selected.salesOwnerPhone || vars.sales_alert_phone || \"\");\nvars.selected_project_sales_email = String(selected.salesOwnerEmail || vars.sales_alert_email || \"\");\nvars.interest_id = \"INT-\" + String(vars.lead_id || \"\") + \"-\" + String(vars.selected_project_code || vars.selected_project_id || \"\");\nreturn {\n  selected_project_name: vars.selected_project_name,\n  selected_project_code: vars.selected_project_code,\n  selected_project_match_score: vars.selected_project_match_score\n};\n",
+          "outputVar": "selected_project_result",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "project_details_message",
+        "type": "message",
+        "position": {
+          "x": 9720,
+          "y": 220
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "{{selected_project_name}}\n\n📍 Location: {{selected_project_location}}\n🏢 Property Type: {{selected_project_property_type}}\n🏠 Configurations: {{selected_project_bhk}}\n💰 Starting Price: {{selected_project_price}}\n📅 Possession: {{selected_project_possession}}\n📋 RERA: {{selected_project_rera}}\n\nWhy this project matches your requirement\n✓ {{selected_project_reason}}"
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "brochure_input",
+        "type": "input",
+        "position": {
+          "x": 9960,
+          "y": 220
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Would you like to view the brochure for {{selected_project_name}}?"
+            }
+          ],
+          "variable": "brochure_interest",
+          "buttons": [
+            {
+              "label": "Yes",
+              "value": "yes"
+            },
+            {
+              "label": "No",
+              "value": "no"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "set_brochure_yes",
+        "type": "setVariable",
+        "position": {
+          "x": 10200,
+          "y": 120
+        },
+        "data": {
+          "assignments": [
+            {
+              "key": "brochure_requested",
+              "value": "yes"
+            }
+          ]
+        }
+      },
+      {
+        "id": "project_brochure_media",
+        "type": "media",
+        "position": {
+          "x": 10440,
+          "y": 120
+        },
+        "data": {
+          "mediaType": "pdf",
+          "url": "{{selected_project_brochure_url}}",
+          "caption": "Here's the brochure for {{selected_project_name}}. 📄\n\nYou can review the project details, amenities, configurations, and specifications.",
+          "fileName": "{{selected_project_code}}-brochure.pdf"
+        }
+      },
+      {
+        "id": "set_brochure_no",
+        "type": "setVariable",
+        "position": {
+          "x": 10200,
+          "y": 320
+        },
+        "data": {
+          "assignments": [
+            {
+              "key": "brochure_requested",
+              "value": "no"
+            }
+          ]
+        }
+      },
+      {
+        "id": "score_lead_previsit",
+        "type": "script",
+        "position": {
+          "x": 10920,
+          "y": 220
+        },
+        "data": {
+          "script": "\nlet score = 0;\nif (Number(vars.budget_max_minor || 0) > 0) score += 10;\nif (String(vars.preferred_location || \"\").trim()) score += 5;\nif (String(vars.property_type || \"\").trim()) score += 5;\nif (String(vars.bhk || \"\").trim() || String(vars.property_type || \"\").trim().toLowerCase() === \"plot\") score += 5;\nconst timeline = String(vars.purchase_timeline || \"\").trim().toLowerCase();\nif (timeline === \"immediately\") score += 30;\nelse if (timeline === \"within 1 month\") score += 25;\nelse if (timeline === \"1-3 months\") score += 20;\nelse if (timeline === \"3-6 months\") score += 10;\nif (/pre-approved|self-funded/i.test(String(vars.financing_status || \"\"))) score += 10;\nif (String(vars.brochure_requested || \"no\") === \"yes\") score += 10;\nif (Number(vars.selected_project_match_score || 0) >= 80) score += 5;\nvars.lead_score = score;\nvars.lead_temperature = score >= 70 ? \"hot\" : score >= 40 ? \"warm\" : \"nurture\";\nvars.lead_stage = String(vars.brochure_requested || \"no\") === \"yes\" ? \"brochure_shared\" : \"projects_shared\";\nreturn {\n  lead_score: vars.lead_score,\n  lead_temperature: vars.lead_temperature,\n  lead_stage: vars.lead_stage\n};\n",
+          "outputVar": "previsit_score_result",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "lead_upsert_previsit",
+        "type": "record",
+        "position": {
+          "x": 11160,
+          "y": 220
+        },
+        "data": {
+          "action": "upsert",
+          "collection": "real_estate_leads",
+          "where": {
+            "lead_id": "{{lead_id}}"
+          },
+          "whereJson": "{\n  \"lead_id\": \"{{lead_id}}\"\n}",
+          "data": {
+            "lead_id": "{{lead_id}}",
+            "contact_id": "{{contact_id}}",
+            "buyer_mobile": "{{buyer_mobile}}",
+            "buyer_name": "{{buyer_name}}",
+            "buyer_email": "{{buyer_email}}",
+            "source_channel": "{{system.channel}}",
+            "status": "open",
+            "stage": "{{lead_stage}}",
+            "preferred_location": "{{preferred_location}}",
+            "budget_min_minor": "{{budget_min_minor}}",
+            "budget_max_minor": "{{budget_max_minor}}",
+            "budget_range_label": "{{budget_range_label}}",
+            "property_type": "{{property_type}}",
+            "bhk": "{{bhk}}",
+            "purchase_purpose": "{{purchase_purpose}}",
+            "purchase_timeline": "{{purchase_timeline}}",
+            "possession_preference": "{{possession_preference}}",
+            "financing_status": "{{financing_status}}",
+            "requirement_summary": "{{requirement_summary}}",
+            "lead_score": "{{lead_score}}",
+            "lead_temperature": "{{lead_temperature}}",
+            "selected_project_id": "{{selected_project_id}}",
+            "selected_project_name": "{{selected_project_name}}",
+            "last_activity_at": "{{interaction_time_iso}}"
+          },
+          "dataJson": "{\n  \"lead_id\": \"{{lead_id}}\",\n  \"contact_id\": \"{{contact_id}}\",\n  \"buyer_mobile\": \"{{buyer_mobile}}\",\n  \"buyer_name\": \"{{buyer_name}}\",\n  \"buyer_email\": \"{{buyer_email}}\",\n  \"source_channel\": \"{{system.channel}}\",\n  \"status\": \"open\",\n  \"stage\": \"{{lead_stage}}\",\n  \"preferred_location\": \"{{preferred_location}}\",\n  \"budget_min_minor\": \"{{budget_min_minor}}\",\n  \"budget_max_minor\": \"{{budget_max_minor}}\",\n  \"budget_range_label\": \"{{budget_range_label}}\",\n  \"property_type\": \"{{property_type}}\",\n  \"bhk\": \"{{bhk}}\",\n  \"purchase_purpose\": \"{{purchase_purpose}}\",\n  \"purchase_timeline\": \"{{purchase_timeline}}\",\n  \"possession_preference\": \"{{possession_preference}}\",\n  \"financing_status\": \"{{financing_status}}\",\n  \"requirement_summary\": \"{{requirement_summary}}\",\n  \"lead_score\": \"{{lead_score}}\",\n  \"lead_temperature\": \"{{lead_temperature}}\",\n  \"selected_project_id\": \"{{selected_project_id}}\",\n  \"selected_project_name\": \"{{selected_project_name}}\",\n  \"last_activity_at\": \"{{interaction_time_iso}}\"\n}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_leads\",\n  \"fields\": {\n    \"lead_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"contact_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"buyer_mobile\": {\n      \"type\": \"phone\",\n      \"required\": true\n    },\n    \"buyer_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"buyer_email\": {\n      \"type\": \"email\",\n      \"required\": false\n    },\n    \"source_channel\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"status\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"open\",\n        \"nurture\",\n        \"site_visit_booked\",\n        \"closed\"\n      ]\n    },\n    \"stage\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"requirements_captured\",\n        \"projects_shared\",\n        \"brochure_shared\",\n        \"site_visit_pending_confirmation\",\n        \"site_visit_booked\",\n        \"nurture\"\n      ]\n    },\n    \"preferred_location\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"budget_min_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"budget_max_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"budget_range_label\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"property_type\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"bhk\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"purchase_purpose\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"purchase_timeline\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"possession_preference\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"financing_status\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"requirement_summary\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"lead_score\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"lead_temperature\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"hot\",\n        \"warm\",\n        \"nurture\"\n      ]\n    },\n    \"selected_project_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"selected_project_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"site_visit_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"site_visit_status\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_activity_at\": {\n      \"type\": \"string\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "lead_id",
+          "idempotencyKey": "{{lead_id}}:previsit",
+          "outputVar": "lead_upsert_previsit_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": "buyer_mobile,buyer_email,buyer_name"
+        }
+      },
+      {
+        "id": "site_visit_input",
+        "type": "input",
+        "position": {
+          "x": 11400,
+          "y": 220
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Would you like to schedule a site visit for {{selected_project_name}} now?"
+            }
+          ],
+          "variable": "site_visit_interest",
+          "buttons": [
+            {
+              "label": "Yes",
+              "value": "yes"
+            },
+            {
+              "label": "No",
+              "value": "no"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "previsit_hot_switch",
+        "type": "switch",
+        "position": {
+          "x": 11640,
+          "y": 420
+        },
+        "data": {
+          "variable": "lead_temperature"
+        }
+      },
+      {
+        "id": "nurture_followup_record",
+        "type": "record",
+        "position": {
+          "x": 11880,
+          "y": 420
+        },
+        "data": {
+          "action": "upsert",
+          "collection": "real_estate_followup_jobs",
+          "where": {
+            "followup_id": "{{lead_id}}-nurture"
+          },
+          "whereJson": "{\n  \"followup_id\": \"{{lead_id}}-nurture\"\n}",
+          "data": {
+            "followup_id": "{{lead_id}}-nurture",
+            "lead_id": "{{lead_id}}",
+            "project_id": "{{selected_project_id}}",
+            "followup_type": "nurture_sequence",
+            "scheduled_for": "{{interaction_time_iso}}",
+            "channel": "{{system.channel}}",
+            "status": "scheduled",
+            "notes": "Send project comparison and weekend visit nudges."
+          },
+          "dataJson": "{\n  \"followup_id\": \"{{lead_id}}-nurture\",\n  \"lead_id\": \"{{lead_id}}\",\n  \"project_id\": \"{{selected_project_id}}\",\n  \"followup_type\": \"nurture_sequence\",\n  \"scheduled_for\": \"{{interaction_time_iso}}\",\n  \"channel\": \"{{system.channel}}\",\n  \"status\": \"scheduled\",\n  \"notes\": \"Send project comparison and weekend visit nudges.\"\n}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_followup_jobs\",\n  \"fields\": {\n    \"followup_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"lead_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"project_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"followup_type\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"scheduled_for\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"channel\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"status\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"scheduled\",\n        \"sent\",\n        \"failed\",\n        \"cancelled\"\n      ]\n    },\n    \"notes\": {\n      \"type\": \"string\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "followup_id",
+          "idempotencyKey": "{{lead_id}}:nurture",
+          "outputVar": "nurture_followup_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": ""
+        }
+      },
+      {
+        "id": "salesperson_alert_previsit",
+        "type": "notification",
+        "position": {
+          "x": 11880,
+          "y": 540
+        },
+        "data": {
+          "recipients": [
+            {
+              "type": "sales_owner",
+              "phone": "{{selected_project_sales_phone}}",
+              "email": "{{selected_project_sales_email}}"
+            }
+          ],
+          "recipientsJson": "[\n  {\n    \"type\": \"sales_owner\",\n    \"phone\": \"{{selected_project_sales_phone}}\",\n    \"email\": \"{{selected_project_sales_email}}\"\n  }\n]",
+          "channels": [
+            {
+              "type": "sms",
+              "enabled": true,
+              "message": "Hot property lead: {{buyer_name}} wants {{bhk}} {{property_type}} in {{preferred_location}}, budget {{budget_range_label}}, project {{selected_project_name}}, score {{lead_score}}."
+            },
+            {
+              "type": "email",
+              "enabled": true,
+              "subject": "Hot property lead requires follow-up",
+              "body": "Buyer: {{buyer_name}}\\nPhone: {{buyer_mobile}}\\nLocation: {{preferred_location}}\\nBudget: {{budget_range_label}}\\nProject: {{selected_project_name}}\\nTimeline: {{purchase_timeline}}\\nLead score: {{lead_score}}"
+            }
+          ],
+          "channelsJson": "[\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Hot property lead: {{buyer_name}} wants {{bhk}} {{property_type}} in {{preferred_location}}, budget {{budget_range_label}}, project {{selected_project_name}}, score {{lead_score}}.\"\n  },\n  {\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Hot property lead requires follow-up\",\n    \"body\": \"Buyer: {{buyer_name}}\\\\nPhone: {{buyer_mobile}}\\\\nLocation: {{preferred_location}}\\\\nBudget: {{budget_range_label}}\\\\nProject: {{selected_project_name}}\\\\nTimeline: {{purchase_timeline}}\\\\nLead score: {{lead_score}}\"\n  }\n]",
+          "strategy": "priority_order",
+          "messageCategory": "transactional",
+          "dedupeKey": "{{lead_id}}:hot-previsit",
+          "defaultCountryCode": "+91",
+          "strictTemplateValidation": true,
+          "outputVar": "sales_alert_previsit_result"
+        }
+      },
+      {
+        "id": "nurture_end_message",
+        "type": "message",
+        "position": {
+          "x": 12120,
+          "y": 420
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Your requirement and shortlisted project are saved. I will keep the conversation warm with follow-up nudges, updated options, and a faster site-visit path when you are ready."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "nurture_end",
+        "type": "end",
+        "position": {
+          "x": 12360,
+          "y": 420
+        },
+        "data": {
+          "messages": []
+        }
+      },
+      {
+        "id": "site_visit_existing_visits_list",
+        "type": "record",
+        "position": {
+          "x": 11640,
+          "y": 120
+        },
+        "data": {
+          "action": "list",
+          "collection": "real_estate_site_visits",
+          "where": {
+            "project_id": "{{selected_project_id}}",
+            "status": "confirmed"
+          },
+          "whereJson": "{\n  \"project_id\": \"{{selected_project_id}}\",\n  \"status\": \"confirmed\"\n}",
+          "data": {},
+          "dataJson": "{}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_site_visits\",\n  \"fields\": {\n    \"site_visit_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"lead_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"contact_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"project_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"project_name\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"slot_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"visit_date\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"visit_time\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"visit_datetime\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"source_channel\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"status\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"confirmed\",\n        \"cancelled\",\n        \"completed\",\n        \"no_show\"\n      ]\n    },\n    \"assigned_salesperson_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"assigned_salesperson_phone\": {\n      \"type\": \"phone\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "",
+          "idempotencyKey": "",
+          "outputVar": "existing_site_visits_result",
+          "limit": 500,
+          "offset": 0,
+          "sortBy": "visit_datetime",
+          "sortOrder": "asc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": ""
+        }
+      },
+      {
+        "id": "build_site_visit_slots",
+        "type": "script",
+        "position": {
+          "x": 11880,
+          "y": 120
+        },
+        "data": {
+          "script": "\nfunction pad2(value) {\n  return String(value).padStart(2, \"0\");\n}\nfunction formatDateKey(date) {\n  return [\n    date.getUTCFullYear(),\n    pad2(date.getUTCMonth() + 1),\n    pad2(date.getUTCDate())\n  ].join(\"-\");\n}\nfunction addDays(dateKey, offsetDays) {\n  const match = String(dateKey || \"\").match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);\n  if (!match) return dateKey;\n  const utc = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + offsetDays));\n  return formatDateKey(utc);\n}\nfunction formatTime(totalMinutes) {\n  const hours = Math.floor(totalMinutes / 60);\n  const minutes = totalMinutes % 60;\n  return pad2(hours) + \":\" + pad2(minutes);\n}\nfunction formatTimeLabel(timeValue) {\n  const match = String(timeValue || \"\").match(/^(\\d{2}):(\\d{2})$/);\n  if (!match) return String(timeValue || \"\");\n  const hour24 = Number(match[1]);\n  const minutes = match[2];\n  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;\n  const suffix = hour24 >= 12 ? \"PM\" : \"AM\";\n  return String(hour12) + \":\" + minutes + \" \" + suffix;\n}\nfunction normalizeTime(value) {\n  const match = String(value || \"\").trim().match(/^(\\d{1,2}):(\\d{2})/);\n  if (!match) return \"\";\n  return pad2(match[1]) + \":\" + match[2];\n}\nconst timezoneOffsetMinutes = 330;\nconst horizonDays = 14;\nconst slotStartMinutes = 10 * 60;\nconst slotEndMinutes = 18 * 60;\nconst slotDurationMinutes = 30;\nconst slotIntervalMinutes = 30;\nconst now = new Date();\nconst nowLocal = new Date(now.getTime() + timezoneOffsetMinutes * 60 * 1000);\nconst todayKey = formatDateKey(new Date(Date.UTC(\n  nowLocal.getUTCFullYear(),\n  nowLocal.getUTCMonth(),\n  nowLocal.getUTCDate()\n)));\nconst currentMinutes = (nowLocal.getUTCHours() * 60) + nowLocal.getUTCMinutes();\nconst existingVisits = Array.isArray(vars.existing_site_visits_result?.data) ? vars.existing_site_visits_result.data : [];\nconst bookedKeys = new Set(\n  existingVisits\n    .filter((row) => String(row?.status || \"\").trim().toLowerCase() === \"confirmed\")\n    .map((row) => String(row?.visit_date || \"\").slice(0, 10) + \"|\" + normalizeTime(row?.visit_time || \"\"))\n    .filter((value) => value.indexOf(\"|\") > 0 && !value.endsWith(\"|\"))\n);\nconst projectSlug = String(vars.selected_project_id || \"site-visit\")\n  .toLowerCase()\n  .replace(/[^a-z0-9]+/g, \"-\")\n  .replace(/^-+|-+$/g, \"\") || \"site-visit\";\nconst slots = [];\nfor (let dayOffset = 0; dayOffset < horizonDays; dayOffset += 1) {\n  const dateKey = addDays(todayKey, dayOffset);\n  for (\n    let startMinutes = slotStartMinutes;\n    startMinutes + slotDurationMinutes <= slotEndMinutes;\n    startMinutes += slotIntervalMinutes\n  ) {\n    if (dayOffset === 0 && startMinutes <= currentMinutes) continue;\n    const start = formatTime(startMinutes);\n    const end = formatTime(startMinutes + slotDurationMinutes);\n    if (bookedKeys.has(dateKey + \"|\" + start)) continue;\n    slots.push({\n      slot_id: \"SVS-\" + projectSlug + \"-\" + dateKey.replace(/-/g, \"\") + \"-\" + start.replace(\":\", \"\"),\n      date: dateKey,\n      start_time: start,\n      end_time: end,\n      label: formatTimeLabel(start) + \" - \" + formatTimeLabel(end)\n    });\n  }\n}\nvars.site_visit_future_slots = { data: slots };\nvars.site_visit_slot_generation_status = slots.length > 0 ? \"available\" : \"unavailable\";\nreturn {\n  slot_generation_status: vars.site_visit_slot_generation_status,\n  slot_count: slots.length\n};\n",
+          "outputVar": "site_visit_slot_inventory",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "site_visit_scheduler",
+        "type": "appointment",
+        "position": {
+          "x": 12120,
+          "y": 120
+        },
+        "data": {
+          "slots": [],
+          "slotsJson": "[]",
+          "messages": [
+            "Let's schedule your visit to {{selected_project_name}}.\n\nWhich date works best for you?"
+          ],
+          "slotMode": "dynamic",
+          "timezone": "{{default_timezone}}",
+          "outputVar": "site_visit_booking",
+          "dateVar": "site_visit_date",
+          "horizonDays": 14,
+          "maxSlotsPerDay": 16,
+          "dynamicSlotsVar": "site_visit_future_slots",
+          "dynamicSlotsPath": "data",
+          "slotDurationMins": 30,
+          "slotIntervalMins": 30,
+          "availableWeekdays": "0,1,2,3,4,5,6",
+          "workingHoursStart": "10:00",
+          "workingHoursEnd": "18:00",
+          "disableGeneratedFallback": true
+        }
+      },
+      {
+        "id": "prepare_site_visit_ids",
+        "type": "script",
+        "position": {
+          "x": 12360,
+          "y": 120
+        },
+        "data": {
+          "script": "\nfunction pad2(value) {\n  return String(value).padStart(2, \"0\");\n}\nfunction addMinutes(timeValue, minutesToAdd) {\n  const parts = String(timeValue || \"\").split(\":\");\n  const hours = Number(parts[0] || 0);\n  const minutes = Number(parts[1] || 0);\n  const totalMinutes = (hours * 60) + minutes + minutesToAdd;\n  const wrapped = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);\n  return pad2(Math.floor(wrapped / 60)) + \":\" + pad2(wrapped % 60);\n}\nfunction formatTimeLabel(timeValue) {\n  const match = String(timeValue || \"\").match(/^(\\d{2}):(\\d{2})$/);\n  if (!match) return String(timeValue || \"\");\n  const hour24 = Number(match[1]);\n  const minutes = match[2];\n  const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;\n  const suffix = hour24 >= 12 ? \"PM\" : \"AM\";\n  return String(hour12) + \":\" + minutes + \" \" + suffix;\n}\nfunction formatDisplayDate(dateValue) {\n  const match = String(dateValue || \"\").match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);\n  if (!match) return String(dateValue || \"\");\n  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));\n  return date.toLocaleDateString(\"en-IN\", {\n    weekday: \"long\",\n    day: \"numeric\",\n    month: \"long\",\n    year: \"numeric\",\n    timeZone: \"UTC\"\n  });\n}\nconst now = new Date();\nconst booking = vars.site_visit_booking && typeof vars.site_visit_booking === \"object\" && !Array.isArray(vars.site_visit_booking)\n  ? vars.site_visit_booking\n  : {};\nconst selectedDate = String(booking.date || vars.site_visit_date || \"\").trim();\nconst selectedTime = String(booking.startTime || booking.start_time || vars.site_visit_time || \"\").trim();\nif (!selectedDate || !selectedTime) {\n  throw new Error(\"missing site visit appointment selection\");\n}\nconst slotId = String(booking.slotId || booking.slot_id || \"\").trim();\nconst slotLabel = String(booking.slotLabel || booking.slot_label || \"\").trim();\nvars.site_visit_id = \"SV-\" + String(vars.lead_id || \"\").replace(/[^A-Za-z0-9]/g, \"\").slice(-8).toUpperCase() + \"-\" + selectedDate.replace(/-/g, \"\") + \"-\" + selectedTime.replace(\":\", \"\");\nvars.site_visit_requested = \"yes\";\nvars.site_visit_date = selectedDate;\nvars.site_visit_time = selectedTime;\nvars.site_visit_end_time = String(booking.endTime || booking.end_time || \"\").trim() || addMinutes(vars.site_visit_time, 30);\nvars.site_visit_slot_id = slotId || (\"SVS-\" + String(vars.selected_project_id || vars.lead_id || \"site-visit\"));\nvars.site_visit_label = slotLabel || (vars.site_visit_time + \" - \" + vars.site_visit_end_time);\nvars.site_visit_date_label = formatDisplayDate(vars.site_visit_date);\nvars.site_visit_time_label = formatTimeLabel(vars.site_visit_time);\nvars.site_visit_end_time_label = formatTimeLabel(vars.site_visit_end_time);\nvars.site_visit_time_range_label = vars.site_visit_time_label && vars.site_visit_end_time_label\n  ? vars.site_visit_time_label + \" - \" + vars.site_visit_end_time_label\n  : vars.site_visit_label;\nvars.site_visit_datetime = vars.site_visit_date && vars.site_visit_time\n  ? vars.site_visit_date + \"T\" + vars.site_visit_time + \":00+05:30\"\n  : \"\";\nvars.site_visit_booked_at = now.toISOString();\nreturn {\n  site_visit_id: vars.site_visit_id,\n  site_visit_date: vars.site_visit_date,\n  site_visit_time: vars.site_visit_time,\n  site_visit_datetime: vars.site_visit_datetime\n};\n",
+          "outputVar": "site_visit_preparation",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "confirm_site_visit_input",
+        "type": "input",
+        "position": {
+          "x": 12600,
+          "y": 120
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "Confirm Your Site Visit\n\nPlease review the details before confirming:\n\n🏢 Project: {{selected_project_name}}\n📍 Location: {{selected_project_location}}\n📅 Date: {{site_visit_date_label}}\n🕑 Time: {{site_visit_time_range_label}}"
+            }
+          ],
+          "variable": "confirm_site_visit",
+          "buttons": [
+            {
+              "label": "Yes",
+              "value": "yes"
+            },
+            {
+              "label": "No",
+              "value": "no"
+            }
+          ],
+          "disableChatInput": true
+        }
+      },
+      {
+        "id": "cancelled_visit_message",
+        "type": "message",
+        "position": {
+          "x": 12840,
+          "y": 220
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "No problem. Your lead is still active, and you can choose another date or time whenever you're ready."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "cancelled_visit_end",
+        "type": "end",
+        "position": {
+          "x": 13080,
+          "y": 220
+        },
+        "data": {
+          "messages": []
+        }
+      },
+      {
+        "id": "site_visit_record_create",
+        "type": "record",
+        "position": {
+          "x": 12840,
+          "y": 120
+        },
+        "data": {
+          "action": "upsert",
+          "collection": "real_estate_site_visits",
+          "where": {
+            "site_visit_id": "{{site_visit_id}}"
+          },
+          "whereJson": "{\n  \"site_visit_id\": \"{{site_visit_id}}\"\n}",
+          "data": {
+            "site_visit_id": "{{site_visit_id}}",
+            "lead_id": "{{lead_id}}",
+            "contact_id": "{{contact_id}}",
+            "project_id": "{{selected_project_id}}",
+            "project_name": "{{selected_project_name}}",
+            "slot_id": "{{site_visit_slot_id}}",
+            "visit_date": "{{site_visit_date}}",
+            "visit_time": "{{site_visit_time}}",
+            "visit_datetime": "{{site_visit_datetime}}",
+            "source_channel": "{{system.channel}}",
+            "status": "confirmed",
+            "assigned_salesperson_name": "{{selected_project_sales_name}}",
+            "assigned_salesperson_phone": "{{selected_project_sales_phone}}"
+          },
+          "dataJson": "{\n  \"site_visit_id\": \"{{site_visit_id}}\",\n  \"lead_id\": \"{{lead_id}}\",\n  \"contact_id\": \"{{contact_id}}\",\n  \"project_id\": \"{{selected_project_id}}\",\n  \"project_name\": \"{{selected_project_name}}\",\n  \"slot_id\": \"{{site_visit_slot_id}}\",\n  \"visit_date\": \"{{site_visit_date}}\",\n  \"visit_time\": \"{{site_visit_time}}\",\n  \"visit_datetime\": \"{{site_visit_datetime}}\",\n  \"source_channel\": \"{{system.channel}}\",\n  \"status\": \"confirmed\",\n  \"assigned_salesperson_name\": \"{{selected_project_sales_name}}\",\n  \"assigned_salesperson_phone\": \"{{selected_project_sales_phone}}\"\n}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_site_visits\",\n  \"fields\": {\n    \"site_visit_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"lead_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"contact_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"project_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"project_name\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"slot_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"visit_date\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"visit_time\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"visit_datetime\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"source_channel\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"status\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"confirmed\",\n        \"cancelled\",\n        \"completed\",\n        \"no_show\"\n      ]\n    },\n    \"assigned_salesperson_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"assigned_salesperson_phone\": {\n      \"type\": \"phone\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "site_visit_id",
+          "idempotencyKey": "{{site_visit_id}}",
+          "outputVar": "site_visit_record_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": ""
+        }
+      },
+      {
+        "id": "final_score_script",
+        "type": "script",
+        "position": {
+          "x": 12360,
+          "y": 120
+        },
+        "data": {
+          "script": "\nconst current = Number(vars.lead_score || 0);\nconst boosted = Math.max(current, 70) + 20;\nvars.lead_score = boosted;\nvars.lead_temperature = boosted >= 70 ? \"hot\" : boosted >= 40 ? \"warm\" : \"nurture\";\nvars.lead_stage = \"site_visit_booked\";\nvars.lead_status = \"site_visit_booked\";\nreturn {\n  lead_score: vars.lead_score,\n  lead_temperature: vars.lead_temperature,\n  lead_stage: vars.lead_stage\n};\n",
+          "outputVar": "final_score_result",
+          "timeoutMs": 120
+        }
+      },
+      {
+        "id": "lead_upsert_final",
+        "type": "record",
+        "position": {
+          "x": 15000,
+          "y": 120
+        },
+        "data": {
+          "action": "upsert",
+          "collection": "real_estate_leads",
+          "where": {
+            "lead_id": "{{lead_id}}"
+          },
+          "whereJson": "{\n  \"lead_id\": \"{{lead_id}}\"\n}",
+          "data": {
+            "lead_id": "{{lead_id}}",
+            "contact_id": "{{contact_id}}",
+            "buyer_mobile": "{{buyer_mobile}}",
+            "buyer_name": "{{buyer_name}}",
+            "buyer_email": "{{buyer_email}}",
+            "source_channel": "{{system.channel}}",
+            "status": "{{lead_status}}",
+            "stage": "{{lead_stage}}",
+            "preferred_location": "{{preferred_location}}",
+            "budget_min_minor": "{{budget_min_minor}}",
+            "budget_max_minor": "{{budget_max_minor}}",
+            "budget_range_label": "{{budget_range_label}}",
+            "property_type": "{{property_type}}",
+            "bhk": "{{bhk}}",
+            "purchase_purpose": "{{purchase_purpose}}",
+            "purchase_timeline": "{{purchase_timeline}}",
+            "possession_preference": "{{possession_preference}}",
+            "financing_status": "{{financing_status}}",
+            "requirement_summary": "{{requirement_summary}}",
+            "lead_score": "{{lead_score}}",
+            "lead_temperature": "{{lead_temperature}}",
+            "selected_project_id": "{{selected_project_id}}",
+            "selected_project_name": "{{selected_project_name}}",
+            "site_visit_id": "{{site_visit_id}}",
+            "site_visit_status": "confirmed",
+            "last_activity_at": "{{site_visit_booked_at}}"
+          },
+          "dataJson": "{\n  \"lead_id\": \"{{lead_id}}\",\n  \"contact_id\": \"{{contact_id}}\",\n  \"buyer_mobile\": \"{{buyer_mobile}}\",\n  \"buyer_name\": \"{{buyer_name}}\",\n  \"buyer_email\": \"{{buyer_email}}\",\n  \"source_channel\": \"{{system.channel}}\",\n  \"status\": \"{{lead_status}}\",\n  \"stage\": \"{{lead_stage}}\",\n  \"preferred_location\": \"{{preferred_location}}\",\n  \"budget_min_minor\": \"{{budget_min_minor}}\",\n  \"budget_max_minor\": \"{{budget_max_minor}}\",\n  \"budget_range_label\": \"{{budget_range_label}}\",\n  \"property_type\": \"{{property_type}}\",\n  \"bhk\": \"{{bhk}}\",\n  \"purchase_purpose\": \"{{purchase_purpose}}\",\n  \"purchase_timeline\": \"{{purchase_timeline}}\",\n  \"possession_preference\": \"{{possession_preference}}\",\n  \"financing_status\": \"{{financing_status}}\",\n  \"requirement_summary\": \"{{requirement_summary}}\",\n  \"lead_score\": \"{{lead_score}}\",\n  \"lead_temperature\": \"{{lead_temperature}}\",\n  \"selected_project_id\": \"{{selected_project_id}}\",\n  \"selected_project_name\": \"{{selected_project_name}}\",\n  \"site_visit_id\": \"{{site_visit_id}}\",\n  \"site_visit_status\": \"confirmed\",\n  \"last_activity_at\": \"{{site_visit_booked_at}}\"\n}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_leads\",\n  \"fields\": {\n    \"lead_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"contact_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"buyer_mobile\": {\n      \"type\": \"phone\",\n      \"required\": true\n    },\n    \"buyer_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"buyer_email\": {\n      \"type\": \"email\",\n      \"required\": false\n    },\n    \"source_channel\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"status\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"open\",\n        \"nurture\",\n        \"site_visit_booked\",\n        \"closed\"\n      ]\n    },\n    \"stage\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"requirements_captured\",\n        \"projects_shared\",\n        \"brochure_shared\",\n        \"site_visit_pending_confirmation\",\n        \"site_visit_booked\",\n        \"nurture\"\n      ]\n    },\n    \"preferred_location\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"budget_min_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"budget_max_minor\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"budget_range_label\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"property_type\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"bhk\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"purchase_purpose\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"purchase_timeline\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"possession_preference\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"financing_status\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"requirement_summary\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"lead_score\": {\n      \"type\": \"number\",\n      \"required\": false\n    },\n    \"lead_temperature\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"hot\",\n        \"warm\",\n        \"nurture\"\n      ]\n    },\n    \"selected_project_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"selected_project_name\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"site_visit_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"site_visit_status\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"last_activity_at\": {\n      \"type\": \"string\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "lead_id",
+          "idempotencyKey": "{{lead_id}}:final",
+          "outputVar": "lead_upsert_final_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": "buyer_mobile,buyer_email,buyer_name"
+        }
+      },
+      {
+        "id": "lead_activity_visit_confirmed",
+        "type": "record",
+        "position": {
+          "x": 15480,
+          "y": 120
+        },
+        "data": {
+          "action": "upsert",
+          "collection": "real_estate_lead_activities",
+          "where": {
+            "activity_id": "{{lead_id}}-visit-confirmed"
+          },
+          "whereJson": "{\n  \"activity_id\": \"{{lead_id}}-visit-confirmed\"\n}",
+          "data": {
+            "activity_id": "{{lead_id}}-visit-confirmed",
+            "lead_id": "{{lead_id}}",
+            "contact_id": "{{contact_id}}",
+            "project_id": "{{selected_project_id}}",
+            "activity_type": "site_visit_confirmed",
+            "channel": "{{system.channel}}",
+            "summary": "{{selected_project_name}} on {{site_visit_date}} at {{site_visit_time}}",
+            "occurred_at": "{{site_visit_booked_at}}"
+          },
+          "dataJson": "{\n  \"activity_id\": \"{{lead_id}}-visit-confirmed\",\n  \"lead_id\": \"{{lead_id}}\",\n  \"contact_id\": \"{{contact_id}}\",\n  \"project_id\": \"{{selected_project_id}}\",\n  \"activity_type\": \"site_visit_confirmed\",\n  \"channel\": \"{{system.channel}}\",\n  \"summary\": \"{{selected_project_name}} on {{site_visit_date}} at {{site_visit_time}}\",\n  \"occurred_at\": \"{{site_visit_booked_at}}\"\n}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_lead_activities\",\n  \"fields\": {\n    \"activity_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"lead_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"contact_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"project_id\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"activity_type\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"channel\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"occurred_at\": {\n      \"type\": \"string\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "activity_id",
+          "idempotencyKey": "{{lead_id}}:visit-confirmed",
+          "outputVar": "lead_activity_visit_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": ""
+        }
+      },
+      {
+        "id": "crm_sync_job_record",
+        "type": "record",
+        "position": {
+          "x": 15720,
+          "y": 120
+        },
+        "data": {
+          "action": "upsert",
+          "collection": "real_estate_crm_sync_jobs",
+          "where": {
+            "sync_job_id": "{{lead_id}}-crm"
+          },
+          "whereJson": "{\n  \"sync_job_id\": \"{{lead_id}}-crm\"\n}",
+          "data": {
+            "sync_job_id": "{{lead_id}}-crm",
+            "lead_id": "{{lead_id}}",
+            "entity_type": "lead",
+            "operation": "upsert",
+            "crm_provider": "{{crm_provider}}",
+            "status": "pending",
+            "payload_summary": "Lead {{lead_id}} | Buyer {{buyer_name}} | Project {{selected_project_name}} | Visit {{site_visit_date}} {{site_visit_time}} | Score {{lead_score}}",
+            "created_at": "{{site_visit_booked_at}}"
+          },
+          "dataJson": "{\n  \"sync_job_id\": \"{{lead_id}}-crm\",\n  \"lead_id\": \"{{lead_id}}\",\n  \"entity_type\": \"lead\",\n  \"operation\": \"upsert\",\n  \"crm_provider\": \"{{crm_provider}}\",\n  \"status\": \"pending\",\n  \"payload_summary\": \"Lead {{lead_id}} | Buyer {{buyer_name}} | Project {{selected_project_name}} | Visit {{site_visit_date}} {{site_visit_time}} | Score {{lead_score}}\",\n  \"created_at\": \"{{site_visit_booked_at}}\"\n}",
+          "collectionSchema": "{\n  \"collection\": \"real_estate_crm_sync_jobs\",\n  \"fields\": {\n    \"sync_job_id\": {\n      \"type\": \"string\",\n      \"required\": true,\n      \"unique\": true\n    },\n    \"lead_id\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"entity_type\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"operation\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"crm_provider\": {\n      \"type\": \"string\",\n      \"required\": true\n    },\n    \"status\": {\n      \"type\": \"enum\",\n      \"values\": [\n        \"pending\",\n        \"processing\",\n        \"success\",\n        \"retry\",\n        \"failed\"\n      ]\n    },\n    \"payload_summary\": {\n      \"type\": \"string\",\n      \"required\": false\n    },\n    \"created_at\": {\n      \"type\": \"string\",\n      \"required\": false\n    }\n  }\n}",
+          "uniqueKey": "sync_job_id",
+          "idempotencyKey": "{{lead_id}}:crm-sync",
+          "outputVar": "crm_sync_job_result",
+          "limit": 20,
+          "offset": 0,
+          "sortBy": "updatedAt",
+          "sortOrder": "desc",
+          "softDelete": true,
+          "encryptPii": false,
+          "piiFields": ""
+        }
+      },
+      {
+        "id": "buyer_confirmation_notification",
+        "type": "notification",
+        "position": {
+          "x": 15960,
+          "y": 120
+        },
+        "data": {
+          "recipients": [
+            {
+              "type": "customer",
+              "phone": "{{buyer_mobile}}",
+              "email": "{{buyer_email}}"
+            }
+          ],
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{buyer_mobile}}\",\n    \"email\": \"{{buyer_email}}\"\n  }\n]",
+          "channels": [
+            {
+              "type": "whatsapp",
+              "enabled": true,
+              "templateId": "site_visit_confirmed"
+            },
+            {
+              "type": "sms",
+              "enabled": true,
+              "message": "Site visit confirmed: {{selected_project_name}} on {{site_visit_date_label}} at {{site_visit_time_range_label}}. Reference {{site_visit_id}}."
+            },
+            {
+              "type": "email",
+              "enabled": true,
+              "subject": "Your site visit is confirmed",
+              "body": "Your site visit has been scheduled successfully.\\n\\nProject: {{selected_project_name}}\\nLocation: {{selected_project_location}}\\nDate: {{site_visit_date_label}}\\nTime: {{site_visit_time_range_label}}\\nReference: {{site_visit_id}}\\nMap: {{selected_project_location_url}}"
+            }
+          ],
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateId\": \"site_visit_confirmed\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Site visit confirmed: {{selected_project_name}} on {{site_visit_date_label}} at {{site_visit_time_range_label}}. Reference {{site_visit_id}}.\"\n  },\n  {\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Your site visit is confirmed\",\n    \"body\": \"Your site visit has been scheduled successfully.\\\\n\\\\nProject: {{selected_project_name}}\\\\nLocation: {{selected_project_location}}\\\\nDate: {{site_visit_date_label}}\\\\nTime: {{site_visit_time_range_label}}\\\\nReference: {{site_visit_id}}\\\\nMap: {{selected_project_location_url}}\"\n  }\n]",
+          "strategy": "priority_order",
+          "messageCategory": "transactional",
+          "dedupeKey": "{{site_visit_id}}:buyer-confirmation",
+          "defaultCountryCode": "+91",
+          "strictTemplateValidation": true,
+          "outputVar": "buyer_confirmation_result"
+        }
+      },
+      {
+        "id": "reminder_scheduler_24h",
+        "type": "scheduler",
+        "position": {
+          "x": 16200,
+          "y": 120
+        },
+        "data": {
+          "scheduleType": "relative",
+          "runAt": "{{site_visit_datetime}}",
+          "offsetValue": 24,
+          "offsetUnit": "hours",
+          "offsetDirection": "before",
+          "timezone": "{{default_timezone}}",
+          "dedupeKey": "{{site_visit_id}}:reminder-24h",
+          "payload": {
+            "type": "site_visit_reminder_24h",
+            "site_visit_id": "{{site_visit_id}}",
+            "lead_id": "{{lead_id}}"
+          },
+          "payloadJson": "{\n  \"type\": \"site_visit_reminder_24h\",\n  \"site_visit_id\": \"{{site_visit_id}}\",\n  \"lead_id\": \"{{lead_id}}\"\n}",
+          "maxExecutions": 1,
+          "expiryAt": "",
+          "pastTimePolicy": "send_immediately",
+          "sendWindowStart": "08:00",
+          "sendWindowEnd": "20:00",
+          "sendWindowTimezone": "{{default_timezone}}",
+          "outsideWindowPolicy": "send_next_window",
+          "outputVar": "reminder_24h_result"
+        }
+      },
+      {
+        "id": "reminder_scheduler_2h",
+        "type": "scheduler",
+        "position": {
+          "x": 16440,
+          "y": 120
+        },
+        "data": {
+          "scheduleType": "relative",
+          "runAt": "{{site_visit_datetime}}",
+          "offsetValue": 2,
+          "offsetUnit": "hours",
+          "offsetDirection": "before",
+          "timezone": "{{default_timezone}}",
+          "dedupeKey": "{{site_visit_id}}:reminder-2h",
+          "payload": {
+            "type": "site_visit_reminder_2h",
+            "site_visit_id": "{{site_visit_id}}",
+            "lead_id": "{{lead_id}}"
+          },
+          "payloadJson": "{\n  \"type\": \"site_visit_reminder_2h\",\n  \"site_visit_id\": \"{{site_visit_id}}\",\n  \"lead_id\": \"{{lead_id}}\"\n}",
+          "maxExecutions": 1,
+          "expiryAt": "",
+          "pastTimePolicy": "send_immediately",
+          "sendWindowStart": "08:00",
+          "sendWindowEnd": "20:00",
+          "sendWindowTimezone": "{{default_timezone}}",
+          "outsideWindowPolicy": "send_next_window",
+          "outputVar": "reminder_2h_result"
+        }
+      },
+      {
+        "id": "final_hot_switch",
+        "type": "switch",
+        "position": {
+          "x": 16680,
+          "y": 120
+        },
+        "data": {
+          "variable": "lead_temperature"
+        }
+      },
+      {
+        "id": "salesperson_alert_final",
+        "type": "notification",
+        "position": {
+          "x": 16920,
+          "y": 120
+        },
+        "data": {
+          "recipients": [
+            {
+              "type": "sales_owner",
+              "phone": "{{selected_project_sales_phone}}",
+              "email": "{{selected_project_sales_email}}"
+            }
+          ],
+          "recipientsJson": "[\n  {\n    \"type\": \"sales_owner\",\n    \"phone\": \"{{selected_project_sales_phone}}\",\n    \"email\": \"{{selected_project_sales_email}}\"\n  }\n]",
+          "channels": [
+            {
+              "type": "sms",
+              "enabled": true,
+              "message": "HOT PROPERTY LEAD: {{buyer_name}}, {{buyer_mobile}}, {{bhk}} {{property_type}}, {{preferred_location}}, budget {{budget_range_label}}, project {{selected_project_name}}, visit {{site_visit_date}} {{site_visit_time}}, score {{lead_score}}."
+            },
+            {
+              "type": "email",
+              "enabled": true,
+              "subject": "Hot property lead with confirmed site visit",
+              "body": "Buyer: {{buyer_name}}\\nMobile: {{buyer_mobile}}\\nBudget: {{budget_range_label}}\\nRequirement: {{bhk}} {{property_type}} in {{preferred_location}}\\nTimeline: {{purchase_timeline}}\\nProject: {{selected_project_name}}\\nSite visit: {{site_visit_date}} {{site_visit_time}}\\nLead score: {{lead_score}}\\nRecommended action: call before the visit."
+            }
+          ],
+          "channelsJson": "[\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"HOT PROPERTY LEAD: {{buyer_name}}, {{buyer_mobile}}, {{bhk}} {{property_type}}, {{preferred_location}}, budget {{budget_range_label}}, project {{selected_project_name}}, visit {{site_visit_date}} {{site_visit_time}}, score {{lead_score}}.\"\n  },\n  {\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Hot property lead with confirmed site visit\",\n    \"body\": \"Buyer: {{buyer_name}}\\\\nMobile: {{buyer_mobile}}\\\\nBudget: {{budget_range_label}}\\\\nRequirement: {{bhk}} {{property_type}} in {{preferred_location}}\\\\nTimeline: {{purchase_timeline}}\\\\nProject: {{selected_project_name}}\\\\nSite visit: {{site_visit_date}} {{site_visit_time}}\\\\nLead score: {{lead_score}}\\\\nRecommended action: call before the visit.\"\n  }\n]",
+          "strategy": "priority_order",
+          "messageCategory": "transactional",
+          "dedupeKey": "{{site_visit_id}}:sales-alert",
+          "defaultCountryCode": "+91",
+          "strictTemplateValidation": true,
+          "outputVar": "sales_alert_final_result"
+        }
+      },
+      {
+        "id": "site_visit_confirmed_message",
+        "type": "message",
+        "position": {
+          "x": 17160,
+          "y": 120
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "✅ Your Site Visit Is Confirmed\n\nYour visit to {{selected_project_name}} has been scheduled successfully.\n\n🏢 Project: {{selected_project_name}}\n📍 Location: {{selected_project_location}}\n📅 Date: {{site_visit_date_label}}\n🕑 Time: {{site_visit_time_range_label}}\n🔖 Reference: {{site_visit_id}}\n\nWe'll send you a reminder before your visit, and the sales team will have your property requirements ready so you won't need to explain everything again."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "site_visit_end",
+        "type": "end",
+        "position": {
+          "x": 17400,
+          "y": 120
+        },
+        "data": {
+          "messages": []
+        }
+      },
+      {
+        "id": "system_failure_message",
+        "type": "message",
+        "position": {
+          "x": 8760,
+          "y": 640
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "I could not complete that step because the operational data or persistence layer did not respond cleanly. I am forwarding the context to the sales operations team so your enquiry does not stall."
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "system_failure_handover",
+        "type": "handover",
+        "position": {
+          "x": 9000,
+          "y": 640
+        },
+        "data": {
+          "channel": "human",
+          "messages": [
+            "Connecting this enquiry to the sales operations team."
+          ]
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_001_start_1_set_template_defaults",
+        "source": "start_1",
+        "target": "set_template_defaults",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_002_set_template_defaults_welcome_message",
+        "source": "set_template_defaults",
+        "target": "welcome_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_003_welcome_message_main_menu_input",
+        "source": "welcome_message",
+        "target": "main_menu_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_004_main_menu_input_requirement_input",
+        "source": "main_menu_input",
+        "target": "requirement_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "find_property",
+        "condition": {
+          "operator": "equals",
+          "value": "find_property"
+        }
+      },
+      {
+        "id": "edge_005_main_menu_input_requirement_input",
+        "source": "main_menu_input",
+        "target": "requirement_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "explore_projects",
+        "condition": {
+          "operator": "equals",
+          "value": "explore_projects"
+        }
+      },
+      {
+        "id": "edge_006_main_menu_input_brochure_menu_message",
+        "source": "main_menu_input",
+        "target": "brochure_menu_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "get_brochure",
+        "condition": {
+          "operator": "equals",
+          "value": "get_brochure"
+        }
+      },
+      {
+        "id": "edge_007_main_menu_input_compare_menu_message",
+        "source": "main_menu_input",
+        "target": "compare_menu_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "compare_properties",
+        "condition": {
+          "operator": "equals",
+          "value": "compare_properties"
+        }
+      },
+      {
+        "id": "edge_008_main_menu_input_shortlist_menu_message",
+        "source": "main_menu_input",
+        "target": "shortlist_menu_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "my_shortlist",
+        "condition": {
+          "operator": "equals",
+          "value": "my_shortlist"
+        }
+      },
+      {
+        "id": "edge_009_main_menu_input_site_visit_menu_message",
+        "source": "main_menu_input",
+        "target": "site_visit_menu_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "book_site_visit",
+        "condition": {
+          "operator": "equals",
+          "value": "book_site_visit"
+        }
+      },
+      {
+        "id": "edge_010_main_menu_input_pricing_menu_message",
+        "source": "main_menu_input",
+        "target": "pricing_menu_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "pricing_offers",
+        "condition": {
+          "operator": "equals",
+          "value": "pricing_offers"
+        }
+      },
+      {
+        "id": "edge_011_main_menu_input_sales_request_message",
+        "source": "main_menu_input",
+        "target": "sales_request_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "talk_to_sales",
+        "condition": {
+          "operator": "equals",
+          "value": "talk_to_sales"
+        }
+      },
+      {
+        "id": "edge_012_main_menu_input_capture_requirement_from_menu",
+        "source": "main_menu_input",
+        "target": "capture_requirement_from_menu",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "free_text/default"
+      },
+      {
+        "id": "edge_013_capture_requirement_from_menu_parse_requirement",
+        "source": "capture_requirement_from_menu",
+        "target": "parse_requirement",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_014_brochure_menu_message_requirement_input",
+        "source": "brochure_menu_message",
+        "target": "requirement_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_015_compare_menu_message_requirement_input",
+        "source": "compare_menu_message",
+        "target": "requirement_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_016_shortlist_menu_message_mobile_form",
+        "source": "shortlist_menu_message",
+        "target": "mobile_form",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_017_site_visit_menu_message_mobile_form",
+        "source": "site_visit_menu_message",
+        "target": "mobile_form",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_018_pricing_menu_message_requirement_input",
+        "source": "pricing_menu_message",
+        "target": "requirement_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_019_sales_request_message_sales_request_handover",
+        "source": "sales_request_message",
+        "target": "sales_request_handover",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_020_requirement_input_parse_requirement",
+        "source": "requirement_input",
+        "target": "parse_requirement",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_021_parse_requirement_mobile_form",
+        "source": "parse_requirement",
+        "target": "mobile_form",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_022_parse_requirement_system_failure_message",
+        "source": "parse_requirement",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_023_mobile_form_mobile_otp_input",
+        "source": "mobile_form",
+        "target": "mobile_otp_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_024_mobile_otp_input_validate_mobile_otp",
+        "source": "mobile_otp_input",
+        "target": "validate_mobile_otp",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_025_validate_mobile_otp_mobile_otp_status_switch",
+        "source": "validate_mobile_otp",
+        "target": "mobile_otp_status_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_026_validate_mobile_otp_system_failure_message",
+        "source": "validate_mobile_otp",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_027_mobile_otp_status_switch_contact_find",
+        "source": "mobile_otp_status_switch",
+        "target": "contact_find",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "valid",
+        "condition": {
+          "operator": "equals",
+          "value": "valid"
+        }
+      },
+      {
+        "id": "edge_028_mobile_otp_status_switch_mobile_otp_invalid_message_1",
+        "source": "mobile_otp_status_switch",
+        "target": "mobile_otp_invalid_message_1",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "invalid",
+        "condition": {
+          "operator": "equals",
+          "value": "invalid"
+        }
+      },
+      {
+        "id": "edge_029_mobile_otp_status_switch_mobile_otp_invalid_message_1",
+        "source": "mobile_otp_status_switch",
+        "target": "mobile_otp_invalid_message_1",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "invalid/default"
+      },
+      {
+        "id": "edge_030_mobile_otp_invalid_message_1_mobile_otp_input_2",
+        "source": "mobile_otp_invalid_message_1",
+        "target": "mobile_otp_input_2",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "retry"
+      },
+      {
+        "id": "edge_031_mobile_otp_input_2_validate_mobile_otp_2",
+        "source": "mobile_otp_input_2",
+        "target": "validate_mobile_otp_2",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_032_validate_mobile_otp_2_mobile_otp_status_switch_2",
+        "source": "validate_mobile_otp_2",
+        "target": "mobile_otp_status_switch_2",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_033_validate_mobile_otp_2_system_failure_message",
+        "source": "validate_mobile_otp_2",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_034_mobile_otp_status_switch_2_contact_find",
+        "source": "mobile_otp_status_switch_2",
+        "target": "contact_find",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "valid",
+        "condition": {
+          "operator": "equals",
+          "value": "valid"
+        }
+      },
+      {
+        "id": "edge_035_mobile_otp_status_switch_2_mobile_otp_invalid_message_2",
+        "source": "mobile_otp_status_switch_2",
+        "target": "mobile_otp_invalid_message_2",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "invalid",
+        "condition": {
+          "operator": "equals",
+          "value": "invalid"
+        }
+      },
+      {
+        "id": "edge_036_mobile_otp_status_switch_2_mobile_otp_invalid_message_2",
+        "source": "mobile_otp_status_switch_2",
+        "target": "mobile_otp_invalid_message_2",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "invalid/default"
+      },
+      {
+        "id": "edge_037_mobile_otp_invalid_message_2_mobile_otp_input_3",
+        "source": "mobile_otp_invalid_message_2",
+        "target": "mobile_otp_input_3",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "retry"
+      },
+      {
+        "id": "edge_038_mobile_otp_input_3_validate_mobile_otp_3",
+        "source": "mobile_otp_input_3",
+        "target": "validate_mobile_otp_3",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_039_validate_mobile_otp_3_mobile_otp_status_switch_3",
+        "source": "validate_mobile_otp_3",
+        "target": "mobile_otp_status_switch_3",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_040_validate_mobile_otp_3_system_failure_message",
+        "source": "validate_mobile_otp_3",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_041_mobile_otp_status_switch_3_contact_find",
+        "source": "mobile_otp_status_switch_3",
+        "target": "contact_find",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "valid",
+        "condition": {
+          "operator": "equals",
+          "value": "valid"
+        }
+      },
+      {
+        "id": "edge_042_mobile_otp_status_switch_3_mobile_otp_max_attempts_message",
+        "source": "mobile_otp_status_switch_3",
+        "target": "mobile_otp_max_attempts_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "invalid/default"
+      },
+      {
+        "id": "edge_043_mobile_otp_max_attempts_message_mobile_otp_max_attempts_end",
+        "source": "mobile_otp_max_attempts_message",
+        "target": "mobile_otp_max_attempts_end",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_044_contact_find_returning_contact_message",
+        "source": "contact_find",
+        "target": "returning_contact_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_045_contact_find_returning_contact_message",
+        "source": "contact_find",
+        "target": "returning_contact_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_046_contact_find_new_contact_form",
+        "source": "contact_find",
+        "target": "new_contact_form",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_047_contact_find_system_failure_message",
+        "source": "contact_find",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_048_returning_contact_message_reuse_saved_preferences_input",
+        "source": "returning_contact_message",
+        "target": "reuse_saved_preferences_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_049_reuse_saved_preferences_input_hydrate_saved_preferences",
+        "source": "reuse_saved_preferences_input",
+        "target": "hydrate_saved_preferences",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_050_reuse_saved_preferences_input_refresh_requirement_flags",
+        "source": "reuse_saved_preferences_input",
+        "target": "refresh_requirement_flags",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_051_hydrate_saved_preferences_refresh_requirement_flags",
+        "source": "hydrate_saved_preferences",
+        "target": "refresh_requirement_flags",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_052_new_contact_form_refresh_requirement_flags",
+        "source": "new_contact_form",
+        "target": "refresh_requirement_flags",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_053_refresh_requirement_flags_location_switch",
+        "source": "refresh_requirement_flags",
+        "target": "location_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_054_refresh_requirement_flags_system_failure_message",
+        "source": "refresh_requirement_flags",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_055_location_switch_property_type_switch",
+        "source": "location_switch",
+        "target": "property_type_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_056_location_switch_location_input",
+        "source": "location_switch",
+        "target": "location_input",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_057_location_input_property_type_switch",
+        "source": "location_input",
+        "target": "property_type_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_058_property_type_switch_bhk_switch",
+        "source": "property_type_switch",
+        "target": "bhk_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_059_property_type_switch_property_type_input",
+        "source": "property_type_switch",
+        "target": "property_type_input",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_060_property_type_input_refresh_after_property_type",
+        "source": "property_type_input",
+        "target": "refresh_after_property_type",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_061_refresh_after_property_type_bhk_switch",
+        "source": "refresh_after_property_type",
+        "target": "bhk_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_062_refresh_after_property_type_system_failure_message",
+        "source": "refresh_after_property_type",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_063_bhk_switch_budget_switch",
+        "source": "bhk_switch",
+        "target": "budget_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_064_bhk_switch_bhk_input",
+        "source": "bhk_switch",
+        "target": "bhk_input",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_065_bhk_input_budget_switch",
+        "source": "bhk_input",
+        "target": "budget_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_066_budget_switch_purpose_switch",
+        "source": "budget_switch",
+        "target": "purpose_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_067_budget_switch_budget_input",
+        "source": "budget_switch",
+        "target": "budget_input",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_068_budget_input_normalize_budget",
+        "source": "budget_input",
+        "target": "normalize_budget",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_069_normalize_budget_purpose_switch",
+        "source": "normalize_budget",
+        "target": "purpose_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_070_normalize_budget_system_failure_message",
+        "source": "normalize_budget",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_071_purpose_switch_timeline_switch",
+        "source": "purpose_switch",
+        "target": "timeline_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_072_purpose_switch_purpose_input",
+        "source": "purpose_switch",
+        "target": "purpose_input",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_073_purpose_input_timeline_switch",
+        "source": "purpose_input",
+        "target": "timeline_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_074_timeline_switch_possession_switch",
+        "source": "timeline_switch",
+        "target": "possession_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_075_timeline_switch_timeline_input",
+        "source": "timeline_switch",
+        "target": "timeline_input",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_076_timeline_input_possession_switch",
+        "source": "timeline_input",
+        "target": "possession_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_077_possession_switch_financing_switch",
+        "source": "possession_switch",
+        "target": "financing_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_078_possession_switch_possession_input",
+        "source": "possession_switch",
+        "target": "possession_input",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_079_possession_input_financing_switch",
+        "source": "possession_input",
+        "target": "financing_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_080_financing_switch_prepare_identity",
+        "source": "financing_switch",
+        "target": "prepare_identity",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_081_financing_switch_financing_input",
+        "source": "financing_switch",
+        "target": "financing_input",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_082_financing_input_prepare_identity",
+        "source": "financing_input",
+        "target": "prepare_identity",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_083_prepare_identity_contact_upsert",
+        "source": "prepare_identity",
+        "target": "contact_upsert",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_084_prepare_identity_system_failure_message",
+        "source": "prepare_identity",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_085_contact_upsert_lead_upsert_initial",
+        "source": "contact_upsert",
+        "target": "lead_upsert_initial",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_086_contact_upsert_lead_upsert_initial",
+        "source": "contact_upsert",
+        "target": "lead_upsert_initial",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_087_contact_upsert_system_failure_message",
+        "source": "contact_upsert",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_088_contact_upsert_system_failure_message",
+        "source": "contact_upsert",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_089_lead_upsert_initial_lead_activity_requirements",
+        "source": "lead_upsert_initial",
+        "target": "lead_activity_requirements",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_090_lead_upsert_initial_lead_activity_requirements",
+        "source": "lead_upsert_initial",
+        "target": "lead_activity_requirements",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_091_lead_upsert_initial_system_failure_message",
+        "source": "lead_upsert_initial",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_092_lead_upsert_initial_system_failure_message",
+        "source": "lead_upsert_initial",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_093_lead_activity_requirements_inventory_list",
+        "source": "lead_activity_requirements",
+        "target": "inventory_list",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_094_lead_activity_requirements_inventory_list",
+        "source": "lead_activity_requirements",
+        "target": "inventory_list",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_095_lead_activity_requirements_system_failure_message",
+        "source": "lead_activity_requirements",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_096_lead_activity_requirements_system_failure_message",
+        "source": "lead_activity_requirements",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_097_inventory_list_match_projects",
+        "source": "inventory_list",
+        "target": "match_projects",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_098_inventory_list_match_projects",
+        "source": "inventory_list",
+        "target": "match_projects",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_099_inventory_list_system_failure_message",
+        "source": "inventory_list",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_100_inventory_list_system_failure_message",
+        "source": "inventory_list",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_101_match_projects_match_status_switch",
+        "source": "match_projects",
+        "target": "match_status_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_102_match_projects_system_failure_message",
+        "source": "match_projects",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_103_match_status_switch_project_carousel",
+        "source": "match_status_switch",
+        "target": "project_carousel",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "exact",
+        "condition": {
+          "operator": "equals",
+          "value": "exact"
+        }
+      },
+      {
+        "id": "edge_104_match_status_switch_close_match_message",
+        "source": "match_status_switch",
+        "target": "close_match_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "alternative",
+        "condition": {
+          "operator": "equals",
+          "value": "alternative"
+        }
+      },
+      {
+        "id": "edge_105_match_status_switch_no_inventory_followup_record",
+        "source": "match_status_switch",
+        "target": "no_inventory_followup_record",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "none/default"
+      },
+      {
+        "id": "edge_106_close_match_message_project_carousel",
+        "source": "close_match_message",
+        "target": "project_carousel",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_107_no_inventory_followup_record_no_inventory_message",
+        "source": "no_inventory_followup_record",
+        "target": "no_inventory_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_108_no_inventory_followup_record_no_inventory_message",
+        "source": "no_inventory_followup_record",
+        "target": "no_inventory_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_109_no_inventory_followup_record_system_failure_message",
+        "source": "no_inventory_followup_record",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_110_no_inventory_followup_record_system_failure_message",
+        "source": "no_inventory_followup_record",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_111_no_inventory_message_no_inventory_end",
+        "source": "no_inventory_message",
+        "target": "no_inventory_end",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_112_project_carousel_project_select_input",
+        "source": "project_carousel",
+        "target": "project_select_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_113_project_select_input_select_project",
+        "source": "project_select_input",
+        "target": "select_project",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_114_select_project_project_details_message",
+        "source": "select_project",
+        "target": "project_details_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_115_select_project_system_failure_message",
+        "source": "select_project",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_116_project_details_message_brochure_input",
+        "source": "project_details_message",
+        "target": "brochure_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_117_brochure_input_set_brochure_yes",
+        "source": "brochure_input",
+        "target": "set_brochure_yes",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_118_brochure_input_set_brochure_no",
+        "source": "brochure_input",
+        "target": "set_brochure_no",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_119_set_brochure_yes_project_brochure_media",
+        "source": "set_brochure_yes",
+        "target": "project_brochure_media",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_120_project_brochure_media_score_lead_previsit",
+        "source": "project_brochure_media",
+        "target": "score_lead_previsit",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_121_set_brochure_no_score_lead_previsit",
+        "source": "set_brochure_no",
+        "target": "score_lead_previsit",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_122_score_lead_previsit_lead_upsert_previsit",
+        "source": "score_lead_previsit",
+        "target": "lead_upsert_previsit",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_123_score_lead_previsit_system_failure_message",
+        "source": "score_lead_previsit",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_124_lead_upsert_previsit_site_visit_input",
+        "source": "lead_upsert_previsit",
+        "target": "site_visit_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_125_lead_upsert_previsit_site_visit_input",
+        "source": "lead_upsert_previsit",
+        "target": "site_visit_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_126_lead_upsert_previsit_system_failure_message",
+        "source": "lead_upsert_previsit",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_127_lead_upsert_previsit_system_failure_message",
+        "source": "lead_upsert_previsit",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_128_site_visit_input_site_visit_existing_visits_list",
+        "source": "site_visit_input",
+        "target": "site_visit_existing_visits_list",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_129_site_visit_input_previsit_hot_switch",
+        "source": "site_visit_input",
+        "target": "previsit_hot_switch",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_130_previsit_hot_switch_salesperson_alert_previsit",
+        "source": "previsit_hot_switch",
+        "target": "salesperson_alert_previsit",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "hot",
+        "condition": {
+          "operator": "equals",
+          "value": "hot"
+        }
+      },
+      {
+        "id": "edge_131_previsit_hot_switch_nurture_followup_record",
+        "source": "previsit_hot_switch",
+        "target": "nurture_followup_record",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "warm_or_nurture/default"
+      },
+      {
+        "id": "edge_132_salesperson_alert_previsit_nurture_followup_record",
+        "source": "salesperson_alert_previsit",
+        "target": "nurture_followup_record",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "sent",
+        "condition": {
+          "operator": "equals",
+          "value": "sent"
+        }
+      },
+      {
+        "id": "edge_133_salesperson_alert_previsit_nurture_followup_record",
+        "source": "salesperson_alert_previsit",
+        "target": "nurture_followup_record",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "partially_sent",
+        "condition": {
+          "operator": "equals",
+          "value": "partially_sent"
+        }
+      },
+      {
+        "id": "edge_134_salesperson_alert_previsit_nurture_followup_record",
+        "source": "salesperson_alert_previsit",
+        "target": "nurture_followup_record",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failed/default"
+      },
+      {
+        "id": "edge_135_nurture_followup_record_nurture_end_message",
+        "source": "nurture_followup_record",
+        "target": "nurture_end_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_136_nurture_followup_record_nurture_end_message",
+        "source": "nurture_followup_record",
+        "target": "nurture_end_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_137_nurture_followup_record_system_failure_message",
+        "source": "nurture_followup_record",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_138_nurture_followup_record_system_failure_message",
+        "source": "nurture_followup_record",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_139_nurture_end_message_nurture_end",
+        "source": "nurture_end_message",
+        "target": "nurture_end",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_140_site_visit_existing_visits_list_build_site_visit_slots",
+        "source": "site_visit_existing_visits_list",
+        "target": "build_site_visit_slots",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_141_site_visit_existing_visits_list_build_site_visit_slots",
+        "source": "site_visit_existing_visits_list",
+        "target": "build_site_visit_slots",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_142_site_visit_existing_visits_list_system_failure_message",
+        "source": "site_visit_existing_visits_list",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_143_site_visit_existing_visits_list_system_failure_message",
+        "source": "site_visit_existing_visits_list",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_144_build_site_visit_slots_site_visit_scheduler",
+        "source": "build_site_visit_slots",
+        "target": "site_visit_scheduler",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_145_build_site_visit_slots_system_failure_message",
+        "source": "build_site_visit_slots",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_146_site_visit_scheduler_prepare_site_visit_ids",
+        "source": "site_visit_scheduler",
+        "target": "prepare_site_visit_ids",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "selected"
+      },
+      {
+        "id": "edge_147_prepare_site_visit_ids_confirm_site_visit_input",
+        "source": "prepare_site_visit_ids",
+        "target": "confirm_site_visit_input",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_148_prepare_site_visit_ids_system_failure_message",
+        "source": "prepare_site_visit_ids",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_149_confirm_site_visit_input_site_visit_record_create",
+        "source": "confirm_site_visit_input",
+        "target": "site_visit_record_create",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "yes",
+        "condition": {
+          "operator": "equals",
+          "value": "yes"
+        }
+      },
+      {
+        "id": "edge_150_confirm_site_visit_input_cancelled_visit_message",
+        "source": "confirm_site_visit_input",
+        "target": "cancelled_visit_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "no/default"
+      },
+      {
+        "id": "edge_151_cancelled_visit_message_cancelled_visit_end",
+        "source": "cancelled_visit_message",
+        "target": "cancelled_visit_end",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_152_site_visit_record_create_final_score_script",
+        "source": "site_visit_record_create",
+        "target": "final_score_script",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_153_site_visit_record_create_final_score_script",
+        "source": "site_visit_record_create",
+        "target": "final_score_script",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_154_site_visit_record_create_system_failure_message",
+        "source": "site_visit_record_create",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_155_site_visit_record_create_system_failure_message",
+        "source": "site_visit_record_create",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_156_final_score_script_lead_upsert_final",
+        "source": "final_score_script",
+        "target": "lead_upsert_final",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_157_final_score_script_system_failure_message",
+        "source": "final_score_script",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failure/default"
+      },
+      {
+        "id": "edge_158_lead_upsert_final_lead_activity_visit_confirmed",
+        "source": "lead_upsert_final",
+        "target": "lead_activity_visit_confirmed",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_159_lead_upsert_final_lead_activity_visit_confirmed",
+        "source": "lead_upsert_final",
+        "target": "lead_activity_visit_confirmed",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_160_lead_upsert_final_system_failure_message",
+        "source": "lead_upsert_final",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_161_lead_upsert_final_system_failure_message",
+        "source": "lead_upsert_final",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_162_lead_activity_visit_confirmed_crm_sync_job_record",
+        "source": "lead_activity_visit_confirmed",
+        "target": "crm_sync_job_record",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_163_lead_activity_visit_confirmed_crm_sync_job_record",
+        "source": "lead_activity_visit_confirmed",
+        "target": "crm_sync_job_record",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_164_lead_activity_visit_confirmed_system_failure_message",
+        "source": "lead_activity_visit_confirmed",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_165_lead_activity_visit_confirmed_system_failure_message",
+        "source": "lead_activity_visit_confirmed",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_166_crm_sync_job_record_buyer_confirmation_notification",
+        "source": "crm_sync_job_record",
+        "target": "buyer_confirmation_notification",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "success",
+        "condition": {
+          "operator": "equals",
+          "value": "success"
+        }
+      },
+      {
+        "id": "edge_167_crm_sync_job_record_buyer_confirmation_notification",
+        "source": "crm_sync_job_record",
+        "target": "buyer_confirmation_notification",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "duplicate",
+        "condition": {
+          "operator": "equals",
+          "value": "duplicate"
+        }
+      },
+      {
+        "id": "edge_168_crm_sync_job_record_system_failure_message",
+        "source": "crm_sync_job_record",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "not_found",
+        "condition": {
+          "operator": "equals",
+          "value": "not_found"
+        }
+      },
+      {
+        "id": "edge_169_crm_sync_job_record_system_failure_message",
+        "source": "crm_sync_job_record",
+        "target": "system_failure_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "validation_failed/failed/default"
+      },
+      {
+        "id": "edge_170_buyer_confirmation_notification_reminder_scheduler_24h",
+        "source": "buyer_confirmation_notification",
+        "target": "reminder_scheduler_24h",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "sent",
+        "condition": {
+          "operator": "equals",
+          "value": "sent"
+        }
+      },
+      {
+        "id": "edge_171_buyer_confirmation_notification_reminder_scheduler_24h",
+        "source": "buyer_confirmation_notification",
+        "target": "reminder_scheduler_24h",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "partially_sent",
+        "condition": {
+          "operator": "equals",
+          "value": "partially_sent"
+        }
+      },
+      {
+        "id": "edge_172_buyer_confirmation_notification_reminder_scheduler_24h",
+        "source": "buyer_confirmation_notification",
+        "target": "reminder_scheduler_24h",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failed/default"
+      },
+      {
+        "id": "edge_173_reminder_scheduler_24h_reminder_scheduler_2h",
+        "source": "reminder_scheduler_24h",
+        "target": "reminder_scheduler_2h",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "scheduled",
+        "condition": {
+          "operator": "equals",
+          "value": "scheduled"
+        }
+      },
+      {
+        "id": "edge_174_reminder_scheduler_24h_reminder_scheduler_2h",
+        "source": "reminder_scheduler_24h",
+        "target": "reminder_scheduler_2h",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "skipped",
+        "condition": {
+          "operator": "equals",
+          "value": "skipped"
+        }
+      },
+      {
+        "id": "edge_175_reminder_scheduler_24h_reminder_scheduler_2h",
+        "source": "reminder_scheduler_24h",
+        "target": "reminder_scheduler_2h",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failed/expired/default"
+      },
+      {
+        "id": "edge_176_reminder_scheduler_2h_final_hot_switch",
+        "source": "reminder_scheduler_2h",
+        "target": "final_hot_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "scheduled",
+        "condition": {
+          "operator": "equals",
+          "value": "scheduled"
+        }
+      },
+      {
+        "id": "edge_177_reminder_scheduler_2h_final_hot_switch",
+        "source": "reminder_scheduler_2h",
+        "target": "final_hot_switch",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "skipped",
+        "condition": {
+          "operator": "equals",
+          "value": "skipped"
+        }
+      },
+      {
+        "id": "edge_178_reminder_scheduler_2h_final_hot_switch",
+        "source": "reminder_scheduler_2h",
+        "target": "final_hot_switch",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failed/expired/default"
+      },
+      {
+        "id": "edge_179_final_hot_switch_salesperson_alert_final",
+        "source": "final_hot_switch",
+        "target": "salesperson_alert_final",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "hot",
+        "condition": {
+          "operator": "equals",
+          "value": "hot"
+        }
+      },
+      {
+        "id": "edge_180_final_hot_switch_site_visit_confirmed_message",
+        "source": "final_hot_switch",
+        "target": "site_visit_confirmed_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "warm_or_nurture/default"
+      },
+      {
+        "id": "edge_181_salesperson_alert_final_site_visit_confirmed_message",
+        "source": "salesperson_alert_final",
+        "target": "site_visit_confirmed_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "sent",
+        "condition": {
+          "operator": "equals",
+          "value": "sent"
+        }
+      },
+      {
+        "id": "edge_182_salesperson_alert_final_site_visit_confirmed_message",
+        "source": "salesperson_alert_final",
+        "target": "site_visit_confirmed_message",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "partially_sent",
+        "condition": {
+          "operator": "equals",
+          "value": "partially_sent"
+        }
+      },
+      {
+        "id": "edge_183_salesperson_alert_final_site_visit_confirmed_message",
+        "source": "salesperson_alert_final",
+        "target": "site_visit_confirmed_message",
+        "type": "smoothstep",
+        "isDefault": true,
+        "label": "failed/default"
+      },
+      {
+        "id": "edge_184_site_visit_confirmed_message_site_visit_end",
+        "source": "site_visit_confirmed_message",
+        "target": "site_visit_end",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      },
+      {
+        "id": "edge_185_system_failure_message_system_failure_handover",
+        "source": "system_failure_message",
+        "target": "system_failure_handover",
+        "type": "smoothstep",
+        "isDefault": false,
+        "label": "next"
+      }
+    ]
+  },
+  "metadata": {
+    "flowVersion": 1,
+    "nodeCount": 100
+  }
+}

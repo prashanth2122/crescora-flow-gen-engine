@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-07-21T00:00:00.000+05:30",
+  "source": "domains/hospital/templates/hospital-full-automation.flow.json",
+  "updatedFlow": "domains/hospital/templates/hospital-full-automation.updated.flow.json",
+  "nodeCount": 336,
+  "edgeCount": 496,
+  "changes": [
+    "Normalized dpc_general_1 to doc_general_1 before slot lookup.",
+    "Captured selected doctor inventory row and next_available_slot from appointment_doctors_result.",
+    "Added fallback slot rendering from selected doctors.next_available_slot when appointment_slots returns no rows.",
+    "Retargeted appointment_slots not_found/default paths through the slot filter so fallback can run.",
+    "Updated seed SQL to create appointment_slots from attached doctor next_available_slot values, including main_branch + in_person + general_medicine + doc_general_1 on 2026-07-27."
+  ]
+}
