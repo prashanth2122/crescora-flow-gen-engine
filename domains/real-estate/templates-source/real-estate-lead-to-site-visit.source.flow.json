@@ -548,6 +548,7 @@
         },
         "data": {
           "action": "find",
+          "schemaName": "realestate",
           "collection": "real_estate_contacts",
           "where": {
             "phone_e164": "{{buyer_mobile}}"
@@ -1127,6 +1128,7 @@
         },
         "data": {
           "action": "upsert",
+          "schemaName": "realestate",
           "collection": "real_estate_contacts",
           "where": {
             "phone_e164": "{{buyer_mobile}}"
@@ -1175,6 +1177,7 @@
         },
         "data": {
           "action": "upsert",
+          "schemaName": "realestate",
           "collection": "real_estate_leads",
           "where": {
             "lead_id": "{{lead_id}}"
@@ -1227,6 +1230,7 @@
         },
         "data": {
           "action": "upsert",
+          "schemaName": "realestate",
           "collection": "real_estate_lead_activities",
           "where": {
             "activity_id": "{{lead_id}}-requirements"
@@ -1264,6 +1268,7 @@
         },
         "data": {
           "action": "list",
+          "schemaName": "realestate",
           "collection": "property_inventory",
           "where": {
             "active": true
@@ -1334,6 +1339,7 @@
         },
         "data": {
           "action": "upsert",
+          "schemaName": "realestate",
           "collection": "real_estate_followup_jobs",
           "where": {
             "followup_id": "{{lead_id}}-inventory-refresh"
@@ -1584,6 +1590,7 @@
         },
         "data": {
           "action": "upsert",
+          "schemaName": "realestate",
           "collection": "real_estate_leads",
           "where": {
             "lead_id": "{{lead_id}}"
@@ -1677,6 +1684,7 @@
         },
         "data": {
           "action": "upsert",
+          "schemaName": "realestate",
           "collection": "real_estate_followup_jobs",
           "where": {
             "followup_id": "{{lead_id}}-nurture"
@@ -1718,10 +1726,12 @@
             {
               "type": "sales_owner",
               "phone": "{{selected_project_sales_phone}}",
-              "email": "{{selected_project_sales_email}}"
+              "email": "{{selected_project_sales_email}}",
+              "whatsappPhone": "{{selected_project_sales_phone}}",
+              "smsPhone": "{{selected_project_sales_phone}}"
             }
           ],
-          "recipientsJson": "[\n  {\n    \"type\": \"sales_owner\",\n    \"phone\": \"{{selected_project_sales_phone}}\",\n    \"email\": \"{{selected_project_sales_email}}\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"sales_owner\",\n    \"phone\": \"{{selected_project_sales_phone}}\",\n    \"email\": \"{{selected_project_sales_email}}\",\n    \"whatsappPhone\": \"{{selected_project_sales_phone}}\",\n    \"smsPhone\": \"{{selected_project_sales_phone}}\"\n  }\n]",
           "channels": [
             {
               "type": "sms",
@@ -1781,6 +1791,7 @@
         },
         "data": {
           "action": "list",
+          "schemaName": "realestate",
           "collection": "real_estate_site_visits",
           "where": {
             "project_id": "{{selected_project_id}}",
@@ -1922,6 +1933,7 @@
         },
         "data": {
           "action": "upsert",
+          "schemaName": "realestate",
           "collection": "real_estate_site_visits",
           "where": {
             "site_visit_id": "{{site_visit_id}}"
@@ -1978,6 +1990,7 @@
         },
         "data": {
           "action": "upsert",
+          "schemaName": "realestate",
           "collection": "real_estate_leads",
           "where": {
             "lead_id": "{{lead_id}}"
@@ -2034,6 +2047,7 @@
         },
         "data": {
           "action": "upsert",
+          "schemaName": "realestate",
           "collection": "real_estate_lead_activities",
           "where": {
             "activity_id": "{{lead_id}}-visit-confirmed"
@@ -2072,6 +2086,7 @@
         },
         "data": {
           "action": "upsert",
+          "schemaName": "realestate",
           "collection": "real_estate_crm_sync_jobs",
           "where": {
             "sync_job_id": "{{lead_id}}-crm"
@@ -2113,15 +2128,17 @@
             {
               "type": "customer",
               "phone": "{{buyer_mobile}}",
-              "email": "{{buyer_email}}"
+              "email": "{{buyer_email}}",
+              "whatsappPhone": "{{buyer_mobile}}",
+              "smsPhone": "{{buyer_mobile}}"
             }
           ],
-          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{buyer_mobile}}\",\n    \"email\": \"{{buyer_email}}\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{buyer_mobile}}\",\n    \"email\": \"{{buyer_email}}\",\n    \"whatsappPhone\": \"{{buyer_mobile}}\",\n    \"smsPhone\": \"{{buyer_mobile}}\"\n  }\n]",
           "channels": [
             {
               "type": "whatsapp",
               "enabled": true,
-              "templateId": "site_visit_confirmed"
+              "templateName": "site_visit_confirmed"
             },
             {
               "type": "sms",
@@ -2135,7 +2152,7 @@
               "body": "Your site visit has been scheduled successfully.\\n\\nProject: {{selected_project_name}}\\nLocation: {{selected_project_location}}\\nDate: {{site_visit_date_label}}\\nTime: {{site_visit_time_range_label}}\\nReference: {{site_visit_id}}\\nMap: {{selected_project_location_url}}"
             }
           ],
-          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateId\": \"site_visit_confirmed\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Site visit confirmed: {{selected_project_name}} on {{site_visit_date_label}} at {{site_visit_time_range_label}}. Reference {{site_visit_id}}.\"\n  },\n  {\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Your site visit is confirmed\",\n    \"body\": \"Your site visit has been scheduled successfully.\\\\n\\\\nProject: {{selected_project_name}}\\\\nLocation: {{selected_project_location}}\\\\nDate: {{site_visit_date_label}}\\\\nTime: {{site_visit_time_range_label}}\\\\nReference: {{site_visit_id}}\\\\nMap: {{selected_project_location_url}}\"\n  }\n]",
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateName\": \"site_visit_confirmed\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Site visit confirmed: {{selected_project_name}} on {{site_visit_date_label}} at {{site_visit_time_range_label}}. Reference {{site_visit_id}}.\"\n  },\n  {\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Your site visit is confirmed\",\n    \"body\": \"Your site visit has been scheduled successfully.\\\\n\\\\nProject: {{selected_project_name}}\\\\nLocation: {{selected_project_location}}\\\\nDate: {{site_visit_date_label}}\\\\nTime: {{site_visit_time_range_label}}\\\\nReference: {{site_visit_id}}\\\\nMap: {{selected_project_location_url}}\"\n  }\n]",
           "strategy": "priority_order",
           "messageCategory": "transactional",
           "dedupeKey": "{{site_visit_id}}:buyer-confirmation",
@@ -2229,10 +2246,12 @@
             {
               "type": "sales_owner",
               "phone": "{{selected_project_sales_phone}}",
-              "email": "{{selected_project_sales_email}}"
+              "email": "{{selected_project_sales_email}}",
+              "whatsappPhone": "{{selected_project_sales_phone}}",
+              "smsPhone": "{{selected_project_sales_phone}}"
             }
           ],
-          "recipientsJson": "[\n  {\n    \"type\": \"sales_owner\",\n    \"phone\": \"{{selected_project_sales_phone}}\",\n    \"email\": \"{{selected_project_sales_email}}\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"sales_owner\",\n    \"phone\": \"{{selected_project_sales_phone}}\",\n    \"email\": \"{{selected_project_sales_email}}\",\n    \"whatsappPhone\": \"{{selected_project_sales_phone}}\",\n    \"smsPhone\": \"{{selected_project_sales_phone}}\"\n  }\n]",
           "channels": [
             {
               "type": "sms",

@@ -28,6 +28,18 @@ const CAROUSEL_LOCAL_TEMPLATE_VARS = new Set([
   "index",
   "slideIndex"
 ]);
+const RECORD_SCHEMA_NAMES = new Set([
+  "public",
+  "automobile",
+  "education",
+  "financial_services",
+  "healthcare",
+  "hospitality",
+  "insurance",
+  "professional_services",
+  "realestate",
+  "retail"
+]);
 const templatePattern = /\{\{\s*([A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*)\s*\}\}/g;
 
 function fail(message) {
@@ -98,6 +110,11 @@ function getNodeLocalTemplateVars(node) {
     localVars.add("answer");
   }
 
+  if (node?.type === "otp") {
+    localVars.add("otp");
+    localVars.add("otp_ttl_minutes");
+  }
+
   return localVars;
 }
 
@@ -117,6 +134,53 @@ function checkTemplateContainer(value, safeVariables, localTemplateVars = new Se
     }
     reportedTemplateErrors.add(errorKey);
     fail(`Template variable {{${variable}}} is not declared by globals or a writer node`);
+  }
+}
+
+function validateRecordSchemaName(node) {
+  if (node?.type !== "record") return;
+
+  const schemaName = node?.data?.schemaName;
+  if (schemaName == null || schemaName === "") return;
+  if (typeof schemaName !== "string") {
+    fail(`Record node ${node.id} data.schemaName must be a string when provided`);
+    return;
+  }
+  if (!RECORD_SCHEMA_NAMES.has(schemaName)) {
+    fail(
+      `Record node ${node.id} uses unsupported schemaName ${schemaName}; allowed values are ${[
+        ...RECORD_SCHEMA_NAMES
+      ].join(", ")}`
+    );
+  }
+}
+
+function validateOtpNode(node) {
+  if (node?.type !== "otp") return;
+
+  const data = node.data ?? {};
+  const channels = data.channels;
+  if (channels != null && !Array.isArray(channels)) {
+    fail(`OTP node ${node.id} data.channels must be an array when provided`);
+  }
+  if (Array.isArray(channels)) {
+    for (const channel of channels) {
+      if (!["sms", "whatsapp", "email"].includes(channel)) {
+        fail(`OTP node ${node.id} uses unsupported delivery channel ${channel}`);
+      }
+    }
+  }
+
+  if (data.resendCooldownSeconds != null && Number(data.resendCooldownSeconds) < 30) {
+    fail(`OTP node ${node.id} resendCooldownSeconds must be at least 30`);
+  }
+  if (data.maxResends != null && Number(data.maxResends) > 3) {
+    fail(`OTP node ${node.id} maxResends must not exceed 3`);
+  }
+
+  const outputVar = typeof data.outputVar === "string" ? data.outputVar.toLowerCase() : "";
+  if (outputVar === "otp" || outputVar.includes("code")) {
+    fail(`OTP node ${node.id} outputVar must not expose the generated OTP code`);
   }
 }
 
@@ -156,6 +220,8 @@ for (const node of nodes) {
   if (node.type === "script") {
     validateScriptSyntax(node);
   }
+  validateRecordSchemaName(node);
+  validateOtpNode(node);
 }
 
 for (const id of duplicateNodeIds) fail(`Duplicate node id: ${id}`);
@@ -291,6 +357,7 @@ for (const node of nodes) {
     if (data.outputVar) safeVariables.add(data.outputVar);
   }
   if (node.type === "record" && data.outputVar) safeVariables.add(data.outputVar);
+  if (node.type === "otp" && data.outputVar) safeVariables.add(data.outputVar);
   if (node.type === "payment" && data.outputVar) safeVariables.add(data.outputVar);
   if (node.type === "queue" && data.outputVar) safeVariables.add(data.outputVar);
   if (node.type === "notification" && data.outputVar) safeVariables.add(data.outputVar);

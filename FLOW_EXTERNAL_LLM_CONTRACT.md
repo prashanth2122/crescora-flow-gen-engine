@@ -303,6 +303,10 @@ SMS is generally a linear step. Connect it to one next node, and branch later if
 
 **Config Fields**
 - `to` (text) required: To (phone number).
+- `templateName` (text): Provider Template Name (optional).
+- `peid` (text): DLT PEID (optional).
+- `ctid` (text): DLT CTID (optional).
+- `templateVariablesJson` (textarea): Template Variables JSON (optional).
 - `messageTemplate` (textarea) required: SMS Template.
 - `senderId` (text): Sender ID (optional).
 - `emitConfirmation` (boolean): Emit Confirmation Message.
@@ -312,6 +316,10 @@ SMS is generally a linear step. Connect it to one next node, and branch later if
 ```json
 {
   "to": "",
+  "templateName": "",
+  "peid": "",
+  "ctid": "",
+  "templateVariablesJson": "",
   "messageTemplate": "Hi {{name}}, your request is received.",
   "senderId": "",
   "emitConfirmation": false,
@@ -325,6 +333,107 @@ SMS is generally a linear step. Connect it to one next node, and branch later if
 - Use short, channel-safe text and define a later failure branch if required.
 
 Docs anchor: `/docs/flow-node-playbook#node-sms`
+
+## `otp` - OTP Verification
+
+Category: `integration`
+
+**Purpose**
+Generates and delivers a backend-only OTP over SMS, WhatsApp, email, or multiple channels, then waits for secure verification.
+
+**When To Use**
+- Verify mobile numbers or email addresses before booking, signup, or consent steps.
+- Send one OTP across fallback channels while keeping the code out of the chat UI.
+- Gate high-risk actions behind bounded resend and verification-attempt limits.
+
+**Limitations**
+- Provider delivery still depends on configured SMS, email, and WhatsApp integrations.
+- WhatsApp delivery outside the active customer window usually requires an approved template.
+- This node should not store or expose OTP values in downstream variables or UI copy.
+
+**Edge Expectations**
+OTP Verification is a blocking node. It waits internally for code entry and resend actions, then routes only when verification succeeds, attempts are exhausted, or delivery cannot be completed.
+
+- Outgoing edges: up to 3
+- Route outcomes: verified, failed, delivery_failed
+- Conditional edges: supported through the node route outcomes
+- Best next nodes: form, approval, api, message, or fallback
+
+**Route Outcomes**
+- verified
+- failed
+- delivery_failed
+
+**Config Fields**
+- `promptText` (textarea): Prompt Text.
+- `channels` (multiSelect): Delivery Channels. Options: sms, whatsapp, email.
+- `phone` (text): Shared Phone Variable.
+- `smsPhone` (text): SMS Phone Override.
+- `whatsappPhone` (text): WhatsApp Phone Override.
+- `email` (text): Email Variable.
+- `defaultCountryCode` (text): Default Country Code.
+- `codeLength` (number): OTP Length.
+- `otpTtlSeconds` (number): OTP TTL (seconds).
+- `resendCooldownSeconds` (number): Resend Cooldown (seconds).
+- `maxResends` (number): Max Resends.
+- `maxAttempts` (number): Max Verify Attempts.
+- `smsMessageTemplate` (textarea): SMS Message Template.
+- `smsTemplateName` (text): SMS Template Name.
+- `smsTemplateVariablesJson` (textarea): SMS Template Variables JSON.
+- `smsSenderId` (text): SMS Sender ID.
+- `smsPeid` (text): SMS PEID.
+- `smsCtid` (text): SMS CTID.
+- `whatsappMessageTemplate` (textarea): WhatsApp Message Template.
+- `whatsappTemplateName` (text): WhatsApp Template Name.
+- `whatsappTemplateLanguage` (text): WhatsApp Template Language.
+- `whatsappTemplateVariablesJson` (textarea): WhatsApp Template Variables JSON.
+- `emailSubject` (text): Email Subject.
+- `emailBody` (textarea): Email Body.
+- `emailBodyType` (select): Email Body Type. Options: text, html.
+- `emailReplyTo` (text): Email Reply-To.
+- `outputVar` (text): Save Result As.
+
+**Runtime Defaults**
+```json
+{
+  "promptText": "Enter the verification code to continue.",
+  "channels": [
+    "sms"
+  ],
+  "phone": "{{phone}}",
+  "smsPhone": "",
+  "whatsappPhone": "",
+  "email": "{{email}}",
+  "codeLength": 6,
+  "otpTtlSeconds": 600,
+  "resendCooldownSeconds": 30,
+  "maxResends": 3,
+  "maxAttempts": 5,
+  "defaultCountryCode": "+91",
+  "smsMessageTemplate": "Your verification code is {{otp}}. It expires in {{otp_ttl_minutes}} minutes.",
+  "smsTemplateName": "",
+  "smsTemplateVariablesJson": "{\n  \"1\": \"{{otp}}\"\n}",
+  "smsSenderId": "",
+  "smsPeid": "",
+  "smsCtid": "",
+  "whatsappMessageTemplate": "Your verification code is {{otp}}. It expires in {{otp_ttl_minutes}} minutes.",
+  "whatsappTemplateName": "",
+  "whatsappTemplateLanguage": "en",
+  "whatsappTemplateVariablesJson": "{\n  \"1\": \"{{otp}}\"\n}",
+  "emailSubject": "Your verification code",
+  "emailBody": "Your verification code is {{otp}}. It expires in {{otp_ttl_minutes}} minutes.",
+  "emailBodyType": "text",
+  "emailReplyTo": "",
+  "outputVar": "otp_result"
+}
+```
+
+**Variable Behavior**
+- Writes: `data.outputVar`
+- Reads: channel selection, recipient templates, resend limits, and OTP delivery templates
+- OTP nodes must never persist or expose the generated code in user-visible variables or transcript rows.
+
+Docs anchor: `/docs/flow-node-playbook#node-otp`
 
 ## `notification` - Unified Notification
 
@@ -1161,6 +1270,7 @@ Record routes by CRUD result. Keep the success path direct, send duplicate and n
 
 **Config Fields**
 - `action` (select): Action. Options: create, find, update, upsert, delete, list.
+- `schemaName` (select): Target Schema. Options: public, automobile, education, financial_services, healthcare, hospitality, insurance, professional_services, realestate, retail.
 - `collection` (text): Collection.
 - `whereJson` (textarea): Where JSON.
 - `dataJson` (textarea): Data JSON.
@@ -1180,6 +1290,7 @@ Record routes by CRUD result. Keep the success path direct, send duplicate and n
 ```json
 {
   "action": "upsert",
+  "schemaName": "public",
   "collection": "leads",
   "where": {},
   "whereJson": "{\n  \"phone\": \"{{customer_phone}}\"\n}",

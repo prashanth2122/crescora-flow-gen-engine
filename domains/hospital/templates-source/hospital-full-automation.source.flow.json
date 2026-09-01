@@ -7995,7 +7995,7 @@
             {
               "type": "whatsapp",
               "enabled": true,
-              "templateId": "ambulance_request_alert"
+              "templateName": "ambulance_request_alert"
             },
             {
               "type": "sms",
@@ -8016,11 +8016,13 @@
             {
               "type": "customer",
               "email": "{{patient_email}}",
-              "phone": "{{patient_mobile}}"
+              "phone": "{{patient_mobile}}",
+              "whatsappPhone": "{{patient_mobile}}",
+              "smsPhone": "{{patient_mobile}}"
             }
           ],
-          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"templateId\": \"ambulance_request_alert\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"sms\",\n    \"message\": \"Ambulance request received. Emergency team will call back immediately.\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"email\",\n    \"subject\": \"Ambulance request received\",\n    \"body\": \"Ambulance request received. Emergency team will call back immediately.\",\n    \"enabled\": true\n  }\n]",
-          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"email\": \"{{patient_email}}\"\n  }\n]",
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateName\": \"ambulance_request_alert\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Ambulance request received. Emergency team will call back immediately.\"\n  },\n  {\n    \"body\": \"Ambulance request received. Emergency team will call back immediately.\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Ambulance request received\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"email\": \"{{patient_email}}\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"whatsappPhone\": \"{{patient_mobile}}\",\n    \"smsPhone\": \"{{patient_mobile}}\"\n  }\n]",
           "messageCategory": "transactional",
           "defaultCountryCode": "+91",
           "strictTemplateValidation": true
@@ -10754,7 +10756,7 @@
             {
               "type": "whatsapp",
               "enabled": true,
-              "templateId": "appointment_confirmed"
+              "templateName": "appointment_confirmed"
             },
             {
               "type": "sms",
@@ -10775,11 +10777,13 @@
             {
               "type": "customer",
               "email": "{{patient_email}}",
-              "phone": "{{patient_mobile}}"
+              "phone": "{{patient_mobile}}",
+              "whatsappPhone": "{{patient_mobile}}",
+              "smsPhone": "{{patient_mobile}}"
             }
           ],
-          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateId\": \"appointment_confirmed\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Appointment {{appointment_id}} confirmed on {{appointment_date}} at {{appointment_slot_label}} with {{appointment_doctor_name}}. Payment status: {{payment_status_label}}.\"\n  },\n  {\n    \"body\": \"Dear {{patient_name}},\\n\\nYour appointment booking is confirmed.\\n\\nAppointment ID: {{appointment_id}}\\nDoctor / care team: {{appointment_doctor_name}}\\nDepartment: {{appointment_department_name}}\\nDate: {{appointment_date}}\\nTime: {{appointment_slot_label}}\\nBranch: {{appointment_branch_name}}\\nConsultation type: {{appointment_consultation_type_label}}\\nBooking fee: {{currency}} {{appointment_booking_fee}}\\nPayment status: {{payment_status_label}}\\n\\nPlease arrive 15 minutes before the appointment. If you need to reschedule or cancel, use the hospital assistant before your appointment time.\\n\\nRegards,\\n{{hospital_name}}\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Your hospital appointment is confirmed\"\n  }\n]",
-          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"email\": \"{{patient_email}}\",\n    \"phone\": \"{{patient_mobile}}\"\n  }\n]",
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateName\": \"appointment_confirmed\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Appointment {{appointment_id}} confirmed on {{appointment_date}} at {{appointment_slot_label}} with {{appointment_doctor_name}}. Payment status: {{payment_status_label}}.\"\n  },\n  {\n    \"body\": \"Dear {{patient_name}},\\n\\nYour appointment booking is confirmed.\\n\\nAppointment ID: {{appointment_id}}\\nDoctor / care team: {{appointment_doctor_name}}\\nDepartment: {{appointment_department_name}}\\nDate: {{appointment_date}}\\nTime: {{appointment_slot_label}}\\nBranch: {{appointment_branch_name}}\\nConsultation type: {{appointment_consultation_type_label}}\\nBooking fee: {{currency}} {{appointment_booking_fee}}\\nPayment status: {{payment_status_label}}\\n\\nPlease arrive 15 minutes before the appointment. If you need to reschedule or cancel, use the hospital assistant before your appointment time.\\n\\nRegards,\\n{{hospital_name}}\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Your hospital appointment is confirmed\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"email\": \"{{patient_email}}\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"whatsappPhone\": \"{{patient_mobile}}\",\n    \"smsPhone\": \"{{patient_mobile}}\"\n  }\n]",
           "messageCategory": "transactional",
           "defaultCountryCode": "+91",
           "strictTemplateValidation": true
@@ -13353,7 +13357,7 @@
             {
               "type": "whatsapp",
               "enabled": true,
-              "templateId": "appointment_rescheduled"
+              "templateName": "appointment_rescheduled"
             },
             {
               "type": "sms",
@@ -13374,11 +13378,13 @@
             {
               "type": "customer",
               "email": "{{patient_email}}",
-              "phone": "{{patient_mobile}}"
+              "phone": "{{patient_mobile}}",
+              "whatsappPhone": "{{patient_mobile}}",
+              "smsPhone": "{{patient_mobile}}"
             }
           ],
-          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateId\": \"appointment_rescheduled\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Your appointment has been rescheduled. New appointment {{reschedule_new_appointment_id}} is on {{reschedule_new_date}} at {{reschedule_new_slot_label}}.\"\n  },\n  {\n    \"body\": \"Your appointment has been rescheduled. New appointment {{reschedule_new_appointment_id}} is with {{reschedule_original_doctor_name}} on {{reschedule_new_date}} at {{reschedule_new_slot_label}}. Old appointment {{reschedule_original_appointment_id}} has been cancelled.\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Appointment rescheduled\"\n  }\n]",
-          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"email\": \"{{patient_email}}\"\n  }\n]",
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateName\": \"appointment_rescheduled\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Your appointment has been rescheduled. New appointment {{reschedule_new_appointment_id}} is on {{reschedule_new_date}} at {{reschedule_new_slot_label}}.\"\n  },\n  {\n    \"body\": \"Your appointment has been rescheduled. New appointment {{reschedule_new_appointment_id}} is with {{reschedule_original_doctor_name}} on {{reschedule_new_date}} at {{reschedule_new_slot_label}}. Old appointment {{reschedule_original_appointment_id}} has been cancelled.\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Appointment rescheduled\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"email\": \"{{patient_email}}\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"whatsappPhone\": \"{{patient_mobile}}\",\n    \"smsPhone\": \"{{patient_mobile}}\"\n  }\n]",
           "messageCategory": "transactional",
           "defaultCountryCode": "+91",
           "strictTemplateValidation": true
@@ -14149,7 +14155,7 @@
             {
               "type": "whatsapp",
               "enabled": true,
-              "templateId": "appointment_cancelled"
+              "templateName": "appointment_cancelled"
             },
             {
               "type": "sms",
@@ -14170,11 +14176,13 @@
             {
               "type": "customer",
               "email": "{{patient_email}}",
-              "phone": "{{patient_mobile}}"
+              "phone": "{{patient_mobile}}",
+              "whatsappPhone": "{{patient_mobile}}",
+              "smsPhone": "{{patient_mobile}}"
             }
           ],
-          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateId\": \"appointment_cancelled\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Your appointment {{cancel_original_appointment_id}} with {{cancel_original_doctor_name}} has been cancelled. The finance team will contact you if refund processing is applicable.\"\n  },\n  {\n    \"body\": \"Your appointment {{cancel_original_appointment_id}} with {{cancel_original_doctor_name}} has been cancelled. The finance team will contact you if refund processing is applicable under hospital policy.\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Appointment cancelled\"\n  }\n]",
-          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"email\": \"{{patient_email}}\"\n  }\n]",
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateName\": \"appointment_cancelled\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Your appointment {{cancel_original_appointment_id}} with {{cancel_original_doctor_name}} has been cancelled. The finance team will contact you if refund processing is applicable.\"\n  },\n  {\n    \"body\": \"Your appointment {{cancel_original_appointment_id}} with {{cancel_original_doctor_name}} has been cancelled. The finance team will contact you if refund processing is applicable under hospital policy.\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Appointment cancelled\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"email\": \"{{patient_email}}\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"whatsappPhone\": \"{{patient_mobile}}\",\n    \"smsPhone\": \"{{patient_mobile}}\"\n  }\n]",
           "messageCategory": "transactional",
           "defaultCountryCode": "+91",
           "strictTemplateValidation": true
@@ -15866,7 +15874,7 @@
             {
               "type": "whatsapp",
               "enabled": true,
-              "templateId": "health_package_booked"
+              "templateName": "health_package_booked"
             },
             {
               "type": "sms",
@@ -15887,11 +15895,13 @@
             {
               "type": "customer",
               "email": "{{patient_email}}",
-              "phone": "{{patient_mobile}}"
+              "phone": "{{patient_mobile}}",
+              "whatsappPhone": "{{patient_mobile}}",
+              "smsPhone": "{{patient_mobile}}"
             }
           ],
-          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"templateId\": \"health_package_booked\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"sms\",\n    \"message\": \"Your health package request is received. The hospital team will confirm preparation instructions.\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"email\",\n    \"subject\": \"Health package request received\",\n    \"body\": \"Your health package request is received. The hospital team will confirm preparation instructions.\",\n    \"enabled\": true\n  }\n]",
-          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"email\": \"{{patient_email}}\"\n  }\n]",
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateName\": \"health_package_booked\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Your health package request is received. The hospital team will confirm preparation instructions.\"\n  },\n  {\n    \"body\": \"Your health package request is received. The hospital team will confirm preparation instructions.\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Health package request received\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"email\": \"{{patient_email}}\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"whatsappPhone\": \"{{patient_mobile}}\",\n    \"smsPhone\": \"{{patient_mobile}}\"\n  }\n]",
           "messageCategory": "transactional",
           "defaultCountryCode": "+91",
           "strictTemplateValidation": true
@@ -16072,7 +16082,7 @@
             {
               "type": "whatsapp",
               "enabled": true,
-              "templateId": "lab_home_collection_received"
+              "templateName": "lab_home_collection_received"
             },
             {
               "type": "sms",
@@ -16093,11 +16103,13 @@
             {
               "type": "customer",
               "email": "{{patient_email}}",
-              "phone": "{{patient_mobile}}"
+              "phone": "{{patient_mobile}}",
+              "whatsappPhone": "{{patient_mobile}}",
+              "smsPhone": "{{patient_mobile}}"
             }
           ],
-          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"templateId\": \"lab_home_collection_received\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"sms\",\n    \"message\": \"Your home collection request is received. Our lab technician will contact you to confirm the visit.\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"email\",\n    \"subject\": \"Home collection request received\",\n    \"body\": \"Your home collection request is received. Our lab technician will contact you to confirm the visit.\",\n    \"enabled\": true\n  }\n]",
-          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"email\": \"{{patient_email}}\"\n  }\n]",
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateName\": \"lab_home_collection_received\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Your home collection request is received. Our lab technician will contact you to confirm the visit.\"\n  },\n  {\n    \"body\": \"Your home collection request is received. Our lab technician will contact you to confirm the visit.\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Home collection request received\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"email\": \"{{patient_email}}\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"whatsappPhone\": \"{{patient_mobile}}\",\n    \"smsPhone\": \"{{patient_mobile}}\"\n  }\n]",
           "messageCategory": "transactional",
           "defaultCountryCode": "+91",
           "strictTemplateValidation": true
@@ -16333,7 +16345,7 @@
             {
               "type": "whatsapp",
               "enabled": true,
-              "templateId": "billing_case_received"
+              "templateName": "billing_case_received"
             },
             {
               "type": "sms",
@@ -16354,11 +16366,13 @@
             {
               "type": "customer",
               "email": "{{patient_email}}",
-              "phone": "{{patient_mobile}}"
+              "phone": "{{patient_mobile}}",
+              "whatsappPhone": "{{patient_mobile}}",
+              "smsPhone": "{{patient_mobile}}"
             }
           ],
-          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"templateId\": \"billing_case_received\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"sms\",\n    \"message\": \"Your billing request has been saved. Use reference BILL-{{system.sessionId}} for follow-up.\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"email\",\n    \"subject\": \"Billing request saved\",\n    \"body\": \"Your billing request has been saved. Use reference BILL-{{system.sessionId}} for follow-up.\",\n    \"enabled\": true\n  }\n]",
-          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"email\": \"{{patient_email}}\"\n  }\n]",
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateName\": \"billing_case_received\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Your billing request has been saved. Use reference BILL-{{system.sessionId}} for follow-up.\"\n  },\n  {\n    \"body\": \"Your billing request has been saved. Use reference BILL-{{system.sessionId}} for follow-up.\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Billing request saved\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"email\": \"{{patient_email}}\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"whatsappPhone\": \"{{patient_mobile}}\",\n    \"smsPhone\": \"{{patient_mobile}}\"\n  }\n]",
           "messageCategory": "transactional",
           "defaultCountryCode": "+91",
           "strictTemplateValidation": true
@@ -16816,7 +16830,7 @@
             {
               "type": "whatsapp",
               "enabled": true,
-              "templateId": "admission_request_recorded"
+              "templateName": "admission_request_recorded"
             },
             {
               "type": "sms",
@@ -16837,11 +16851,13 @@
             {
               "type": "customer",
               "email": "{{patient_email}}",
-              "phone": "{{patient_mobile}}"
+              "phone": "{{patient_mobile}}",
+              "whatsappPhone": "{{patient_mobile}}",
+              "smsPhone": "{{patient_mobile}}"
             }
           ],
-          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"templateId\": \"admission_request_recorded\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"sms\",\n    \"message\": \"Your admission request has been saved. Reference: ADM-{{system.sessionId}}.\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"email\",\n    \"subject\": \"Admission request saved\",\n    \"body\": \"Your admission request has been saved. Reference: ADM-{{system.sessionId}}.\",\n    \"enabled\": true\n  }\n]",
-          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"email\": \"{{patient_email}}\"\n  }\n]",
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateName\": \"admission_request_recorded\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Your admission request has been saved. Reference: ADM-{{system.sessionId}}.\"\n  },\n  {\n    \"body\": \"Your admission request has been saved. Reference: ADM-{{system.sessionId}}.\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Admission request saved\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"email\": \"{{patient_email}}\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"whatsappPhone\": \"{{patient_mobile}}\",\n    \"smsPhone\": \"{{patient_mobile}}\"\n  }\n]",
           "messageCategory": "transactional",
           "defaultCountryCode": "+91",
           "strictTemplateValidation": true
@@ -17439,7 +17455,7 @@
             {
               "type": "whatsapp",
               "enabled": true,
-              "templateId": "feedback_case_received"
+              "templateName": "feedback_case_received"
             },
             {
               "type": "sms",
@@ -17460,11 +17476,13 @@
             {
               "type": "customer",
               "email": "{{patient_email}}",
-              "phone": "{{patient_mobile}}"
+              "phone": "{{patient_mobile}}",
+              "whatsappPhone": "{{patient_mobile}}",
+              "smsPhone": "{{patient_mobile}}"
             }
           ],
-          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"templateId\": \"feedback_case_received\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"sms\",\n    \"message\": \"Your feedback or complaint has been received. The hospital team will review it.\",\n    \"enabled\": true\n  },\n  {\n    \"type\": \"email\",\n    \"subject\": \"Feedback received\",\n    \"body\": \"Your feedback or complaint has been received. The hospital team will review it.\",\n    \"enabled\": true\n  }\n]",
-          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"email\": \"{{patient_email}}\"\n  }\n]",
+          "channelsJson": "[\n  {\n    \"type\": \"whatsapp\",\n    \"enabled\": true,\n    \"templateName\": \"feedback_case_received\"\n  },\n  {\n    \"type\": \"sms\",\n    \"enabled\": true,\n    \"message\": \"Your feedback or complaint has been received. The hospital team will review it.\"\n  },\n  {\n    \"body\": \"Your feedback or complaint has been received. The hospital team will review it.\",\n    \"type\": \"email\",\n    \"enabled\": true,\n    \"subject\": \"Feedback received\"\n  }\n]",
+          "recipientsJson": "[\n  {\n    \"type\": \"customer\",\n    \"email\": \"{{patient_email}}\",\n    \"phone\": \"{{patient_mobile}}\",\n    \"whatsappPhone\": \"{{patient_mobile}}\",\n    \"smsPhone\": \"{{patient_mobile}}\"\n  }\n]",
           "messageCategory": "transactional",
           "defaultCountryCode": "+91",
           "strictTemplateValidation": true

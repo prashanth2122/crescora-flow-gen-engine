@@ -1,6 +1,11 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import {
+  normalizeNotificationFlow,
+  notificationData as buildNotificationData
+} from "./notification-data.mjs";
 
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const domainRoot = join(rootDir, "domains", "hospital");
@@ -10,11 +15,26 @@ const sourcePath = join(
   "templates-source",
   "hospital-full-automation.source.flow.json"
 );
+const DOMAIN_RECORD_SCHEMA = "healthcare";
+
+function applyDomainRecordSchema(doc) {
+  for (const node of doc.flow?.nodes ?? []) {
+    if (node?.type === "record") {
+      node.data = {
+        ...node.data,
+        schemaName: node.data?.schemaName || DOMAIN_RECORD_SCHEMA
+      };
+    }
+  }
+}
 
 if (existsSync(sourcePath) && process.env.HOSPITAL_FLOW_LEGACY_GENERATOR !== "1") {
   mkdirSync(dirname(outputPath), { recursive: true });
-  copyFileSync(sourcePath, outputPath);
-  const sourceDoc = JSON.parse(readFileSync(sourcePath, "utf8"));
+  const sourceDoc = normalizeNotificationFlow(
+    JSON.parse(readFileSync(sourcePath, "utf8"))
+  );
+  applyDomainRecordSchema(sourceDoc);
+  writeFileSync(outputPath, `${JSON.stringify(sourceDoc, null, 2)}\n`, "utf8");
   console.log(`Wrote ${outputPath}`);
   console.log(`Source: ${sourcePath}`);
   console.log(`Nodes: ${sourceDoc.flow.nodes.length}`);
@@ -147,6 +167,7 @@ function recordData({
   const shouldEncryptPii = Boolean(encryptPii && FLOW_RECORD_PII_ENCRYPTION_ENABLED);
   return {
     action,
+    schemaName: DOMAIN_RECORD_SCHEMA,
     collection,
     where,
     whereJson: pretty(where),
@@ -211,18 +232,12 @@ function notificationData({ templateId, sms, emailSubject, emailBody, outputVar,
     { type: "sms", message: sms, enabled: true },
     { type: "email", subject: emailSubject, body: emailBody, enabled: true }
   ];
-  return {
+  return buildNotificationData({
     recipients,
-    recipientsJson: pretty(recipients),
     channels,
-    channelsJson: pretty(channels),
-    strategy: "priority_order",
-    messageCategory: "transactional",
     dedupeKey: `{{system.sessionId}}:${dedupeSuffix}`,
-    defaultCountryCode: "+91",
-    strictTemplateValidation: true,
     outputVar
-  };
+  });
 }
 
 function paymentData({ amount, description, outputVar }) {

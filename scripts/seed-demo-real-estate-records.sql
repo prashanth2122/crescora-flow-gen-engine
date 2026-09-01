@@ -7,6 +7,7 @@
 -- How to run:
 --   1. Update the tenant_id value in the params CTE below.
 --   2. Run against the bot-code-zero PostgreSQL database.
+--      This script writes to the shared `public` schema.
 --      PowerShell example:
 --      psql $env:DATABASE_URL -f .\scripts\seed-demo-real-estate-records.sql
 --
@@ -14,9 +15,11 @@
 
 BEGIN;
 
+SET search_path TO public;
+
 WITH params AS (
   SELECT
-    'replace-with-tenant-id'::text AS tenant_id,
+    '8285edc4-af68-46c0-9e72-5b2819cb33d9'::text AS tenant_id,
     'seed-demo-real-estate-records'::text AS source_tag
 ),
 schemas (collection, schema_json) AS (

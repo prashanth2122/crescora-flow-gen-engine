@@ -18,6 +18,70 @@
       "builtFlow": "domains/real-estate/templates/real-estate-lead-to-site-visit.flow.json",
       "buildScript": "scripts/build-real-estate-lead-to-site-visit.mjs",
       "validateScript": "scripts/validate-flow-export.mjs"
+    },
+    {
+      "id": "financial-services",
+      "displayName": "Financial Services",
+      "sourceFlow": "domains/financial-services/templates-source/financial-services-loan-advisor-automation.source.flow.json",
+      "builtFlow": "domains/financial-services/templates/financial-services-loan-advisor-automation.flow.json",
+      "buildScript": "scripts/build-financial-services-loan-advisor-automation.mjs",
+      "validateScript": "scripts/validate-flow-export.mjs"
+    },
+    {
+      "id": "education",
+      "displayName": "Education",
+      "sourceFlow": "domains/education/templates-source/education-admission-operating-system.source.flow.json",
+      "builtFlow": "domains/education/templates/education-admission-operating-system.flow.json",
+      "buildScript": "scripts/build-education-admission-operating-system.mjs",
+      "validateScript": "scripts/validate-flow-export.mjs"
+    },
+    {
+      "id": "hotels-travel",
+      "displayName": "Hotels / Travel",
+      "sourceFlow": "domains/hotels-travel/templates-source/hotel-digital-front-desk.source.flow.json",
+      "builtFlow": "domains/hotels-travel/templates/hotel-digital-front-desk.flow.json",
+      "buildScript": "scripts/build-hotels-travel-digital-front-desk.mjs",
+      "validateScript": "scripts/validate-flow-export.mjs"
+    },
+    {
+      "id": "retail-ecommerce",
+      "displayName": "Retail / E-commerce",
+      "sourceFlow": "domains/retail-ecommerce/templates-source/retail-ecommerce-killer-automation.source.flow.json",
+      "builtFlow": "domains/retail-ecommerce/templates/retail-ecommerce-killer-automation.flow.json",
+      "buildScript": "scripts/build-retail-ecommerce-killer-automation.mjs",
+      "validateScript": "scripts/validate-flow-export.mjs"
+    },
+    {
+      "id": "insurance",
+      "displayName": "Insurance",
+      "sourceFlow": "domains/insurance/templates-source/insurance-claim-policy-service.source.flow.json",
+      "builtFlow": "domains/insurance/templates/insurance-claim-policy-service.flow.json",
+      "buildScript": "scripts/build-insurance-claim-policy-service.mjs",
+      "validateScript": "scripts/validate-flow-export.mjs"
+    },
+    {
+      "id": "automobile",
+      "displayName": "Automobile",
+      "sourceFlow": "domains/automobile/templates-source/automobile-customer-lifecycle-assistant.source.flow.json",
+      "builtFlow": "domains/automobile/templates/automobile-customer-lifecycle-assistant.flow.json",
+      "buildScript": "scripts/build-automobile-customer-lifecycle-assistant.mjs",
+      "validateScript": "scripts/validate-flow-export.mjs"
+    },
+    {
+      "id": "local-professional-services",
+      "displayName": "Local / Professional Services",
+      "sourceFlow": "domains/local-professional-services/templates-source/local-professional-services-killer-automation.source.flow.json",
+      "builtFlow": "domains/local-professional-services/templates/local-professional-services-killer-automation.flow.json",
+      "buildScript": "scripts/build-local-professional-services-automation.mjs",
+      "validateScript": "scripts/validate-flow-export.mjs"
+    },
+    {
+      "id": "interior-design",
+      "displayName": "Interior Design / Services",
+      "sourceFlow": "domains/interior-design/templates-source/interior-design-sales-consultant.source.flow.json",
+      "builtFlow": "domains/interior-design/templates/interior-design-sales-consultant.flow.json",
+      "buildScript": "scripts/build-interior-design-sales-consultant.mjs",
+      "validateScript": "scripts/validate-flow-export.mjs"
     }
   ]
 }

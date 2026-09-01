@@ -16,13 +16,16 @@ Use this checklist before importing or releasing a regenerated workflow automati
 | Full edge coverage | The flow covers the requested domain edge cases, retries, recovery paths, and safe exits instead of only the happy path. |
 | Intent routing | Exactly one main intent router owns concrete journeys directly; there are no nested category intent routers. |
 | Appointment patient lookup | Appointment booking starts with a mobile lookup, requires a 6-digit OTP gate before record fetch, allows up to 3 invalid-format retries, reuses an existing patient profile when found, and asks only remaining required details for a new patient. |
+| WhatsApp OTP enforcement | The single-branch appointment variant sends the OTP over WhatsApp before patient lookup, validates the exact 6-digit value instead of only checking the format, and stops after 3 failed attempts with hospital call guidance. |
 | Active appointment check | Existing patients see any active confirmed appointment before another booking is created, with a clear proceed or stop choice. |
 | Consultation patient lookup | Doctor consultation journeys start with a mobile lookup, require a 6-digit OTP gate before record fetch, allow up to 3 invalid-format retries, reuse existing patient details, and save new patient details before booking or ticket creation. |
 | Doctor discovery order | Doctor availability and doctor profile journeys ask for branch first, then department, and only then show matching doctors. |
+| Single-branch booking variant | The appointment-only single-branch variant must not prompt for branch or consultation-mode choice, must offer department-first or doctor-first selection, and must keep all booking writes scoped to the configured default branch. |
 | OTP gate behavior | Every phone-based fetch journey uses an OTP step before lookup, accepts any 6-digit OTP in the current demo mode, loops back to the same OTP input after the first 2 invalid-format attempts, and ends with a start-new-chat message on the 3rd invalid attempt. |
 | Appointment reschedule | Reschedule lists only future confirmed appointments, asks which appointment when multiple are found, books a new DB-backed slot, cancels the old appointment, releases the old slot, notifies, audits, and ends. |
 | Appointment cancellation | Cancellation has its own mobile-first path, lists only future confirmed appointments, lets the patient select one, asks for confirmation, cancels the selected record, releases the booked slot, notifies with refund guidance, audits, and ends. |
 | Appointment payment choice | Booking supports both `pay_now` and `pay_at_hospital` when enabled, and both paths persist `payment_status` before confirmation. |
+| Single-branch payment mode | The appointment-only single-branch variant confirms bookings with `pay_at_hospital` only and must not expose the online payment path. |
 | Payment prompt UX | When a summary message already asks the patient to choose a payment path, the following button node should render buttons only and should not repeat the same question text. |
 | Single-result selection UX | When any selection step returns exactly one valid result, the flow should show that result first and offer a direct proceed action instead of asking the patient to type `1` for a one-item list. |
 | Multi-result doctor selection UX | When multiple doctors are shown, the prompt should ask only for the doctor number, such as `1` or `2`, and should not expose or require internal doctor IDs. |
@@ -50,6 +53,7 @@ Use this checklist before importing or releasing a regenerated workflow automati
 | Inventory hold/update | The list query and hold/update query use the same operational filters, and the selected UI ID maps to the persisted unique key. |
 | Operational state records | Slot, inventory, hold, lock, queue-state, and scheduler state records use non-PII identifiers and do not store patient mobile/email/name. |
 | Patient contact records | Patient mobile and email are stored only in approved patient, appointment, consent, ticket, or domain records, not in operational slot or hold state. |
+| Healthcare runtime compatibility | The single-branch appointment variant writes appointment and reservation data with hospital-compatible `branch_*` fields plus generic `location_*` and `scheduled_*_at` fields so the logical FLOW contract can move to `healthcare.flow_records` without dropping timing or location scope. |
 | Flow-level PII encryption | Generated record nodes do not depend on `encryptPii: true` unless the deployment preflights `RECORD_PII_ENCRYPTION_KEY`; otherwise record nodes use `encryptPii: false`. |
 | Default failure copy | Generic default branches use neutral recovery wording and do not claim a specific cause such as "slot taken" unless that branch is exclusively for that cause. |
 
@@ -68,6 +72,7 @@ Use this checklist before importing or releasing a regenerated workflow automati
 | Successful action | The flow sends a clear confirmation and follows up only when the workflow requires it. |
 | Delivery failure | The flow routes to a safe recovery path or a justified escalation, not a loop. |
 | Reminder required | Reminder or follow-up records are scheduled from the saved state, not from a temporary placeholder. |
+| Appointment reminder schedule | The single-branch appointment variant must schedule two reminder jobs from the saved appointment datetime: one 12 hours before and one 2 hours before the visit. |
 
 ## Feedback
 

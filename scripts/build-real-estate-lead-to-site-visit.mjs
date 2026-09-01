@@ -2,6 +2,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { notificationData } from "./notification-data.mjs";
+
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const domainRoot = join(rootDir, "domains", "real-estate");
 const sourcePath = join(
@@ -53,6 +55,7 @@ const exportDoc = {
 
 const { nodes, edges } = exportDoc.flow;
 let edgeSeq = 1;
+const DOMAIN_RECORD_SCHEMA = "realestate";
 
 function pretty(value) {
   return JSON.stringify(value, null, 2);
@@ -166,6 +169,7 @@ function recordData({
 }) {
   return {
     action,
+    schemaName: DOMAIN_RECORD_SCHEMA,
     collection,
     where,
     whereJson: pretty(where),
@@ -182,27 +186,6 @@ function recordData({
     softDelete: true,
     encryptPii: false,
     piiFields
-  };
-}
-
-function notificationData({
-  recipients,
-  channels,
-  outputVar,
-  dedupeKey,
-  messageCategory = "transactional"
-}) {
-  return {
-    recipients,
-    recipientsJson: pretty(recipients),
-    channels,
-    channelsJson: pretty(channels),
-    strategy: "priority_order",
-    messageCategory,
-    dedupeKey,
-    defaultCountryCode: "+91",
-    strictTemplateValidation: true,
-    outputVar
   };
 }
 

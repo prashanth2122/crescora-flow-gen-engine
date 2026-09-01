@@ -18,3 +18,10 @@ Current registered examples:
 
 - `hospital` for healthcare operations automation.
 - `real-estate` for buyer qualification, project matching, brochure sharing, site-visit booking, CRM sync, reminders, and hot-lead routing.
+- `financial-services` for structured loan lead capture, indicative guidance, document intake, advisor booking, status lookup, and follow-up scheduling.
+- `education` for school and college admissions automation, including discovery, eligibility, fees, applications, documents, bookings, payments, and status tracking.
+- `hotels-travel` for hotel discovery, live room search, quote snapshots, booking holds, payments, booking changes, transfers, guest services, and operational escalation.
+- `retail-ecommerce` for product discovery, variant and stock handling, cart and checkout assistance, order tracking, cancellation, returns, exchanges, refunds, delivery issues, policies, and structured support handoff.
+- `insurance` for policy help, policy details, claim registration, missing-document recovery, claim and settlement status, service requests, disputes, and contextual escalation.
+- `local-professional-services` for generic service discovery, pricing, serviceability, paid appointment booking, technician assignment, tracking, reschedule, cancellation, invoicing, and complaint handling.
+- `interior-design` for interior enquiries, estimates, packages, portfolio references, consultation booking, quote and project lookups, payments, and service support.

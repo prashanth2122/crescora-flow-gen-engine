@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-07-13",
-  "nodeCount": 51,
+  "nodeCount": 52,
   "nodes": [
     {
       "type": "start",
@@ -241,6 +241,30 @@
           "required": true
         },
         {
+          "key": "templateName",
+          "label": "Provider Template Name (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "peid",
+          "label": "DLT PEID (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "ctid",
+          "label": "DLT CTID (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "templateVariablesJson",
+          "label": "Template Variables JSON (optional)",
+          "type": "textarea",
+          "required": false
+        },
+        {
           "key": "messageTemplate",
           "label": "SMS Template",
           "type": "textarea",
@@ -267,6 +291,10 @@
       ],
       "defaults": {
         "to": "",
+        "templateName": "",
+        "peid": "",
+        "ctid": "",
+        "templateVariablesJson": "",
         "messageTemplate": "Hi {{name}}, your request is received.",
         "senderId": "",
         "emitConfirmation": false,
@@ -281,6 +309,252 @@
         ],
         "notes": [
           "Use short, channel-safe text and define a later failure branch if required."
+        ]
+      }
+    },
+    {
+      "type": "otp",
+      "label": "OTP Verification",
+      "category": "integration",
+      "summary": "Generates and delivers a backend-only OTP over SMS, WhatsApp, email, or multiple channels, then waits for secure verification.",
+      "useCases": [
+        "Verify mobile numbers or email addresses before booking, signup, or consent steps.",
+        "Send one OTP across fallback channels while keeping the code out of the chat UI.",
+        "Gate high-risk actions behind bounded resend and verification-attempt limits."
+      ],
+      "limitations": [
+        "Provider delivery still depends on configured SMS, email, and WhatsApp integrations.",
+        "WhatsApp delivery outside the active customer window usually requires an approved template.",
+        "This node should not store or expose OTP values in downstream variables or UI copy."
+      ],
+      "edgeConfig": {
+        "summary": "OTP Verification is a blocking node. It waits internally for code entry and resend actions, then routes only when verification succeeds, attempts are exhausted, or delivery cannot be completed.",
+        "items": [
+          "Outgoing edges: up to 3",
+          "Route outcomes: verified, failed, delivery_failed",
+          "Conditional edges: supported through the node route outcomes",
+          "Best next nodes: form, approval, api, message, or fallback"
+        ]
+      },
+      "routes": [
+        "verified",
+        "failed",
+        "delivery_failed"
+      ],
+      "docsHref": "/docs/flow-node-playbook#node-otp",
+      "uiFields": [
+        {
+          "key": "promptText",
+          "label": "Prompt Text",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "channels",
+          "label": "Delivery Channels",
+          "type": "multiSelect",
+          "required": false,
+          "options": [
+            "sms",
+            "whatsapp",
+            "email"
+          ]
+        },
+        {
+          "key": "phone",
+          "label": "Shared Phone Variable",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "smsPhone",
+          "label": "SMS Phone Override",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "whatsappPhone",
+          "label": "WhatsApp Phone Override",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "email",
+          "label": "Email Variable",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "defaultCountryCode",
+          "label": "Default Country Code",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "codeLength",
+          "label": "OTP Length",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "otpTtlSeconds",
+          "label": "OTP TTL (seconds)",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "resendCooldownSeconds",
+          "label": "Resend Cooldown (seconds)",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "maxResends",
+          "label": "Max Resends",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "maxAttempts",
+          "label": "Max Verify Attempts",
+          "type": "number",
+          "required": false
+        },
+        {
+          "key": "smsMessageTemplate",
+          "label": "SMS Message Template",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "smsTemplateName",
+          "label": "SMS Template Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "smsTemplateVariablesJson",
+          "label": "SMS Template Variables JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "smsSenderId",
+          "label": "SMS Sender ID",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "smsPeid",
+          "label": "SMS PEID",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "smsCtid",
+          "label": "SMS CTID",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "whatsappMessageTemplate",
+          "label": "WhatsApp Message Template",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "whatsappTemplateName",
+          "label": "WhatsApp Template Name",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "whatsappTemplateLanguage",
+          "label": "WhatsApp Template Language",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "whatsappTemplateVariablesJson",
+          "label": "WhatsApp Template Variables JSON",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "emailSubject",
+          "label": "Email Subject",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "emailBody",
+          "label": "Email Body",
+          "type": "textarea",
+          "required": false
+        },
+        {
+          "key": "emailBodyType",
+          "label": "Email Body Type",
+          "type": "select",
+          "required": false,
+          "options": [
+            "text",
+            "html"
+          ]
+        },
+        {
+          "key": "emailReplyTo",
+          "label": "Email Reply-To",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "outputVar",
+          "label": "Save Result As",
+          "type": "text",
+          "required": false
+        }
+      ],
+      "defaults": {
+        "promptText": "Enter the verification code to continue.",
+        "channels": [
+          "sms"
+        ],
+        "phone": "{{phone}}",
+        "smsPhone": "",
+        "whatsappPhone": "",
+        "email": "{{email}}",
+        "codeLength": 6,
+        "otpTtlSeconds": 600,
+        "resendCooldownSeconds": 30,
+        "maxResends": 3,
+        "maxAttempts": 5,
+        "defaultCountryCode": "+91",
+        "smsMessageTemplate": "Your verification code is {{otp}}. It expires in {{otp_ttl_minutes}} minutes.",
+        "smsTemplateName": "",
+        "smsTemplateVariablesJson": "{\n  \"1\": \"{{otp}}\"\n}",
+        "smsSenderId": "",
+        "smsPeid": "",
+        "smsCtid": "",
+        "whatsappMessageTemplate": "Your verification code is {{otp}}. It expires in {{otp_ttl_minutes}} minutes.",
+        "whatsappTemplateName": "",
+        "whatsappTemplateLanguage": "en",
+        "whatsappTemplateVariablesJson": "{\n  \"1\": \"{{otp}}\"\n}",
+        "emailSubject": "Your verification code",
+        "emailBody": "Your verification code is {{otp}}. It expires in {{otp_ttl_minutes}} minutes.",
+        "emailBodyType": "text",
+        "emailReplyTo": "",
+        "outputVar": "otp_result"
+      },
+      "variableBehavior": {
+        "writes": [
+          "`data.outputVar`"
+        ],
+        "reads": [
+          "channel selection, recipient templates, resend limits, and OTP delivery templates"
+        ],
+        "notes": [
+          "OTP nodes must never persist or expose the generated code in user-visible variables or transcript rows."
         ]
       }
     },
@@ -1752,6 +2026,24 @@
           ]
         },
         {
+          "key": "schemaName",
+          "label": "Target Schema",
+          "type": "select",
+          "required": false,
+          "options": [
+            "public",
+            "automobile",
+            "education",
+            "financial_services",
+            "healthcare",
+            "hospitality",
+            "insurance",
+            "professional_services",
+            "realestate",
+            "retail"
+          ]
+        },
+        {
           "key": "collection",
           "label": "Collection",
           "type": "text",
@@ -1846,6 +2138,7 @@
       ],
       "defaults": {
         "action": "upsert",
+        "schemaName": "public",
         "collection": "leads",
         "where": {},
         "whereJson": "{\n  \"phone\": \"{{customer_phone}}\"\n}",
