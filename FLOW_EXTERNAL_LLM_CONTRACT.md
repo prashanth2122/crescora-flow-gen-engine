@@ -763,6 +763,8 @@ Captures a user-selected date and time slot, stores appointment metadata, and co
 **Limitations**
 - Slot logic depends on valid slot configuration and IDs.
 - Timezone handling must be explicit and drives the generated date chips for multi-region users.
+- Dynamic and static slot records can mark a slot as booked with booked/isBooked/is_booked, metadata availability flags, available=false, or a booked/reserved/unavailable status.
+- Booked slot display can hide, show with strikethrough, or show as disabled; booked slots are nonselectable in both visible modes, including via typed input.
 - Needs clear retry guidance when no suitable slot is available.
 - The node is linear and should continue to one downstream step after a booking is chosen.
 
@@ -790,6 +792,7 @@ Appointment is a linear booking step. It validates the date and slot inside the 
 - `availableWeekdays` (text): Available Weekdays (0-6 csv).
 - `dynamicSlotsVar` (text): Dynamic Slots Variable.
 - `dynamicSlotsPath` (text): Dynamic Slots Path.
+- `bookedSlotBehavior` (select): Booked Slot Display. Options: hide, strikethrough, disable.
 - `slotsJson` (textarea): Static Slots JSON.
 - `dateVar` (text): Save Date As.
 - `outputVar` (text): Save Booking As.
@@ -811,6 +814,7 @@ Appointment is a linear booking step. It validates the date and slot inside the 
   "availableWeekdays": "1,2,3,4,5,6",
   "dynamicSlotsVar": "",
   "dynamicSlotsPath": "",
+  "bookedSlotBehavior": "hide",
   "slots": [
     {
       "id": "slot_1",
