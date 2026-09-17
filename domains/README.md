@@ -14,6 +14,15 @@ The package root remains responsible for shared external-contract files and gene
 
 Every active domain must also be registered in `domains/registry.json`. Package-level build/check commands operate on that registry, so flow-specific changes should update the registry-backed bundle rather than relying on manual one-off commands.
 
+For every new or modified domain workflow, stable customer-visible copy must be
+defined in the export's English-first `bot.localizedVariables` catalog and
+referenced from nodes with `{{key}}`. This includes button, form, and carousel
+content. Multilingual domain exports use `catalog_only`, declare language
+support, and keep every enabled-language catalog complete. Do not place these
+strings in builder helpers as hardcoded translated node copy; helpers should
+accept or emit stable content tokens. Existing domain migrations should be
+performed deliberately rather than renaming keys as an incidental rebuild.
+
 Current registered examples:
 
 - `hospital` for healthcare operations automation.

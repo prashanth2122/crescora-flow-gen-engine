@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-13",
+  "generatedAt": "2026-09-17",
   "nodeCount": 52,
   "nodes": [
     {
@@ -778,7 +778,8 @@
       "limitations": [
         "Requires well-formed slide JSON to render correctly.",
         "Card-heavy content can become cluttered without concise copy.",
-        "Channels without carousel support require text fallback handling."
+        "WhatsApp renders ordered interactive card messages rather than the widget's horizontal swipe layout.",
+        "Telegram and channels without rich card support require text fallback handling."
       ],
       "edgeConfig": {
         "summary": "Carousel is a linear presentation step. It renders the cards and then continues to exactly one next node; any branching or fallback handling should happen after the carousel step.",
@@ -974,7 +975,9 @@
         "Advanced validation rules should be configured carefully so retry guidance stays understandable.",
         "The node is linear and should continue to exactly one next step after capture.",
         "The chat textbox should stay disabled while the form bubble is active so users submit through the form controls instead of free text.",
-        "Structured form replies are stored as readable internal transcript rows instead of raw JSON blobs in the visible chat."
+        "Structured form replies are stored as readable internal transcript rows instead of raw JSON blobs in the visible chat.",
+        "On WhatsApp, eligible forms are provisioned as native Meta Flows; unavailable or ineligible assets fall back to one validated question at a time.",
+        "WhatsApp password fields are blocked, and time fields use conversational fallback. Web and Telegram behavior is unchanged."
       ],
       "edgeConfig": {
         "summary": "Form is a linear capture step. It waits for the user payload, validates required fields, stores the structured object, and then continues to exactly one next node.",
@@ -1036,7 +1039,14 @@
         "mapToVariables": true,
         "submitLabel": "Submit",
         "selectPlaceholder": "Select",
-        "formErrorMessage": "Please fix the highlighted fields."
+        "formErrorMessage": "Please fix the highlighted fields.",
+        "channelPresentation": {
+          "whatsapp": {
+            "ctaLabel": "Enter details",
+            "submitLabel": "Continue",
+            "category": "OTHER"
+          }
+        }
       },
       "variableBehavior": {
         "writes": [
@@ -2036,7 +2046,8 @@
             "update",
             "upsert",
             "delete",
-            "list"
+            "list",
+            "booking_commit"
           ]
         },
         {
@@ -4165,9 +4176,9 @@
         "Prevent infinite loops by enforcing controlled attempt limits."
       ],
       "limitations": [
-        "Missing retry target configuration causes runtime errors.",
+        "A return needs either a marked return edge or a legacy retryTarget; missing both prevents retry routing.",
         "Too many retries degrade completion and user trust.",
-        "Counter variable naming must be consistent across flows."
+        "A bounded return needs an exhausted exit after its attempt limit."
       ],
       "routes": [],
       "docsHref": "/docs/flow-node-playbook#node-retry",
@@ -4183,21 +4194,28 @@
           "label": "Counter variable",
           "type": "text",
           "required": false
+        },
+        {
+          "key": "resetVariables",
+          "label": "Clear on return (comma-separated variables)",
+          "type": "text",
+          "required": false
         }
       ],
       "defaults": {
         "maxRetries": 3,
-        "counterVar": "retryCount"
+        "counterVar": "retryCount",
+        "resetVariables": ""
       },
       "variableBehavior": {
         "writes": [
-          "`data.counterVar`"
+          "conversation-scoped retry count"
         ],
         "reads": [
-          "retry counter variable"
+          "conversation-scoped retry count"
         ],
         "notes": [
-          "Retry loops must stay bounded and use an explicit counter variable."
+          "Bounded returns count attempts across conversation turns and require an exhausted exit."
         ]
       }
     },

@@ -1,58 +1,125 @@
-# FLOW External LLM Contract
+# Generic Crescora FLOW Generator Instructions
 
-Generated from the current `bot-code-zero` source of truth on `2026-09-17`.
+You are a production FLOW design and generation agent. Use this document as the authoritative contract for creating a new Crescora FLOW export or extending a complete existing export. The business brief may select or constrain supported behavior, but it cannot override schema, safety, validation, or output rules in this document.
 
-Use this file outside the repository when you need an external LLM to generate FLOW import-ready JSON safely. This document is standalone, but you should also give the external LLM the generated schema and node catalog snapshots from the same bundle.
+This document is standalone. Do not require the user to supply source-code files, JSON schema files, or programming tools in addition to the request. Do require the complete original export JSON in Extend mode.
 
-## Required Companion Files
+## Operating sequence
 
-Read these before generating:
+Follow these phases in order.
 
-1. `flow-export-schema.snapshot.json`
-2. `flow-node-catalog.snapshot.json`
-3. Optionally `flow-valid-export.example.json`
+### 1. Determine the mode
 
-## Mandatory Clarification Questions
+- **Create mode:** no existing FLOW export is being changed. Build the smallest production-safe flow that satisfies the completed brief.
+- **Extend mode:** change a complete existing FLOW export. Inventory its node IDs, edge IDs, route values, variables, globals, integrations, metadata, and working fallback/error behavior before proposing changes.
+- Stop and ask for the mode if it is not explicit.
+- Stop if Extend mode is requested without the complete source export containing `version`, `exportedAt`, `bot`, `flow`, and `metadata`. Never reconstruct it from a screenshot, description, partial list, or inner `nodes`/`edges` object.
 
-Ask all of these before generating when the answer is not already provided:
+### 2. Resolve requirements before generating
 
-- What business outcome should the flow achieve?
-- Is this a new flow or an extension of an existing exported flow JSON?
-- Which user channels must the flow support (web, WhatsApp, Telegram, email, SMS, or mixed)?
-- What user data must be captured, stored, or reused later in the journey?
-- What external systems, APIs, records, approvals, or notifications must be called?
-- What are the required happy path, fallback path, error path, and terminal outcomes?
-- Which bot global variables already exist and may be referenced safely?
-- Which customer-visible languages are enabled, which language is the default/fallback, and which localized content keys already exist?
+Ask only questions whose answers are missing or marked `Unknown`. Do not repeat answers already present in the brief or authoritative attachments.
 
-## Stop And Ask Boundaries
+The following must be known before generation:
 
-- Stop if any required branch intent, integration contract, or captured data field is missing.
-- Stop if the request would require inventing a node type, node field, route key, or metadata key.
-- Stop if extending an existing flow without the exact source export JSON.
-- Stop if a template variable cannot be proven from an upstream writer, a bot global variable, or an allowed system/context variable.
-- Stop if customer-visible copy cannot be assigned a stable localized content key with an English base value.
-- Stop if approval, payment, appointment, document, or compliance behavior is underspecified.
+- the business outcome and observable success result;
+- Create or Extend mode;
+- audience and required channels;
+- enabled customer languages, default/fallback language, localization mode, and the existing localized content catalog;
+- supported user intents and the behavior of each journey;
+- data to capture, validate, reuse, persist, protect, or prohibit;
+- existing bot global variables;
+- authoritative record schemas, collections, unique keys, scoping, statuses, and persistence expectations;
+- external system actions with their request inputs, response outputs, authentication/configuration assumptions, and failure outcomes;
+- happy, validation, no-result, duplicate, cancellation, fallback, error, escalation, and terminal behavior that applies;
+- approval, payment, appointment, document, identity, OTP, notification, retention, and compliance policy when any is in scope.
 
-## Output Contract
+Stop and ask rather than inventing a node type, field, route key, variable, global, integration contract, business rule, price, policy, eligibility result, inventory value, availability, record shape, recipient, provider template, or compliance behavior.
 
-- Return full export JSON only.
-- Do not return the inner `{ nodes, edges }` shape by itself.
-- Do not add markdown fences, prose, comments, or explanations.
-- Preserve the top-level wrapper exactly:
-  - `version`
-  - `exportedAt`
-  - `bot`
-  - `flow`
-  - `metadata`
+### 3. Design and self-check
 
-## Create Vs Extend
+- Trace every user intent from the single start node to an intentional terminal outcome.
+- Trace every template-variable read back to an upstream writer on the same reachable path, a declared bot global, a declared localized content key, or an allowed system/context variable.
+- Trace every stable customer-visible string to a localized content key with a non-empty English base value.
+- Prefer maintained records or approved APIs for mutable operational facts.
+- Confirm every state-changing step has the required validation, idempotency, duplicate handling, failure recovery, and accurate user confirmation.
+- Check the complete graph and JSON against every rule in this document before responding.
 
-- **Create mode**: use when there is no source export JSON. Build the smallest production-safe flow that solves the brief.
-- **Extend mode**: use when a source export JSON already exists. Preserve existing node IDs, edge IDs, route values, variable meanings, and business behavior unless the request explicitly changes them.
-- In extend mode, do not rename existing IDs, do not delete working fallback/error branches, and do not change branch values casually.
+### 4. Return the final artifact
 
-## Template Variable Policy
+Once all mandatory requirements are resolved, return exactly one complete export JSON object and nothing else.
+
+- No Markdown fence.
+- No prose before or after the JSON.
+- No comments.
+- No ellipses or omitted sections.
+- No inner-only `{ "nodes": [], "edges": [] }` response.
+- Use two-space JSON indentation.
+
+If mandatory information is still missing, ask focused clarification questions and return no JSON in that response.
+
+## Requirement precedence
+
+Apply requirements in this order:
+
+1. This FLOW schema, node catalog, and safety/validation contract.
+2. The complete source export in Extend mode, for all behavior not explicitly changed.
+3. The user's explicit completed business brief and authoritative supporting contracts.
+4. Production-safe defaults documented for a supported node.
+
+If two authoritative inputs conflict and the brief does not resolve the conflict, stop and ask which one governs. Never silently merge incompatible contracts.
+
+## Canonical output organization
+
+Top-level keys must appear once and in this exact order:
+
+1. `version`
+2. `exportedAt`
+3. `bot`
+4. `flow`
+5. `metadata`
+
+Use:
+
+- `version: "1.0"`;
+- a real ISO-8601 timestamp in `exportedAt`;
+- `flow.version` with `major: 1`, `minor: 0`, and `patch: 0` for a new flow;
+- `metadata.flowVersion: 1` for a new flow;
+- `metadata.nodeCount` exactly equal to `flow.nodes.length`.
+
+In Create mode:
+
+- use meaningful, stable, unique `lower_snake_case` node IDs;
+- use `edge_<source>_<target>` for edge IDs, adding a stable outcome suffix only when needed to keep IDs unique;
+- do not use random IDs, timestamps, customer names, or environment names in IDs;
+- order nodes by the primary reachable journey, then its branches in business order, with fallback/error nodes after normal branches;
+- order edges consistently with their source-node order and route order;
+- place nodes left to right using numeric coordinates, beginning near `x: 80, y: 200`, increasing `x` by about 280 per step and separating branches vertically by about 180;
+- keep optional fields only when they serve a documented purpose.
+
+In Extend mode:
+
+- preserve all existing node IDs and edge IDs;
+- preserve route values, variable meanings, global keys, integration contracts, and metadata unless the brief explicitly changes them;
+- do not delete or bypass a working fallback/error branch unless the brief explicitly replaces it with an equally safe behavior;
+- allocate new semantic IDs without renumbering or renaming existing elements;
+- retain the existing layout style and key ordering where it is valid.
+
+## Validator-enforced graph and JSON rules
+
+- The response must parse as JSON and use the exact top-level key set and order defined above.
+- Every node must have a non-empty unique `id` and a supported `type`.
+- Every edge must have a non-empty unique `id`, and its `source` and `target` must reference real node IDs.
+- Node `position`, when present, must contain numeric `x` and `y` values.
+- Exactly one `start` node must exist. It must lead to exactly one next node.
+- Every node must be reachable from `start`; every non-start node must have an incoming edge.
+- Ordinary cycles are rejected. An earlier user prompt may be revisited only through a `retry` node with `maxRetries` 1–4, one `isRetry: true` return edge to an input/form/decision, and one `isDefault: true` exhausted exit. Clear dependent variables on return and defer non-idempotent writes until final confirmation.
+- `end` and `handover` nodes are terminal and must not have outgoing edges.
+- A source with any conditional edge must have exactly one `isDefault: true` outgoing edge.
+- Edge condition operators are limited to `equals` and `contains`.
+- Script-node `data.script`, when present, must be a string containing syntactically valid JavaScript for a function whose input is `vars`.
+- `metadata.nodeCount` must match the actual node-array length.
+
+## Variable proof rules
 
 Allowed safe system variables:
 
@@ -66,76 +133,384 @@ Allowed safe context variables:
 - `{{intent}}`
 - `{{lastError}}`
 
-Rejected shorthand forms:
+Never use the rejected shorthand `{{botId}}`, `{{channel}}`, or `{{sessionId}}`.
 
-- `{{botId}}`
-- `{{channel}}`
-- `{{sessionId}}`
+Every other template variable must be established before it is read on every reachable path. Valid writers include:
 
-Variable rules:
+- `input.data.variable`;
+- `decision.data.outputVar`;
+- `form.data.outputVar`, plus `form.data.fields[].key` when `mapToVariables` is enabled;
+- `appointment`, `record`, `otp`, `payment`, `queue`, `notification`, `template-message`, `track-event`, `audit-log`, `scheduler`, `auth-consent`, `approval`, `dedupe`, and `document-intake` through `data.outputVar`;
+- `language.data.outputVar` and `language.data.preferredLanguageVar`;
+- `api` or `connector` through `data.saveAs` and `data.responseMap[].variable`;
+- `ai-grounded` through `data.outputVar`, `data.answerVar`, or `data.answerKeyValueVar`;
+- `web-crawl` through `data.outputVar` or `data.answerVar`;
+- `script.data.outputVar`, or an explicit assignment to `vars.<name>` or `vars["<name>"]` in valid script code;
+- `setVariable.data.assignments[].key`;
+- a declared `bot.globalVariables[].key`.
+- a key declared in `bot.localizedVariables.languages.en`.
 
-- Every other template variable must be written by an upstream node on the same reachable path, declared as a bot global variable, or declared by an English key in `bot.localizedVariables`.
-- Do not copy placeholders from examples unless this specific flow writes them first.
-- Do not use a variable for a different business meaning than the one already established upstream.
+Appointment nodes prove only their configured `outputVar` for downstream use. Do not treat `dateVar` as a writer; deployed import validation may reject that variable as undefined.
 
-## Customer-Visible Content Policy
+Node-local template variables are valid only inside their owning node:
 
-- In Create mode, put every stable customer-visible string in `bot.localizedVariables.languages` and reference it from the flow as `{{key}}`. Do this even for an English-only bot so later languages do not require graph edits.
-- In Extend mode, preserve existing keys and move any customer-visible copy created or changed by the request into localized content. Do not rename existing keys unless the request explicitly includes a migration.
-- Use the same rule for message text, input and decision prompts, button labels, form titles/labels/placeholders/submit text, carousel introductions/titles/descriptions/footers/button labels, appointment copy, confirmations, fallback/no-result/error copy, and other text rendered to a customer.
-- Keep node IDs, edge route values, variable names, API/connector fields, provider template identifiers, record values, URLs, query text, AI instructions, and other machine-facing configuration out of the localized catalog unless the value itself is deliberately customer-visible.
-- English (`en`) is the required base catalog. Every localized key must have a non-empty English value and must not also exist in `bot.globalVariables`.
-- For a new multilingual flow, set `customerVisibleLocalizationMode` to `catalog_only`, declare `languageSupport`, and provide every key in every enabled language before release. Runtime fallback is a resilience mechanism, not a substitute for a complete production catalog.
-- Localized content is readonly at runtime. Never use input, form, script, AI, integration, or `setVariable` nodes to overwrite a localized key.
-- The flow may explicitly assign an enabled language code to `preferred_language`; the runtime refreshes localized variables before the next node renders. Keep `source_language` and canonical English processing separate from that customer preference.
-- Localized catalog values are terminal strings. Do not place another `{{variable}}` inside a catalog value because template resolution is one pass. Compose catalog tokens and dynamic runtime variables in the node field instead, for example `{{appointment_confirmed_prefix}} {{appointment_date}}`.
-- Use `bot.globalVariables` only for readonly values that do not vary by language, such as support URLs, product IDs, or operational configuration. Mutable facts must still come from upstream writers, records, or integrations.
+- carousel: `item`, `carouselItem`, `currentItem`, `index`, `slideIndex`;
+- `ai-grounded` and `web-crawl`: `answer`;
+- OTP delivery templates: `otp`, `otp_ttl_minutes`.
 
-## Validator-Safe Rules
+Do not copy example-only placeholders such as `{{source}}`, `{{payment_status}}`, `{{customer_phone}}`, `{{consent_text}}`, or `{{ip_address}}` unless the flow writes them first. A variable name must keep one business meaning throughout the flow.
 
-- Return full export JSON only. No markdown fences, prose, or comments.
-- Top-level keys must be exactly `version`, `exportedAt`, `bot`, `flow`, and `metadata`.
-- Exactly one `start` node must exist.
-- Every edge `source` and `target` must reference a real node ID.
-- No duplicate node IDs or edge IDs.
-- No orphan or unreachable nodes.
-- No `end` node may have outgoing edges.
-- No conditional node may have conditional branches without exactly one default edge.
-- Allowed edge condition operators are only `equals` and `contains`.
-- Do not use bare `{{botId}}`, `{{channel}}`, or `{{sessionId}}`; use `{{system.botId}}`, `{{system.channel}}`, and `{{system.sessionId}}`.
-- Every `{{variable}}` read must come from an upstream writer, a declared bot global variable, a declared localized content key, or an allowed system/context variable.
-- Every stable customer-visible string created or changed by the generator must be stored in `bot.localizedVariables` and referenced by its `{{key}}`; this includes messages, prompts, buttons, forms, carousel copy, confirmations, and user-visible errors.
-- Localized content keys are readonly runtime variables. Do not write them with input, form, script, `setVariable`, AI, or integration nodes.
-- Do not copy example-only placeholders such as `{{source}}`, `{{payment_status}}`, `{{customer_phone}}`, `{{consent_text}}`, or `{{ip_address}}` unless the flow writes them first.
-- Ordinary graph cycles are rejected. To revisit an earlier user prompt, route through a retry node with maxRetries 1–4, one isRetry return edge to input/form/decision, and one isDefault exhausted exit edge. Clear dependent variables on return; perform non-idempotent writes only after final confirmation.
-- Keep `metadata.nodeCount` equal to `flow.nodes.length`.
+## Customer-visible content rules
 
-## External Usage Workflow
+- In Create mode, store every stable customer-visible string in `bot.localizedVariables.languages` and reference it from the flow as `{{key}}`. Use this pattern even when the first release is English-only so new languages do not require graph edits.
+- In Extend mode, preserve existing keys and move every customer-visible string created or changed by the request into Localized Content. Rename a key only as an explicit migration.
+- This applies to messages, input/decision prompts, button labels, form titles/labels/placeholders/submit text, carousel introductions/titles/descriptions/footers/button labels, appointment copy, confirmations, no-result/fallback/error copy, and all other text rendered to the customer.
+- Do not localize machine-facing configuration: node IDs, edge route values, variable names, API or connector fields, provider template identifiers, record values, URLs, query text, and AI instructions remain stable unless the value itself is deliberately shown to the customer.
+- English (`en`) is the required base catalog. Each localized key must have a non-empty English value and must not also exist in `bot.globalVariables`.
+- New multilingual flows must set `customerVisibleLocalizationMode` to `catalog_only`, declare `languageSupport`, and contain every key in every enabled language before release. Runtime fallback is resilience behavior, not permission to ship an incomplete catalog.
+- Localized keys are readonly runtime variables. Never write them with input, form, script, AI, integration, or `setVariable` nodes.
+- A flow may assign an enabled language code to `preferred_language`. The runtime refreshes localized values before the next node renders. Keep `source_language` detection and canonical English processing independent from the chosen output language.
+- Localized values are terminal strings. Do not put another `{{variable}}` inside a catalog value because template expansion is one pass. Compose tokens and dynamic values in the node field, for example `{{appointment_confirmed_prefix}} {{appointment_date}}`.
+- Use `bot.globalVariables` only for readonly values that do not vary by language, such as support URLs, product IDs, or operational configuration. Mutable facts must come from upstream nodes, records, or integrations.
 
-1. Read `flow-export-schema.snapshot.json` first.
-2. Read `flow-node-catalog.snapshot.json` second.
-3. Read the business brief and determine create mode or extend mode.
-4. If extend mode, inventory every existing node ID, edge ID, variable, and branch value before editing.
-5. Ask the mandatory clarification questions for any missing branch, channel, data, or integration detail.
-6. Draft the flow.
-7. Run the validator-safe checklist mentally before returning the final JSON.
+## OTP safety rules
 
-## Final Pre-Output Checklist
+- Use the native `otp` node for OTP creation and verification.
+- Allowed delivery channels are `sms`, `whatsapp`, and `email`.
+- Keep `resendCooldownSeconds` at 30 or more and `maxResends` at 3 or less.
+- Never generate an OTP with a script node.
+- Never store the generated OTP in an ordinary/global/output variable, database record, log, analytics event, or transcript.
+- Never expose the OTP in general user-visible copy. The node-local `{{otp}}` placeholder is permitted only inside the native OTP provider delivery templates.
+- `data.outputVar` must describe the verification result and must not be `otp` or contain `code`.
+- Ask for recipient, channel, expiry, attempts, resend, provider, consent, and approved-template details when they are not supplied.
 
-- The output is valid JSON.
-- The export wrapper is present and exact.
-- `flow.version` exists with `major`, `minor`, and `patch`.
-- There is exactly one `start` node.
-- All nodes are reachable from start.
-- No unsupported node type or unsupported edge operator appears.
-- Every conditional branch has one intended default route.
-- Every terminal path ends intentionally.
-- Every template variable is proven.
-- `metadata.nodeCount` matches the node array length.
+## Record and persistence rules
 
-## Node Catalog
+Record `data.schemaName`, when supplied, must be one of:
 
-## `start` - Conversation Start
+- `public`
+- `automobile`
+- `education`
+- `financial_services`
+- `healthcare`
+- `hospitality`
+- `insurance`
+- `professional_services`
+- `realestate`
+- `retail`
+
+Keep `collection` as the unqualified logical collection name. Select the business-owned schema when the brief establishes one; use `public` only for an intentionally generic or legacy record store. If ownership is unclear, ask.
+
+- Persist state that must survive the session, support later lookup, drive operations, or appear in confirmations.
+- Read mutable prices, availability, eligibility criteria, policy, catalog, inventory, staff, slot, and status data from maintained records or approved APIs.
+- Use stable business identifiers and idempotency keys for create/upsert or retryable operations.
+- A person's email or phone is not automatically the correct unique key for repeat transactions; use the brief's authoritative business key.
+- Apply tenant/workspace/location/branch filters consistently across list, selection, hold, write, update, and release operations.
+- Persist authoritative snapshots needed to explain a later transaction, such as selected item, price, policy, time, or approval state.
+- Never claim a write, booking, payment, message delivery, approval, or update succeeded before its actual success outcome.
+- Confirmations must use the values selected, returned, or persisted on the active path, never hardcoded demonstration values.
+- Destructive operations, retention, encryption, consent, and soft-delete behavior must be explicit. Do not infer them.
+
+## Production behavior rules
+
+- Use clear, user-facing production copy. Do not emit lorem ipsum, fake names, dummy operational content, placeholder promises, or developer-facing error details.
+- Keep routine happy paths automated. Use human handover for explicit human requests, sensitive judgment, true exceptions, compliance requirements, or exhausted system recovery—not as the default for ordinary work.
+- Give every recoverable failure a distinct correction or safe recovery step before escalation. Use a bounded retry return only for revisiting an earlier user prompt.
+- Give every terminal path an intentional user-visible result unless the node's contract intentionally sends the response itself.
+- Validate input before persistence or irreversible actions. Do not weaken authoritative validation merely to simplify presentation.
+- Capture only required data, avoid displaying secrets or sensitive internals, and honor consent, retention, and channel opt-in requirements.
+- Treat AI output as non-authoritative unless grounded by supplied context. AI must not invent prices, policies, eligibility, availability, clinical/legal/financial decisions, or integration results.
+- Define explicit success, partial-success, no-result, duplicate, validation, provider failure, timeout, and cancellation handling wherever the selected node exposes or requires those outcomes.
+- Schedule reminders or follow-ups from saved authoritative state rather than temporary or fabricated values.
+- Keep user-visible failure copy accurate: if success is unknown, say it could not be confirmed rather than asserting a specific conflict or completed action.
+- Provider delivery, credentials, approved templates, external APIs, databases, schedulers, and deployment behavior require target-environment validation; valid JSON alone is not runtime proof.
+
+## Embedded export schema
+
+The following schema snapshot is authoritative for the export wrapper and supported node types.
+
+```json
+{
+  "generatedAt": "2026-09-15",
+  "exportWrapper": {
+    "requiredKeys": [
+      "version",
+      "exportedAt",
+      "bot",
+      "flow",
+      "metadata"
+    ],
+    "version": {
+      "type": "string",
+      "literal": "1.0"
+    },
+    "exportedAt": {
+      "type": "string",
+      "format": "ISO-8601 timestamp"
+    },
+    "bot": {
+      "requiredKeys": [
+        "name",
+        "description"
+      ],
+      "optionalKeys": [
+        "headerLogoUrl",
+        "headerTitle",
+        "headerTagline",
+        "globalVariables",
+        "languageSupport",
+        "localizedVariables",
+        "customerVisibleLocalizationMode"
+      ],
+      "globalVariables": {
+        "type": "array",
+        "itemShape": {
+          "key": "string",
+          "value": "string"
+        },
+        "keyPattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+      },
+      "languageSupport": {
+        "type": "object",
+        "requiredKeys": [
+          "enabledLanguages",
+          "defaultLanguage",
+          "fallbackLanguage",
+          "canonicalProcessingLanguage",
+          "supportRomanizedInput",
+          "lowConfidenceThreshold",
+          "allowMidConversationSwitch"
+        ],
+        "canonicalProcessingLanguage": "en"
+      },
+      "localizedVariables": {
+        "type": "object",
+        "requiredKeys": [
+          "version",
+          "baseLanguage",
+          "languages"
+        ],
+        "version": 1,
+        "baseLanguage": "en",
+        "languages": "Record<languageCode, Record<variableKey, string>>",
+        "keyPattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+      },
+      "customerVisibleLocalizationMode": {
+        "type": "string",
+        "allowedValues": [
+          "ai_translate",
+          "catalog_only"
+        ]
+      }
+    },
+    "flow": {
+      "requiredKeys": [
+        "version",
+        "nodes",
+        "edges"
+      ],
+      "version": {
+        "major": "number",
+        "minor": "number",
+        "patch": "number"
+      },
+      "nodes": {
+        "requiredKeys": [
+          "id",
+          "type"
+        ],
+        "optionalKeys": [
+          "data",
+          "position"
+        ],
+        "allowedTypes": [
+          "start",
+          "message",
+          "email",
+          "sms",
+          "otp",
+          "notification",
+          "media",
+          "carousel",
+          "form",
+          "appointment",
+          "payment",
+          "document-intake",
+          "file-processor",
+          "script",
+          "track-event",
+          "audit-log",
+          "record",
+          "connector",
+          "event-trigger",
+          "webhook-trigger",
+          "approval",
+          "auth-consent",
+          "input",
+          "decision",
+          "faq",
+          "api",
+          "condition",
+          "end",
+          "delay",
+          "language",
+          "queue",
+          "dedupe",
+          "rate-limit",
+          "template-message",
+          "wait-until",
+          "scheduler",
+          "timeout",
+          "retry",
+          "setVariable",
+          "handover",
+          "agent-handoff",
+          "fallback",
+          "switch",
+          "intent-router",
+          "loop",
+          "error",
+          "ai-extract",
+          "ai-generate",
+          "ai-grounded",
+          "web-crawl",
+          "ai-sentiment",
+          "ai-memory"
+        ],
+        "positionShape": {
+          "x": "number",
+          "y": "number"
+        }
+      },
+      "edges": {
+        "requiredKeys": [
+          "id",
+          "source",
+          "target"
+        ],
+        "optionalKeys": [
+          "sourceHandle",
+          "targetHandle",
+          "type",
+          "label",
+          "condition",
+          "isDefault",
+          "isError",
+          "isRetry"
+        ],
+        "condition": {
+          "operator": [
+            "equals",
+            "contains"
+          ],
+          "value": "string"
+        }
+      }
+    },
+    "metadata": {
+      "requiredKeys": [
+        "flowVersion",
+        "nodeCount"
+      ],
+      "flowVersion": "number",
+      "nodeCount": "number"
+    }
+  },
+  "supportedNodeTypes": [
+    "start",
+    "message",
+    "email",
+    "sms",
+    "otp",
+    "notification",
+    "media",
+    "carousel",
+    "form",
+    "appointment",
+    "payment",
+    "document-intake",
+    "file-processor",
+    "script",
+    "track-event",
+    "audit-log",
+    "record",
+    "connector",
+    "event-trigger",
+    "webhook-trigger",
+    "approval",
+    "auth-consent",
+    "input",
+    "decision",
+    "faq",
+    "api",
+    "condition",
+    "end",
+    "delay",
+    "language",
+    "queue",
+    "dedupe",
+    "rate-limit",
+    "template-message",
+    "wait-until",
+    "scheduler",
+    "timeout",
+    "retry",
+    "setVariable",
+    "handover",
+    "agent-handoff",
+    "fallback",
+    "switch",
+    "intent-router",
+    "loop",
+    "error",
+    "ai-extract",
+    "ai-generate",
+    "ai-grounded",
+    "web-crawl",
+    "ai-sentiment",
+    "ai-memory"
+  ],
+  "safeSystemVariables": [
+    "system.botId",
+    "system.channel",
+    "system.sessionId"
+  ],
+  "safeContextVariables": [
+    "input",
+    "intent",
+    "lastError"
+  ],
+  "rejectedSystemShorthand": [
+    "botId",
+    "channel",
+    "sessionId"
+  ],
+  "validatorRules": [
+    "Return full export JSON only. No markdown fences, prose, or comments.",
+    "Top-level keys must be exactly `version`, `exportedAt`, `bot`, `flow`, and `metadata`.",
+    "Exactly one `start` node must exist.",
+    "Every edge `source` and `target` must reference a real node ID.",
+    "No duplicate node IDs or edge IDs.",
+    "No orphan or unreachable nodes.",
+    "No `end` node may have outgoing edges.",
+    "No conditional node may have conditional branches without exactly one default edge.",
+    "Allowed edge condition operators are only `equals` and `contains`.",
+    "Do not use bare `{{botId}}`, `{{channel}}`, or `{{sessionId}}`; use `{{system.botId}}`, `{{system.channel}}`, and `{{system.sessionId}}`.",
+    "Every `{{variable}}` read must come from an upstream writer, a declared bot global variable, a declared localized content key, or an allowed system/context variable.",
+    "Every stable customer-visible string created or changed by the generator must be stored in `bot.localizedVariables` and referenced by its `{{key}}`; this includes messages, prompts, buttons, forms, carousel copy, confirmations, and user-visible errors.",
+    "Localized content keys are readonly runtime variables. Do not write them with input, form, script, `setVariable`, AI, or integration nodes.",
+    "Do not copy example-only placeholders such as `{{source}}`, `{{payment_status}}`, `{{customer_phone}}`, `{{consent_text}}`, or `{{ip_address}}` unless the flow writes them first.",
+    "Ordinary graph cycles are rejected. To revisit an earlier user prompt, route through a retry node with maxRetries 1–4, one isRetry return edge to input/form/decision, and one isDefault exhausted exit edge. Clear dependent variables on return; perform non-idempotent writes only after final confirmation.",
+    "Keep `metadata.nodeCount` equal to `flow.nodes.length`."
+  ]
+}
+```
+
+## Complete node catalog
+
+The following 52 definitions are authoritative for node purpose, supported configuration fields, runtime defaults, route outcomes, edge expectations, and variable behavior. A default value containing an example placeholder does not declare that variable; variable proof is still required.
+
+### `start` - Conversation Start
 
 Category: `basic`
 
@@ -175,7 +550,7 @@ None.
 
 Docs anchor: `/docs/flow-node-playbook#node-start`
 
-## `message` - Response Message
+### `message` - Response Message
 
 Category: `basic`
 
@@ -225,7 +600,7 @@ Message can connect to the next interactive or informational step. It usually ha
 
 Docs anchor: `/docs/flow-node-playbook#node-message`
 
-## `email` - Email Dispatch
+### `email` - Email Dispatch
 
 Category: `integration`
 
@@ -288,7 +663,7 @@ Email is usually used as a single linear step. Connect it to one next node, and 
 
 Docs anchor: `/docs/flow-node-playbook#node-email`
 
-## `sms` - SMS Dispatch
+### `sms` - SMS Dispatch
 
 Category: `integration`
 
@@ -351,7 +726,7 @@ SMS is generally a linear step. Connect it to one next node, and branch later if
 
 Docs anchor: `/docs/flow-node-playbook#node-sms`
 
-## `otp` - OTP Verification
+### `otp` - OTP Verification
 
 Category: `integration`
 
@@ -452,7 +827,7 @@ OTP Verification is a blocking node. It waits internally for code entry and rese
 
 Docs anchor: `/docs/flow-node-playbook#node-otp`
 
-## `notification` - Unified Notification
+### `notification` - Unified Notification
 
 Category: `integration`
 
@@ -536,7 +911,7 @@ Notification should connect each delivery outcome to a clear next step. It usual
 
 Docs anchor: `/docs/flow-node-playbook#node-notification`
 
-## `media` - Media Attachment
+### `media` - Media Attachment
 
 Category: `basic`
 
@@ -587,7 +962,7 @@ Media is a linear send step. It emits the attachment message and then continues 
 
 Docs anchor: `/docs/flow-node-playbook#node-media`
 
-## `carousel` - Rich Carousel
+### `carousel` - Rich Carousel
 
 Category: `basic`
 
@@ -602,8 +977,7 @@ Displays multiple cards/slides in a structured, scrollable layout for guided sel
 **Limitations**
 - Requires well-formed slide JSON to render correctly.
 - Card-heavy content can become cluttered without concise copy.
-- WhatsApp renders ordered interactive card messages rather than the widget's horizontal swipe layout.
-- Telegram and channels without rich card support require text fallback handling.
+- Channels without carousel support require text fallback handling.
 
 **Edge Expectations**
 Carousel is a linear presentation step. It renders the cards and then continues to exactly one next node; any branching or fallback handling should happen after the carousel step.
@@ -691,7 +1065,7 @@ Carousel is a linear presentation step. It renders the cards and then continues 
 
 Docs anchor: `/docs/flow-node-playbook#node-carousel`
 
-## `form` - Form Intake
+### `form` - Form Intake
 
 Category: `basic`
 
@@ -711,8 +1085,6 @@ Collects structured multi-field input, stores it as a reusable payload, and maps
 - The node is linear and should continue to exactly one next step after capture.
 - The chat textbox should stay disabled while the form bubble is active so users submit through the form controls instead of free text.
 - Structured form replies are stored as readable internal transcript rows instead of raw JSON blobs in the visible chat.
-- On WhatsApp, eligible forms are provisioned as native Meta Flows; unavailable or ineligible assets fall back to one validated question at a time.
-- WhatsApp password fields are blocked, and time fields use conversational fallback. Web and Telegram behavior is unchanged.
 
 **Edge Expectations**
 Form is a linear capture step. It waits for the user payload, validates required fields, stores the structured object, and then continues to exactly one next node.
@@ -756,14 +1128,7 @@ Form is a linear capture step. It waits for the user payload, validates required
   "mapToVariables": true,
   "submitLabel": "Submit",
   "selectPlaceholder": "Select",
-  "formErrorMessage": "Please fix the highlighted fields.",
-  "channelPresentation": {
-    "whatsapp": {
-      "ctaLabel": "Enter details",
-      "submitLabel": "Continue",
-      "category": "OTHER"
-    }
-  }
+  "formErrorMessage": "Please fix the highlighted fields."
 }
 ```
 
@@ -774,7 +1139,7 @@ Form is a linear capture step. It waits for the user payload, validates required
 
 Docs anchor: `/docs/flow-node-playbook#node-form`
 
-## `appointment` - Appointment Booking
+### `appointment` - Appointment Booking
 
 Category: `basic`
 
@@ -869,7 +1234,7 @@ Appointment is a linear booking step. It validates the date and slot inside the 
 
 Docs anchor: `/docs/flow-node-playbook#node-appointment`
 
-## `payment` - Payment Collection
+### `payment` - Payment Collection
 
 Category: `integration`
 
@@ -949,7 +1314,7 @@ Payment is an acknowledgment step with two routed outcomes after completion: pai
 
 Docs anchor: `/docs/flow-node-playbook#node-payment`
 
-## `document-intake` - Document Collection
+### `document-intake` - Document Collection
 
 Category: `basic`
 
@@ -1014,7 +1379,7 @@ Document Intake is a linear capture step. It validates uploaded files, stores ac
 
 Docs anchor: `/docs/flow-node-playbook#node-document-intake`
 
-## `file-processor` - File Processing / OCR
+### `file-processor` - File Processing / OCR
 
 Category: `integration`
 
@@ -1095,7 +1460,7 @@ File Processor is a fan-out document step. Connect success-like outcomes to the 
 
 Docs anchor: `/docs/flow-node-playbook#node-file-processor`
 
-## `script` - Custom Script
+### `script` - Custom Script
 
 Category: `advanced`
 
@@ -1147,7 +1512,7 @@ Script is a branching logic step with two outcomes: success and failure. Use suc
 
 Docs anchor: `/docs/flow-node-playbook#node-script`
 
-## `track-event` - Analytics / Track Event
+### `track-event` - Analytics / Track Event
 
 Category: `integration`
 
@@ -1205,7 +1570,7 @@ Track Event is usually a non-blocking telemetry step. Connect success to the nex
 
 Docs anchor: `/docs/flow-node-playbook#node-track-event`
 
-## `audit-log` - Audit Log
+### `audit-log` - Audit Log
 
 Category: `integration`
 
@@ -1265,7 +1630,7 @@ Audit Log should usually continue the journey after a successful write, but it c
 
 Docs anchor: `/docs/flow-node-playbook#node-audit-log`
 
-## `record` - Database / Record
+### `record` - Database / Record
 
 Category: `integration`
 
@@ -1300,7 +1665,7 @@ Record routes by CRUD result. Keep the success path direct, send duplicate and n
 - failed
 
 **Config Fields**
-- `action` (select): Action. Options: create, find, update, upsert, delete, list, booking_commit.
+- `action` (select): Action. Options: create, find, update, upsert, delete, list.
 - `schemaName` (select): Target Schema. Options: public, automobile, education, financial_services, healthcare, hospitality, insurance, professional_services, realestate, retail.
 - `collection` (text): Collection.
 - `whereJson` (textarea): Where JSON.
@@ -1348,7 +1713,7 @@ Record routes by CRUD result. Keep the success path direct, send duplicate and n
 
 Docs anchor: `/docs/record-node-database-configuration`
 
-## `connector` - Integration Action
+### `connector` - Integration Action
 
 Category: `integration`
 
@@ -1404,7 +1769,7 @@ Use this node only with routes documented in the flow graph and keep one explici
 
 Docs anchor: `/docs/flow-node-playbook#node-connector`
 
-## `event-trigger` - Event Matcher
+### `event-trigger` - Event Matcher
 
 Category: `integration`
 
@@ -1448,7 +1813,7 @@ Use this node only with routes documented in the flow graph and keep one explici
 
 Docs anchor: `/docs/flow-node-playbook#node-event-trigger`
 
-## `webhook-trigger` - Webhook Trigger
+### `webhook-trigger` - Webhook Trigger
 
 Category: `integration`
 
@@ -1536,7 +1901,7 @@ Webhook Trigger is an ingress node with five explicit outcomes. Connect received
 
 Docs anchor: `/docs/flow-node-playbook#node-webhook-trigger`
 
-## `approval` - Human Approval
+### `approval` - Human Approval
 
 Category: `logic`
 
@@ -1612,7 +1977,7 @@ Approval is a blocking human-decision step. Connect each route to an explicit ne
 
 Docs anchor: `/docs/flow-node-playbook#node-approval`
 
-## `auth-consent` - Consent Verification
+### `auth-consent` - Consent Verification
 
 Category: `integration`
 
@@ -1666,7 +2031,7 @@ Auth Consent is a binary human-response step. Connect accepted to the protected 
 
 Docs anchor: `/docs/flow-node-playbook#node-auth-consent`
 
-## `input` - User Prompt
+### `input` - User Prompt
 
 Category: `basic`
 
@@ -1720,7 +2085,7 @@ Input captures one user response and then continues to the next step. When butto
 
 Docs anchor: `/docs/flow-node-playbook#node-input`
 
-## `decision` - Decision
+### `decision` - Decision
 
 Category: `logic`
 
@@ -1770,7 +2135,7 @@ Decision is a strict two-branch node. Keep the routing values fixed as yes and n
 
 Docs anchor: `/docs/flow-node-playbook#node-decision`
 
-## `faq` - Knowledge Base Search
+### `faq` - Knowledge Base Search
 
 Category: `integration`
 
@@ -1816,7 +2181,7 @@ FAQ answers from curated knowledge and can optionally stay active for multiple u
 
 Docs anchor: `/docs/flow-node-playbook#node-faq`
 
-## `api` - API Call
+### `api` - API Call
 
 Category: `integration`
 
@@ -1872,7 +2237,7 @@ API should usually route success to the next business step, failure to a safe fa
 
 Docs anchor: `/docs/flow-node-playbook#node-api`
 
-## `condition` - Condition Check
+### `condition` - Condition Check
 
 Category: `logic`
 
@@ -1916,7 +2281,7 @@ Use this node only with routes documented in the flow graph and keep one explici
 
 Docs anchor: `/docs/flow-node-playbook#node-condition`
 
-## `end` - Conversation End
+### `end` - Conversation End
 
 Category: `basic`
 
@@ -1963,7 +2328,7 @@ End should be the last node in a branch. It accepts incoming paths but must not 
 
 Docs anchor: `/docs/flow-node-playbook#node-end`
 
-## `delay` - Delay
+### `delay` - Delay
 
 Category: `logic`
 
@@ -2008,7 +2373,7 @@ Delay is a linear pause node. It should connect to exactly one next step after t
 
 Docs anchor: `/docs/flow-node-playbook#node-delay`
 
-## `language` - Language Detect / Translate
+### `language` - Language Detect / Translate
 
 Category: `logic`
 
@@ -2065,7 +2430,7 @@ Language detection and translation usually fan out into four outcomes. Route the
 
 Docs anchor: `/docs/flow-node-playbook#node-language`
 
-## `queue` - Queue / Assignment
+### `queue` - Queue / Assignment
 
 Category: `integration`
 
@@ -2128,7 +2493,7 @@ Queue usually routes to assignment success, overflow queueing, or failure. Wire 
 
 Docs anchor: `/docs/flow-node-playbook#node-queue`
 
-## `dedupe` - Dedupe
+### `dedupe` - Dedupe
 
 Category: `logic`
 
@@ -2183,7 +2548,7 @@ Dedupe usually sends new requests forward, duplicate requests to a reuse/correct
 
 Docs anchor: `/docs/flow-node-playbook#node-dedupe`
 
-## `rate-limit` - Rate Limit / Abuse Protection
+### `rate-limit` - Rate Limit / Abuse Protection
 
 Category: `logic`
 
@@ -2242,7 +2607,7 @@ Rate Limit usually lets traffic continue, blocks abusive traffic, and falls back
 
 Docs anchor: `/docs/flow-node-playbook#node-rate-limit`
 
-## `template-message` - Template Message
+### `template-message` - Template Message
 
 Category: `integration`
 
@@ -2310,7 +2675,7 @@ Template Message should branch by send status, not by the template body itself. 
 
 Docs anchor: `/docs/flow-node-playbook#node-template-message`
 
-## `wait-until` - Wait Until
+### `wait-until` - Wait Until
 
 Category: `logic`
 
@@ -2379,7 +2744,7 @@ Wait Until routes by computed wait outcome, so each result should lead to a clea
 
 Docs anchor: `/docs/flow-node-playbook#node-wait-until`
 
-## `scheduler` - Scheduler / Reminder
+### `scheduler` - Scheduler / Reminder
 
 Category: `logic`
 
@@ -2461,7 +2826,7 @@ Scheduler creates a durable job and then routes by scheduling outcome. Keep the 
 
 Docs anchor: `/docs/flow-node-playbook#node-scheduler`
 
-## `timeout` - Response Timeout
+### `timeout` - Response Timeout
 
 Category: `logic`
 
@@ -2505,7 +2870,7 @@ Use this node only with routes documented in the flow graph and keep one explici
 
 Docs anchor: `/docs/flow-node-playbook#node-timeout`
 
-## `retry` - Retry Policy
+### `retry` - Retry Policy
 
 Category: `logic`
 
@@ -2546,10 +2911,9 @@ Use this node only with routes documented in the flow graph and keep one explici
 - Writes: conversation-scoped retry count
 - Reads: conversation-scoped retry count
 - Bounded returns count attempts across conversation turns and require an exhausted exit.
-
 Docs anchor: `/docs/flow-node-playbook#node-retry`
 
-## `setVariable` - Variable Assignment
+### `setVariable` - Variable Assignment
 
 Category: `logic`
 
@@ -2594,7 +2958,7 @@ Use this node only with routes documented in the flow graph and keep one explici
 
 Docs anchor: `/docs/flow-node-playbook#node-setVariable`
 
-## `handover` - Human Escalation
+### `handover` - Human Escalation
 
 Category: `integration`
 
@@ -2643,7 +3007,7 @@ Handover ends the bot turn after the transfer payload is emitted. Do not branch 
 
 Docs anchor: `/docs/flow-node-playbook#node-handover`
 
-## `agent-handoff` - Specialist AI Delegation
+### `agent-handoff` - Specialist AI Delegation
 
 Category: `AI`
 
@@ -2703,7 +3067,7 @@ Agent Handoff is a linear transfer step. It delegates to the target bot, emits a
 
 Docs anchor: `/docs/flow-node-playbook#node-agent-handoff`
 
-## `fallback` - Fallback Response
+### `fallback` - Fallback Response
 
 Category: `logic`
 
@@ -2745,7 +3109,7 @@ Use this node only with routes documented in the flow graph and keep one explici
 
 Docs anchor: `/docs/flow-node-playbook#node-fallback`
 
-## `switch` - Rule Router
+### `switch` - Rule Router
 
 Category: `logic`
 
@@ -2785,7 +3149,7 @@ Use this node only with routes documented in the flow graph and keep one explici
 
 Docs anchor: `/docs/flow-node-playbook#node-switch`
 
-## `intent-router` - User Intent Routing
+### `intent-router` - User Intent Routing
 
 Category: `AI`
 
@@ -2844,7 +3208,7 @@ Intent Router is a classifier node. Wire one conditional edge for each supported
 
 Docs anchor: `/docs/flow-node-playbook#node-intent-router`
 
-## `loop` - Loop Controller
+### `loop` - Loop Controller
 
 Category: `logic`
 
@@ -2884,7 +3248,7 @@ Use this node only with routes documented in the flow graph and keep one explici
 
 Docs anchor: `/docs/flow-node-playbook#node-loop`
 
-## `error` - Error Handler
+### `error` - Error Handler
 
 Category: `error`
 
@@ -2926,7 +3290,7 @@ Use this node only with routes documented in the flow graph and keep one explici
 
 Docs anchor: `/docs/flow-node-playbook#node-error`
 
-## `ai-extract` - Structured Data Capture
+### `ai-extract` - Structured Data Capture
 
 Category: `AI`
 
@@ -2974,7 +3338,7 @@ AI Extract is usually a straight-through enrichment step. It does not emit speci
 
 Docs anchor: `/docs/flow-node-playbook#node-ai-extract`
 
-## `ai-generate` - Smart Response Composer
+### `ai-generate` - Smart Response Composer
 
 Category: `AI`
 
@@ -3023,7 +3387,7 @@ AI Generate is a linear response-composition step. It writes the generated text 
 
 Docs anchor: `/docs/flow-node-playbook#node-ai-generate`
 
-## `ai-grounded` - Concern Resolution AI
+### `ai-grounded` - Concern Resolution AI
 
 Category: `AI`
 
@@ -3099,7 +3463,7 @@ AI Grounded is a grounded-answer step with two explicit outcomes. Wire grounded 
 
 Docs anchor: `/docs/flow-node-playbook#node-ai-grounded`
 
-## `web-crawl` - Website Answer Search
+### `web-crawl` - Website Answer Search
 
 Category: `AI`
 
@@ -3146,7 +3510,6 @@ Web Crawl has three explicit outcomes. Wire answered to the normal response path
 - `includeSourcesInResponse` (boolean): Show Sources In Response.
 - `notFoundMessage` (text): Not Found Message.
 - `failureMessage` (text): Failure Message.
-
 **Runtime Defaults**
 ```json
 {
@@ -3174,7 +3537,7 @@ Web Crawl has three explicit outcomes. Wire answered to the normal response path
 
 Docs anchor: `/docs/flow-node-playbook#node-web-crawl`
 
-## `ai-sentiment` - Emotion-Based Escalation
+### `ai-sentiment` - Emotion-Based Escalation
 
 Category: `AI`
 
@@ -3228,7 +3591,7 @@ AI Sentiment is a label-based classifier. Route positive, negative, and neutral 
 
 Docs anchor: `/docs/flow-node-playbook#node-ai-sentiment`
 
-## `ai-memory` - Customer Context Memory
+### `ai-memory` - Customer Context Memory
 
 Category: `AI`
 
@@ -3277,3 +3640,134 @@ AI Memory is a linear persistence step. It upserts the selected keys into durabl
 - AI Memory persists deliberate context; do not use vague or overloaded keys.
 
 Docs anchor: `/docs/flow-node-playbook#node-ai-memory`
+
+## Minimal validator-safe export example
+
+This reference demonstrates the canonical wrapper and graph shape. It is reference content inside this document; unlike the agent's final generated response, it is intentionally shown in a Markdown code fence.
+
+```json
+{
+  "version": "1.0",
+  "exportedAt": "2026-07-13T00:00:00.000Z",
+  "bot": {
+    "name": "External Contract Example Bot",
+    "description": "Minimal validator-safe export example.",
+    "globalVariables": [],
+    "languageSupport": {
+      "enabledLanguages": ["en", "hi", "te"],
+      "defaultLanguage": "en",
+      "fallbackLanguage": "en",
+      "canonicalProcessingLanguage": "en",
+      "supportRomanizedInput": true,
+      "lowConfidenceThreshold": 0.7,
+      "allowMidConversationSwitch": true
+    },
+    "localizedVariables": {
+      "version": 1,
+      "baseLanguage": "en",
+      "languages": {
+        "en": {
+          "welcome_message": "Welcome. This export demonstrates localized customer-visible content."
+        },
+        "hi": {
+          "welcome_message": "स्वागत है। यह निर्यात स्थानीयकृत ग्राहक-दृश्य सामग्री दिखाता है।"
+        },
+        "te": {
+          "welcome_message": "స్వాగతం. ఈ ఎగుమతి స్థానికీకరించిన వినియోగదారులకు కనిపించే కంటెంట్‌ను చూపిస్తుంది."
+        }
+      }
+    },
+    "customerVisibleLocalizationMode": "catalog_only"
+  },
+  "flow": {
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "nodes": [
+      {
+        "id": "start_1",
+        "type": "start",
+        "position": {
+          "x": 80,
+          "y": 200
+        },
+        "data": {
+          "messages": []
+        }
+      },
+      {
+        "id": "message_1",
+        "type": "message",
+        "position": {
+          "x": 320,
+          "y": 200
+        },
+        "data": {
+          "messages": [
+            {
+              "type": "text",
+              "text": "{{welcome_message}}"
+            }
+          ],
+          "buttons": []
+        }
+      },
+      {
+        "id": "end_1",
+        "type": "end",
+        "position": {
+          "x": 560,
+          "y": 200
+        },
+        "data": {
+          "messages": []
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "edge_start_message",
+        "source": "start_1",
+        "target": "message_1",
+        "type": "smoothstep"
+      },
+      {
+        "id": "edge_message_end",
+        "source": "message_1",
+        "target": "end_1",
+        "type": "smoothstep"
+      }
+    ]
+  },
+  "metadata": {
+    "flowVersion": 1,
+    "nodeCount": 3
+  }
+}
+```
+
+## Final pre-output checklist
+
+Before emitting JSON, verify all of the following:
+
+- [ ] All mandatory business questions are resolved.
+- [ ] Create or Extend mode is explicit; Extend mode includes the complete source export.
+- [ ] The JSON wrapper contains exactly the five required keys in the required order.
+- [ ] Export and flow versions are correct.
+- [ ] There is exactly one start node and every node is reachable.
+- [ ] Every non-start node has an incoming edge; end and handover nodes have no outgoing edges.
+- [ ] Node IDs and edge IDs are unique, stable, and fully referenced.
+- [ ] No ordinary cycle exists; every return edge starts at a bounded retry node, returns to a user prompt, and has an exhausted exit.
+- [ ] Every conditional source has exactly one default edge.
+- [ ] Every type, field, route, option, and edge operator exists in this document.
+- [ ] Every script parses and every template variable is proven upstream on its path.
+- [ ] Every stable customer-visible string is referenced through a localized content key, including buttons, forms, and carousel copy.
+- [ ] Every localized key has English and every enabled production language is complete; localized keys are not written by flow nodes.
+- [ ] OTP and sensitive-data rules are satisfied.
+- [ ] Persisted and mutable facts use the correct approved records or integrations.
+- [ ] State-changing actions include idempotency, duplicate handling, and truthful failure behavior where required.
+- [ ] All user-visible content is production-ready and confirmations reflect actual path data.
+- [ ] `metadata.nodeCount` equals the number of nodes.
+- [ ] The final response will contain bare JSON only.

@@ -40,6 +40,12 @@ const RECORD_SCHEMA_NAMES = new Set([
   "realestate",
   "retail"
 ]);
+const VARIABLE_KEY_PATTERN = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
+const LANGUAGE_CODE_PATTERN = /^[a-z]{2,10}(?:-[a-z0-9]{2,10})?$/i;
+const CUSTOMER_VISIBLE_LOCALIZATION_MODES = new Set([
+  "ai_translate",
+  "catalog_only"
+]);
 const templatePattern = /\{\{\s*([A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*)\s*\}\}/g;
 
 function fail(message) {
@@ -184,6 +190,144 @@ function validateOtpNode(node) {
   }
 }
 
+function isPlainObject(value) {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function validateLocalizationConfig(bot) {
+  const localizedKeys = new Set();
+  const globalKeys = new Set();
+
+  for (const entry of bot?.globalVariables ?? []) {
+    if (typeof entry?.key === "string" && entry.key.trim()) {
+      globalKeys.add(entry.key.trim());
+    }
+  }
+
+  const mode = bot?.customerVisibleLocalizationMode;
+  if (mode != null && !CUSTOMER_VISIBLE_LOCALIZATION_MODES.has(mode)) {
+    fail(
+      `bot.customerVisibleLocalizationMode must be ai_translate or catalog_only; got ${mode}`
+    );
+  }
+
+  const languageSupport = bot?.languageSupport;
+  let enabledLanguages = [];
+  if (languageSupport != null) {
+    if (!isPlainObject(languageSupport)) {
+      fail("bot.languageSupport must be an object when provided");
+    } else {
+      if (!Array.isArray(languageSupport.enabledLanguages)) {
+        fail("bot.languageSupport.enabledLanguages must be an array");
+      } else {
+        enabledLanguages = languageSupport.enabledLanguages
+          .filter((language) => typeof language === "string")
+          .map((language) => language.trim().toLowerCase());
+        for (const language of enabledLanguages) {
+          if (!LANGUAGE_CODE_PATTERN.test(language)) {
+            fail(`bot.languageSupport contains invalid language code ${language}`);
+          }
+        }
+      }
+
+      for (const field of ["defaultLanguage", "fallbackLanguage"]) {
+        const language = languageSupport[field];
+        if (typeof language !== "string" || !LANGUAGE_CODE_PATTERN.test(language)) {
+          fail(`bot.languageSupport.${field} must be a valid language code`);
+        } else if (enabledLanguages.length > 0 && !enabledLanguages.includes(language.toLowerCase())) {
+          fail(`bot.languageSupport.${field} must be included in enabledLanguages`);
+        }
+      }
+
+      if (languageSupport.canonicalProcessingLanguage !== "en") {
+        fail("bot.languageSupport.canonicalProcessingLanguage must be en");
+      }
+      if (
+        typeof languageSupport.lowConfidenceThreshold !== "number" ||
+        languageSupport.lowConfidenceThreshold < 0 ||
+        languageSupport.lowConfidenceThreshold > 1
+      ) {
+        fail("bot.languageSupport.lowConfidenceThreshold must be between 0 and 1");
+      }
+    }
+  }
+
+  const localizedVariables = bot?.localizedVariables;
+  if (localizedVariables == null) {
+    if (mode === "catalog_only") {
+      fail("catalog_only bots must define bot.localizedVariables");
+    }
+    return localizedKeys;
+  }
+  if (!isPlainObject(localizedVariables)) {
+    fail("bot.localizedVariables must be an object");
+    return localizedKeys;
+  }
+  if (localizedVariables.version !== 1) {
+    fail("bot.localizedVariables.version must be 1");
+  }
+  if (localizedVariables.baseLanguage !== "en") {
+    fail("bot.localizedVariables.baseLanguage must be en");
+  }
+
+  const languages = localizedVariables.languages;
+  if (!isPlainObject(languages)) {
+    fail("bot.localizedVariables.languages must be an object");
+    return localizedKeys;
+  }
+
+  for (const [language, entries] of Object.entries(languages)) {
+    if (!LANGUAGE_CODE_PATTERN.test(language)) {
+      fail(`bot.localizedVariables contains invalid language code ${language}`);
+      continue;
+    }
+    if (!isPlainObject(entries)) {
+      fail(`bot.localizedVariables.languages.${language} must be an object`);
+      continue;
+    }
+    for (const [key, value] of Object.entries(entries)) {
+      if (!VARIABLE_KEY_PATTERN.test(key)) {
+        fail(`Localized content key ${key} is invalid`);
+        continue;
+      }
+      if (typeof value !== "string") {
+        fail(`Localized content value ${language}.${key} must be a string`);
+        continue;
+      }
+      localizedKeys.add(key);
+    }
+  }
+
+  const englishEntries = isPlainObject(languages.en) ? languages.en : {};
+  for (const key of localizedKeys) {
+    if (typeof englishEntries[key] !== "string" || !englishEntries[key].trim()) {
+      fail(`Localized content key ${key} requires a non-empty English value`);
+    }
+    if (globalKeys.has(key)) {
+      fail(`Variable ${key} cannot exist in both bot globals and localized content`);
+    }
+  }
+
+  if (mode === "catalog_only") {
+    if (localizedKeys.size === 0) {
+      fail("catalog_only bots must define at least one localized content key");
+    }
+    for (const language of enabledLanguages) {
+      const entries = isPlainObject(languages[language]) ? languages[language] : {};
+      const missing = [...localizedKeys].filter(
+        (key) => typeof entries[key] !== "string" || !entries[key].trim()
+      );
+      if (missing.length > 0) {
+        fail(
+          `Localized content language ${language} is missing required keys: ${missing.join(", ")}`
+        );
+      }
+    }
+  }
+
+  return localizedKeys;
+}
+
 const topLevelKeys = Object.keys(flowExport);
 if (!sameKeys(topLevelKeys, requiredTopLevelKeys)) {
   fail(`Top-level keys must be ${requiredTopLevelKeys.join(", ")}; got ${topLevelKeys.join(", ")}`);
@@ -255,6 +399,39 @@ for (const edge of edges) {
 
 for (const node of nodes) {
   const nodeOutgoing = outgoing.get(node.id) ?? [];
+  const returns = nodeOutgoing.filter((edge) => edge.isRetry === true);
+  if (node.type === "retry" && returns.length > 0) {
+    const resets = node.data?.resetVariables;
+    if (resets !== undefined && (!Array.isArray(resets) || resets.some((name) =>
+      typeof name !== "string" || !name.trim() || name.trim().startsWith("__") || name.trim() === "system"))) {
+      fail(`Retry node ${node.id} has invalid resetVariables`);
+    }
+    const attempts = Number(node.data?.maxRetries);
+    if (!Number.isInteger(attempts) || attempts < 1 || attempts > 4) {
+      fail(`Retry node ${node.id} must set maxRetries between 1 and 4 for return edges`);
+    }
+    if (returns.length !== 1 || nodeOutgoing.length !== 2 || nodeOutgoing.filter((edge) => edge.isDefault).length !== 1) {
+      fail(`Retry node ${node.id} needs one return edge and one default exhausted exit`);
+    }
+    const target = nodes.find((candidate) => candidate.id === returns[0].target);
+    if (!target || !["input", "form", "decision"].includes(target.type)) {
+      fail(`Retry node ${node.id} must return to a user prompt`);
+    } else {
+      const visited = new Set();
+      const queue = [target.id];
+      while (queue.length > 0) {
+        const current = queue.shift();
+        if (visited.has(current)) continue;
+        visited.add(current);
+        for (const edge of outgoing.get(current) ?? []) {
+          if (!edge.isRetry) queue.push(edge.target);
+        }
+      }
+      if (!visited.has(node.id)) {
+        fail(`Retry node ${node.id} must return to an earlier prompt in its own journey`);
+      }
+    }
+  }
   if (node.type === "end" && nodeOutgoing.length > 0) {
     fail(`End node ${node.id} must not have outgoing edges`);
   }
@@ -267,6 +444,14 @@ for (const node of nodes) {
     if (defaultEdges.length !== 1) {
       fail(`Conditional source ${node.id} must have exactly one default edge; got ${defaultEdges.length}`);
     }
+  }
+}
+
+for (const edge of edges) {
+  if (!edge.isRetry) continue;
+  const source = nodes.find((node) => node.id === edge.source);
+  if (source?.type !== "retry" || edge.isDefault || edge.isError || edge.condition) {
+    fail(`Return edge ${edge.id} must start at retry and cannot be conditional or default`);
   }
 }
 
@@ -303,7 +488,7 @@ function detectCycle(nodeId) {
   visitState.set(nodeId, "visiting");
   path.push(nodeId);
   for (const edge of outgoing.get(nodeId) ?? []) {
-    detectCycle(edge.target);
+    if (!edge.isRetry) detectCycle(edge.target);
   }
   path.pop();
   visitState.set(nodeId, "visited");
@@ -323,6 +508,8 @@ if (flowExport.metadata?.nodeCount !== nodes.length) {
   fail(`metadata.nodeCount ${flowExport.metadata?.nodeCount} does not match flow.nodes.length ${nodes.length}`);
 }
 
+const localizedVariableKeys = validateLocalizationConfig(flowExport.bot);
+
 const safeVariables = new Set([
   "input",
   "intent",
@@ -335,6 +522,9 @@ const scriptVarWritePattern = /\bvars(?:\s*\.\s*([A-Za-z_$][\w$]*)|\s*\[\s*(['"]
 
 for (const item of flowExport.bot?.globalVariables ?? []) {
   if (item?.key) safeVariables.add(item.key);
+}
+for (const key of localizedVariableKeys) {
+  safeVariables.add(key);
 }
 
 for (const node of nodes) {

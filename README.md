@@ -6,6 +6,16 @@ This standalone package mirrors the application contract from the sibling `bot-c
 
 Current generator rules include the native `otp` node for backend-only OTP generation and delivery over SMS, WhatsApp, email, or multiple channels. Generated flows must not create OTP values with script nodes, store OTP codes in ordinary variables, or include OTP values in user-visible copy. OTP node configs should keep `resendCooldownSeconds >= 30` and `maxResends <= 3`.
 
+Generated workflows must also read stable customer-visible content from the
+bot's Localized Content catalog. Messages, prompts, buttons, forms, carousels,
+confirmations, and customer-visible fallback/error copy use stable `{{key}}`
+references backed by `bot.localizedVariables`; they are not embedded as
+language-specific literals in the graph. New multilingual exports use
+`catalog_only`, include `languageSupport`, and provide complete values for every
+enabled language. See `WORKSPACE.md` and
+`generic-flow-agent-kit/FLOW_GENERATOR_INSTRUCTIONS.md` for the complete
+authoring boundary.
+
 Record nodes now support `schemaName` for industry targeting. Generated domain builders default record nodes to the matching schema: `automobile`, `education`, `financial_services`, `healthcare`, `hospitality`, `insurance`, `professional_services`, `realestate`, or `retail`. Use `public` only for legacy/generic flows that intentionally target the default records store.
 
 For any future create or extend work, follow `FLOW_EXTERNAL_LLM_CONTRACT.md` and verify against the relevant domain QA checklist before import. The contract now calls out the recurring mistakes we want to avoid: invented fields, unresolved variables, backward loops, dummy content, and default human handover for routine work. It also expects real database-backed data for persisted flow state. The checklist is workflow-wide; hospital is only one example domain bundle.
@@ -57,6 +67,7 @@ Whenever flow-specific generation logic, validator logic, node/schema contract b
 
 ```powershell
 npm run domains:check
+npm run test:localized-content
 ```
 
 That command rebuilds and validates every domain listed in `domains/registry.json` so this package stays in sync with application code and domain artifacts together.
@@ -139,7 +150,9 @@ npm run test:hospital:appointment-single-branch
 
 The validator now compiles every `script` node body as JavaScript before passing the export. This catches malformed multiline strings, broken regex literals, and other `Invalid or unexpected token` failures locally instead of during `/bots/import` or runtime execution.
 
-Generated FLOW graphs must be acyclic. Do not route retry, fallback, slot-conflict, no-slot, or low-confidence paths back to the same node or an earlier node. Use a forward recovery node, queue, handover, or end instead. The local validator checks this because `/bots/import` rejects cycles as `INFINITE_LOOP`.
+Generated FLOW graphs reject ordinary cycles. To let a patient change an earlier department choice without duplicating the journey, use a `retry` node with `maxRetries` from 1 to 4, one `isRetry: true` edge back to the original input/form/decision, and one `isDefault: true` exhausted exit edge. Set `resetVariables` to the dependent choices that must be cleared (such as doctor and slot); perform booking writes only after final confirmation. The local validator and `/bots/import` still reject unbounded backward edges as `INFINITE_LOOP`.
+
+For example, route `department_input` to `department_confirmation`. Its No branch enters `department_retry`; that node's return edge targets the original `department_input`, while its default edge offers cancellation or a menu after the attempt limit. The Yes branch proceeds to the shared slot and booking steps. Keep department/doctor/slot state current as answers change, and store a booking only on the confirmed branch.
 
 The validator intentionally treats appointment `dateVar` values as non-import-safe for generated templates. Resolve the selected slot from the appointment node `outputVar`, then use that normalized slot object for downstream record data unless the deployed FLOW import validator is confirmed to accept `dateVar` reads.
 

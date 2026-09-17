@@ -25,6 +25,8 @@ export const outputPath = join(
   "assai-deepa-hospital-appointment-single-branch.flow.json"
 );
 const DOMAIN_RECORD_SCHEMA = "healthcare";
+const OTP_NOTIFICATION_EMAIL = "prashanth.chinala@gmail.com";
+const WHATSAPP_OTP_TEMPLATE_NAME = "jaspers_market_order_confirmation_v1";
 
 // FLOW input buttons do not support a dynamic button source or a native icon
 // field. Keep this deterministic export-time presentation list in sync with
@@ -99,6 +101,51 @@ function replaceOutgoing(doc, sourceId, newEdges) {
   for (const edge of newEdges) {
     addEdge(doc, { source: sourceId, ...edge });
   }
+}
+
+function cloneAcyclicRestartBranch(doc, { startId, stopId, prefix, stopEdges }) {
+  const nodeMap = getNodeMap(doc);
+  const sourceIds = new Set([startId]);
+  const queue = [startId];
+  while (queue.length > 0) {
+    const sourceId = queue.shift();
+    for (const edge of doc.flow.edges.filter((item) => item.source === sourceId)) {
+      if (!nodeMap.has(edge.target)) continue;
+      if (edge.target === stopId) {
+        sourceIds.add(stopId);
+        continue;
+      }
+      if (!sourceIds.has(edge.target)) {
+        sourceIds.add(edge.target);
+        queue.push(edge.target);
+      }
+    }
+  }
+
+  const cloneId = (id) => `${prefix}${id}`;
+  for (const sourceId of sourceIds) {
+    const clone = deepClone(nodeMap.get(sourceId));
+    clone.id = cloneId(sourceId);
+    upsertNode(doc, clone);
+  }
+
+  for (const edge of doc.flow.edges) {
+    if (!sourceIds.has(edge.source) || edge.source === stopId) continue;
+    addEdge(doc, {
+      ...edge,
+      id: `${prefix}edge_${edge.id}`,
+      source: cloneId(edge.source),
+      target: sourceIds.has(edge.target) ? cloneId(edge.target) : edge.target
+    });
+  }
+  for (const edge of stopEdges) {
+    addEdge(doc, {
+      ...edge,
+      source: cloneId(stopId),
+      id: `${prefix}edge_${edge.id}`
+    });
+  }
+  return cloneId(startId);
 }
 
 function replaceEdgeTarget(doc, edgeId, nextTarget) {
@@ -224,16 +271,6 @@ function replyButton(label, value) {
   };
 }
 
-function phoneButton(label, phone) {
-  return {
-    label,
-    value: "call",
-    actionType: "phone",
-    url: "",
-    phone
-  };
-}
-
 function dynamicCarouselNode(id, position, introText, slidesSource, slideTemplate) {
   return {
     id,
@@ -350,9 +387,8 @@ function notificationNode(id, position, payload) {
 
 function templateMessageNode(id, position, templateName, outputVar) {
   const variables = {
-    "1": "{{patient_name}}",
-    "2": "{{appointment_scheduled_at}}",
-    "3": "{{hospital_name}}"
+    "1": "{{appointment_date}}",
+    "2": "{{appointment_slot_label}}"
   };
   return {
     id,
@@ -373,6 +409,33 @@ function templateMessageNode(id, position, templateName, outputVar) {
       outputVar
     }
   };
+}
+
+function appointmentConfirmationWhatsappData() {
+  return buildNotificationData({
+    recipients: [
+      { type: "customer", whatsappPhone: "{{patient_mobile}}" }
+    ],
+    channels: [
+      {
+        type: "whatsapp",
+        enabled: true,
+        templateName: "appointment_confirmed",
+        language: "{{whatsapp_template_language}}",
+        requiresMediaHeader: false,
+        variables: {
+          "1": "{{patient_name}}",
+          "2": "{{appointment_date}}",
+          "3": "{{appointment_slot_label}}",
+          "4": "{{appointment_department_name}}",
+          "5": "{{appointment_id}}"
+        }
+      }
+    ],
+    dedupeKey: "{{appointment_id}}:confirmation",
+    outputVar: "appointment_notification_result",
+    messageCategory: "transactional"
+  });
 }
 
 function formatDoctorLabelScript({
@@ -591,6 +654,8 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
   doc.metadata.runtimeTableFamily = "healthcare.flow_records";
   doc.metadata.runtimeStorageContract = "healthcare.flow_records and its companion healthcare.flow_record_* tables, selected by schemaName and scoped to the bot tenant";
   doc.metadata.runtimeDataPrerequisite = "Run scripts/ensure-sai-deepa-healthcare-schema.sql before local runtime E2E; the healthcare FLOW record-table family must be provisioned";
+  doc.metadata.bookingConfirmationCriticalPath = "reservation hold, atomic appointment/reservation/payment commit, outbox enqueue, confirmation card";
+  doc.metadata.bookingPostCommitWork = "WhatsApp confirmation, reminder scheduling, and secondary audit run from healthcare.outbox_events in the background worker";
   doc.metadata.variantBuiltFrom = "domains/hospital/templates-source/hospital-full-automation.source.flow.json";
 
   const appointmentIntro = findNode(doc, "appointment_intro");
@@ -662,6 +727,12 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
   ]);
   replaceOutgoing(doc, "appointment_reminder_trigger_router", [
     {
+      id: "edge_variant_post_booking_tasks_router",
+      target: "appointment_notify",
+      label: "appointment_post_booking_tasks",
+      condition: { operator: "equals", value: "appointment_post_booking_tasks" }
+    },
+    {
       id: "edge_variant_reminder_router_12h",
       target: "appointment_reminder_12h_template",
       label: "appointment_reminder_12h",
@@ -689,7 +760,7 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
     },
     {
       id: "edge_variant_reminder_12h_template_failed",
-      target: "appointment_reminder_12h_failed",
+      target: "appointment_reminder_delivery_end",
       label: "failed/default",
       isDefault: true
     }
@@ -703,16 +774,10 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
     },
     {
       id: "edge_variant_reminder_2h_template_failed",
-      target: "appointment_reminder_2h_failed",
+      target: "appointment_reminder_delivery_end",
       label: "failed/default",
       isDefault: true
     }
-  ]);
-  replaceOutgoing(doc, "appointment_reminder_12h_failed", [
-    { id: "edge_variant_reminder_12h_failed_end", target: "appointment_reminder_delivery_end" }
-  ]);
-  replaceOutgoing(doc, "appointment_reminder_2h_failed", [
-    { id: "edge_variant_reminder_2h_failed_end", target: "appointment_reminder_delivery_end" }
   ]);
   replaceOutgoing(doc, "appointment_client_defaults_set", [
     {
@@ -733,11 +798,11 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
     position: { x: 15360, y: 7836 },
     data: {
       promptText: "Enter the 6-digit OTP to continue your booking.",
-      channels: ["whatsapp"],
+      channels: ["email", "whatsapp"],
       phone: "{{patient_mobile}}",
       smsPhone: "",
       whatsappPhone: "{{patient_mobile}}",
-      email: "",
+      email: "{{otp_notification_email}}",
       defaultCountryCode: "+91",
       codeLength: 6,
       otpTtlSeconds: 300,
@@ -750,12 +815,16 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
       smsSenderId: "",
       smsPeid: "",
       smsCtid: "",
-      whatsappMessageTemplate: "Sai Deepa Hospital – Chanda Nagar\n\nYour OTP for appointment booking is {{otp}}.\n\nEnter this OTP to continue your booking.\n\nThis OTP is valid for {{otp_ttl_minutes}} minutes.\n\nPlease do not share this OTP with anyone.",
-      whatsappTemplateName: "verify_otp_usecase",
-      whatsappTemplateLanguage: "en",
-      whatsappTemplateVariablesJson: "{\n  \"1\": \"{{otp}}\",\n  \"2\": \"{{otp_ttl_minutes}}\",\n  \"3\": \"{{hospital_name}}\"\n}",
-      emailSubject: "",
-      emailBody: "",
+      whatsappMessageTemplate: "",
+      whatsappTemplateName: "{{whatsapp_otp_template_name}}",
+      whatsappTemplateLanguage: "{{whatsapp_template_language}}",
+      whatsappTemplateVariablesJson: JSON.stringify({
+        "1": "User",
+        "2": "{{otp}}",
+        "3": "5 minutes"
+      }, null, 2),
+      emailSubject: "Sai Deepa Hospital appointment verification code",
+      emailBody: "Hello,\n\nYour Sai Deepa Hospital verification code is {{otp}}.\n\nThis code expires in {{otp_ttl_minutes}} minutes. Please do not share it with anyone.\n\nRegards,\nSai Deepa Hospital, Chanda Nagar",
       emailBodyType: "text",
       emailReplyTo: "",
       outputVar: "existing_patient_lookup_otp_result"
@@ -1275,35 +1344,7 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
     }
   ]);
 
-  findNode(doc, "appointment_notify").data = buildNotificationData({
-    recipients: [
-      { type: "customer", whatsappPhone: "{{patient_mobile}}" }
-    ],
-    channels: [
-      {
-        type: "whatsapp",
-        enabled: true,
-        templateName: "appointment_confirmed",
-        language: "{{whatsapp_template_language}}",
-        requiresMediaHeader: false,
-        variables: {
-          "1": "{{patient_name}}",
-          "2": "{{appointment_id}}",
-          "3": "{{appointment_doctor_name}}",
-          "4": "{{appointment_department_name}}",
-          "5": "{{appointment_date}}",
-          "6": "{{appointment_slot_label}}",
-          "7": "{{appointment_branch_name}}",
-          "8": "{{appointment_consultation_type_label}}",
-          "9": "{{currency}} {{appointment_booking_fee}}",
-          "10": "{{payment_status_label}}"
-        }
-      }
-    ],
-    dedupeKey: "{{appointment_id}}:confirmation",
-    outputVar: "appointment_notification_result",
-    messageCategory: "transactional"
-  });
+  findNode(doc, "appointment_notify").data = appointmentConfirmationWhatsappData();
 
   const reminder12h = deepClone(findNode(doc, "appointment_reminder_scheduler"));
   reminder12h.id = "appointment_reminder_12h_scheduler";
@@ -1397,6 +1438,22 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
       isDefault: true
     }
   ]);
+  // WhatsApp confirmation, reminders, and secondary audit are background work.
+  // The booking turn only needs the durable commit and the confirmation card.
+  replaceOutgoing(doc, "appointment_audit", [
+    {
+      id: "edge_variant_appointment_audit_confirmation_logged",
+      target: "appointment_confirmation",
+      label: "logged",
+      condition: { operator: "equals", value: "logged" }
+    },
+    {
+      id: "edge_variant_appointment_audit_confirmation_default",
+      target: "appointment_confirmation",
+      label: "failed/default",
+      isDefault: true
+    }
+  ]);
 
   const appointmentConfirmation = findNode(doc, "appointment_confirmation");
   appointmentConfirmation.type = "carousel";
@@ -1474,23 +1531,42 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
   setGlobal(doc, "payment_link", "https://saideepahospitals.com");
   setGlobal(doc, "report_portal_url", "https://saideepahospitals.com");
   setGlobal(doc, "appointment_fee", "0");
-  setGlobal(doc, "whatsapp_otp_template_name", "verify_otp_usecase");
+  setGlobal(doc, "whatsapp_otp_template_name", WHATSAPP_OTP_TEMPLATE_NAME);
   setGlobal(doc, "whatsapp_confirmation_template_name", "appointment_confirmed");
   setGlobal(doc, "whatsapp_reminder_template_name", "appointment_reminder");
   setGlobal(doc, "whatsapp_reminder_12h_template_name", "appointment_reminder");
   setGlobal(doc, "whatsapp_reminder_2h_template_name", "appointment_reminder");
-  setGlobal(doc, "whatsapp_template_language", "en");
+  // Meta's approved template cards are registered as English (US), which
+  // maps to the Cloud API locale code en_US. Using en silently makes an
+  // otherwise valid template name fail lookup at delivery time.
+  setGlobal(doc, "whatsapp_template_language", "en_US");
+  setGlobal(doc, "otp_notification_email", OTP_NOTIFICATION_EMAIL);
   doc.bot.description = "Appointment and patient-support assistant for Sai Deepa Hospitals, Chanda Nagar, Hyderabad. Helps patients find the right department and doctor, verify their mobile number, check available appointment dates and slots, view upcoming appointments, book appointments, and receive confirmation and reminder updates through WhatsApp. For medical emergencies, patients are directed to the hospital’s emergency services.";
   doc.metadata.requiredProductionConfiguration = [
     "emergency_phone",
+    "otp_notification_email",
     "whatsapp_otp_template_name",
     "whatsapp_confirmation_template_name",
     "whatsapp_reminder_12h_template_name",
     "whatsapp_reminder_2h_template_name"
   ];
+  doc.metadata.activeNotificationChannel = "mixed";
+  doc.metadata.notificationChannels = {
+    otp: "email + whatsapp",
+    confirmation: "whatsapp",
+    reminder12h: "whatsapp",
+    reminder2h: "whatsapp"
+  };
+  doc.metadata.otpEmailDeliveryConfiguration = {
+    recipient: "{{otp_notification_email}}",
+    provider: "runtime sendEmail adapter",
+    purpose: "appointment OTP only"
+  };
   doc.metadata.whatsappDeliveryConfiguration = {
     otpTemplate: "{{whatsapp_otp_template_name}}",
     confirmationTemplate: "{{whatsapp_confirmation_template_name}}",
+    reminder12hTemplate: "{{whatsapp_reminder_12h_template_name}}",
+    reminder2hTemplate: "{{whatsapp_reminder_2h_template_name}}",
     language: "{{whatsapp_template_language}}",
     recipient: "{{patient_mobile}}",
     category: "transactional",
@@ -1498,23 +1574,16 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
   };
   doc.metadata.emergencyPhoneSource = "Sai Deepa support_phone fallback; verify dedicated emergency number before production";
 
-  // The patient-facing entry point is intentionally only two actions.
+  // The patient-facing entry point is intentionally a single booking action.
   const mainMenu = inputNode(
     "main_menu",
     { x: 2580, y: 40 },
-    "How can I help you today?",
+    "",
     "main_menu",
-    [replyButton("📅 Book Appointment", "book_appointment"), replyButton("🚨 Emergency Help", "emergency")],
+    [replyButton("📅 Book Appointment", "book_appointment")],
     true
   );
-  const emergencyActions = inputNode(
-    "emergency_actions",
-    { x: 3780, y: 520 },
-    "If this is a medical emergency, please seek immediate hospital care or call {{emergency_phone}}. This chat is not a substitute for urgent medical care.",
-    "emergency_action",
-    [phoneButton("📞 Call hospital emergency team", "{{emergency_phone}}"), replyButton("✖️ End conversation", "end")],
-    true
-  );
+  mainMenu.data.messages = [];
   const emergencyEnd = {
     id: "emergency_end",
     type: "end",
@@ -1522,7 +1591,6 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
     data: { messages: [] }
   };
   upsertNode(doc, mainMenu);
-  upsertNode(doc, emergencyActions);
   upsertNode(doc, emergencyEnd);
   appointmentIntro.data.messages = [
     {
@@ -1541,13 +1609,7 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
       id: "edge_variant_main_menu_book_appointment",
       target: "existing_patient_lookup_form",
       label: "book_appointment",
-      condition: { operator: "equals", value: "book_appointment" }
-    },
-    {
-      id: "edge_variant_main_menu_emergency",
-      target: "emergency_safety_message",
-      label: "emergency",
-      condition: { operator: "equals", value: "emergency" },
+      condition: { operator: "equals", value: "book_appointment" },
       isDefault: true
     }
   ]);
@@ -1636,8 +1698,16 @@ return { route: "valid", mobile: vars.patient_mobile };
     source: "appointment_mobile_invalid_message",
     target: "existing_patient_lookup_otp_invalid_end"
   });
-  otpNode.data.whatsappTemplateName = "verify_otp_usecase";
+  otpNode.data.channels = ["email", "whatsapp"];
+  otpNode.data.email = "{{otp_notification_email}}";
+  otpNode.data.whatsappPhone = "{{patient_mobile}}";
+  otpNode.data.whatsappTemplateName = "{{whatsapp_otp_template_name}}";
   otpNode.data.whatsappTemplateLanguage = "{{whatsapp_template_language}}";
+  otpNode.data.whatsappTemplateVariablesJson = JSON.stringify({
+    "1": "User",
+    "2": "{{otp}}",
+    "3": "5 minutes"
+  }, null, 2);
 
   // Read existing appointments broadly, then apply the exact future-time rule
   // in one deterministic script because the record node has no range operator.
@@ -2160,8 +2230,45 @@ return { route: vars.appointment_department_ai_route, department: vars.departmen
       ? { ...assignment, value: "{{existing_patient_result.data.display_name}}" }
       : assignment.key === "patient_mobile"
         ? { ...assignment, value: "{{patient_mobile}}" }
-        : assignment
+      : assignment
   );
+  // The first-time patient path creates the patient record before booking.
+  // Seed the same stable patient identifier that is persisted by that record
+  // so the required appointment.patient_id field is available when the user
+  // confirms the slot. Without this assignment, an empty patient catalog
+  // reaches the commit chain with an undefined patient_id and is reported as
+  // a misleading slot conflict.
+  const newPatientPrepare = findNode(doc, "appointment_new_patient_prepare");
+  newPatientPrepare.data.assignments = [
+    { key: "appointment_patient_flow_type", value: "new" },
+    { key: "patient_id", value: "PAT-{{patient_mobile}}" }
+  ];
+  const patientForm = findNode(doc, "appointment_patient_form");
+  patientForm.data.fields = [
+    {
+      key: "patient_name",
+      type: "text",
+      label: "Patient name",
+      required: true
+    },
+    {
+      key: "patient_age",
+      type: "number",
+      label: "Age",
+      required: false
+    },
+    {
+      key: "patient_gender",
+      type: "select",
+      label: "Gender",
+      options: [
+        { label: "Male", value: "male" },
+        { label: "Female", value: "female" }
+      ],
+      required: false
+    }
+  ];
+  patientForm.data.fieldsJson = `${JSON.stringify(patientForm.data.fields, null, 2)}\n`;
   const patientRecord = findNode(doc, "appointment_patient_record");
   patientRecord.data.data = {
     patient_id: "PAT-{{patient_mobile}}",
@@ -2209,7 +2316,8 @@ return { route: vars.appointment_department_ai_route, department: vars.departmen
     node.data.data.patient_id = "{{patient_id}}";
     node.data.dataJson = `${JSON.stringify(node.data.data, null, 2)}\n`;
   }
-  confirmUpdate.data.data.booking_source = "whatsapp_workflow";
+  confirmUpdate.data.data.booking_source = "appointment_workflow";
+  confirmUpdate.data.data.patient_name = "{{patient_name}}";
   confirmUpdate.data.data.consultation_mode = "{{consultation_type}}";
   confirmUpdate.data.data.consultation_fee_paise = "{{appointment_booking_fee_paise}}";
   confirmUpdate.data.dataJson = `${JSON.stringify(confirmUpdate.data.data, null, 2)}\n`;
@@ -2432,6 +2540,7 @@ return {
     "called"
   ];
   Object.assign(confirmUpdate.data.collectionSchema.fields, {
+    patient_name: { type: "string", required: true },
     booking_source: { type: "string", required: false },
     consultation_mode: { type: "string", required: false },
     consultation_fee_paise: { type: "number", required: false }
@@ -2454,13 +2563,13 @@ return {
   upsertNode(doc, commitCancel);
   replaceOutgoing(doc, "appointment_payment_record", [
     {
-      id: "edge_variant_payment_record_appointment_notify_success",
+      id: "edge_variant_payment_record_notification_success",
       target: "appointment_notify",
       label: "success",
       condition: { operator: "equals", value: "success" }
     },
     {
-      id: "edge_variant_payment_record_appointment_notify_default",
+      id: "edge_variant_payment_record_notification_default",
       target: "appointment_notify",
       label: "failed/default",
       isDefault: true
@@ -2503,7 +2612,7 @@ return {
   findNode(doc, "appointment_booking_commit_failed_message").data.messages = [
     {
       type: "text",
-      text: "I couldn't complete that appointment because the selected time was just taken. No appointment was confirmed. Please choose another available date or call {{front_desk_phone}}."
+      text: "I couldn't complete that appointment right now. No appointment was confirmed and no payment record was created. Please choose another available date or call {{front_desk_phone}}."
     }
   ];
 
@@ -2549,6 +2658,74 @@ return {
   paymentRecord.data.whereJson = JSON.stringify(paymentRecord.data.where, null, 2);
   paymentRecord.data.idempotencyKey = "{{payment_id}}";
 
+  const reservationCommit = findNode(doc, "appointment_slot_booked_update");
+  const bookingCommit = deepClone(findNode(doc, "appointment_confirm_record_update"));
+  bookingCommit.id = "appointment_booking_commit";
+  bookingCommit.position = { x: 58476, y: 10190 };
+  bookingCommit.data.action = "booking_commit";
+  bookingCommit.data.outputVar = "appointment_booking_commit_result";
+  bookingCommit.data.idempotencyKey = "{{appointment_id}}:booking_commit";
+  bookingCommit.data.where = {};
+  bookingCommit.data.whereJson = "{}";
+  bookingCommit.data.data = {};
+  bookingCommit.data.dataJson = "{}";
+  bookingCommit.data.bookingCommit = {
+    idempotencyKey: "{{appointment_id}}:booking_commit",
+    lockKey: "{{appointment_reservation_key}}",
+    duplicate: {
+      collection: "appointments",
+      where: {
+        slot_id: "{{appointment_slot_id}}",
+        doctor_id: "{{doctor_id}}",
+        patient_id: "{{patient_id}}"
+      },
+      excludeAppointmentId: "{{appointment_id}}"
+    },
+    appointment: {
+      collection: "appointments",
+      where: { appointment_id: "{{appointment_id}}" },
+      data: confirmUpdate.data.data,
+      uniqueKey: "appointment_id"
+    },
+    reservation: {
+      collection: "appointment_reservations",
+      where: {
+        status: "held",
+        reservation_id: "{{appointment_reservation_id}}"
+      },
+      data: reservationCommit.data.data,
+      uniqueKey: "reservation_id"
+    },
+    payment: {
+      collection: "payments",
+      where: { payment_id: "{{payment_id}}" },
+      data: paymentRecord.data.data,
+      uniqueKey: "payment_id"
+    },
+    outbox: {
+      eventId: "appointment-post-booking:{{appointment_id}}",
+      locationId: "{{doctor_scope_branch_id}}",
+      aggregateCollection: "appointments",
+      aggregateRecordId: "{{appointment_id}}",
+      eventType: "appointment.post_booking_tasks",
+      payload: {
+        triggerText: "appointment_post_booking_tasks",
+        type: "appointment_post_booking_tasks",
+        channel: "whatsapp",
+        appointment_id: "{{appointment_id}}",
+        conversation_id: "{{system.sessionId}}",
+        flow_id: "{{system.botId}}"
+      },
+      headers: {
+        source: "appointment_booking_commit",
+        channel: "whatsapp"
+      }
+    }
+  };
+  bookingCommit.data.collectionSchema = confirmUpdate.data.collectionSchema;
+  bookingCommit.data.schemaName = DOMAIN_RECORD_SCHEMA;
+  upsertNode(doc, bookingCommit);
+
   // The DB uses booking_horizon_days and same_day_booking_allowed names.
   for (const id of ["appointment_filter_available_slots", "appointment_filter_alternate_slots", "appointment_filter_conflict_slots"]) {
     const node = findNode(doc, id);
@@ -2587,7 +2764,7 @@ return {
   findNode(doc, "appointment_booking_commit_failed_message").data.messages = [
     {
       type: "text",
-      text: "I couldn't complete that appointment because the selected time was just taken. No appointment was confirmed. Please choose another available date or call {{front_desk_phone}}."
+      text: "I couldn't complete that appointment right now. No appointment was confirmed and no payment record was created. Please choose another available date or call {{front_desk_phone}}."
     }
   ];
   // Sai Deepa's initial configuration is pay-at-hospital only; remove the
@@ -2621,7 +2798,7 @@ return {
   replaceOutgoing(doc, "appointment_payment_confirmation_gate", [
     {
       id: "edge_variant_payment_confirmation_authorized",
-      target: "appointment_confirm_record_update",
+      target: "appointment_booking_commit",
       label: "confirmed",
       condition: { operator: "equals", value: "confirmed" }
     },
@@ -2692,7 +2869,7 @@ return {
     },
     {
       id: "edge_variant_confirmation_change_slot",
-      target: "appointment_reselect_slot",
+      target: "appointment_change_appointment_department_input",
       label: "change_slot",
       isDefault: true
     }
@@ -2730,61 +2907,59 @@ return {
     source: "appointment_payment_confirmation_authorize",
     target: "appointment_prepare_reservation_hold"
   });
+  replaceOutgoing(doc, "appointment_booking_commit", [
+    {
+      id: "edge_variant_booking_commit_confirmation",
+      target: "appointment_confirmation",
+      label: "success",
+      condition: { operator: "equals", value: "success" }
+    },
+    {
+      id: "edge_variant_booking_commit_failed",
+      target: "appointment_booking_commit_failed_message",
+      label: "failed/default",
+      isDefault: true
+    }
+  ]);
+
+  const postBookingEnd = {
+    id: "appointment_post_booking_tasks_end",
+    type: "end",
+    position: { x: 62600, y: 10040 },
+    data: { messages: [] }
+  };
+  upsertNode(doc, postBookingEnd);
+  replaceOutgoing(doc, "appointment_audit", [
+    {
+      id: "edge_variant_appointment_audit_post_booking_end",
+      target: "appointment_post_booking_tasks_end",
+      label: "logged",
+      condition: { operator: "equals", value: "logged" }
+    },
+    {
+      id: "edge_variant_appointment_audit_post_booking_end_default",
+      target: "appointment_post_booking_tasks_end",
+      label: "failed/default",
+      isDefault: true
+    }
+  ]);
   // The confirmation input owns the review prompt so the details are shown
   // exactly once immediately before the confirmation buttons. The old
   // summary node is bypassed above and pruned from the export.
 
   // Use stable appointment IDs for all delivery and scheduler deduplication.
-  findNode(doc, "appointment_notify").data = buildNotificationData({
-    recipients: [
-      { type: "customer", whatsappPhone: "{{patient_mobile}}" }
-    ],
-    channels: [
-      {
-        type: "whatsapp",
-        enabled: true,
-        templateName: "appointment_confirmed",
-        language: "{{whatsapp_template_language}}",
-        requiresMediaHeader: false,
-        variables: {
-          "1": "{{patient_name}}",
-          "2": "{{appointment_id}}",
-          "3": "{{appointment_doctor_name}}",
-          "4": "{{appointment_department_name}}",
-          "5": "{{appointment_date}}",
-          "6": "{{appointment_slot_label}}",
-          "7": "{{appointment_branch_name}}",
-          "8": "{{appointment_consultation_type_label}}",
-          "9": "{{currency}} {{appointment_booking_fee}}",
-          "10": "{{payment_status_label}}"
-        }
-      }
-    ],
-    dedupeKey: "{{appointment_id}}:confirmation",
-    outputVar: "appointment_notification_result",
-    messageCategory: "transactional"
-  });
-  for (const [node, window, template, triggerText] of [
-    [reminder12h, "12_hours", "appointment_reminder", "appointment_reminder_12h"],
-    [reminder2h, "2_hours", "appointment_reminder", "appointment_reminder_2h"]
+  findNode(doc, "appointment_notify").data = appointmentConfirmationWhatsappData();
+  for (const [node, window, triggerText] of [
+    [reminder12h, "12_hours", "appointment_reminder_12h"],
+    [reminder2h, "2_hours", "appointment_reminder_2h"]
   ]) {
     node.data.payload = {
       triggerText,
       type: "appointment_reminder",
       channel: "whatsapp",
-      templateName: template,
-      language: "{{whatsapp_template_language}}",
+      templateName: "appointment_reminder",
       reminder_window: window,
-      appointment_id: "{{appointment_id}}",
-      patient_mobile: "{{patient_mobile}}",
-      variables: {
-        appointment_id: "{{appointment_id}}",
-        doctor_name: "{{appointment_doctor_name}}",
-        department: "{{appointment_department_name}}",
-        appointment_date: "{{appointment_date}}",
-        appointment_time: "{{appointment_slot_label}}",
-        hospital_name: "{{hospital_name}}"
-      }
+      appointment_id: "{{appointment_id}}"
     };
     node.data.dedupeKey = `{{appointment_id}}:{{appointment_scheduled_at}}:appointment_reminder_${window === "12_hours" ? "12h" : "2h"}`;
     node.data.pastTimePolicy = "skip";
@@ -2821,6 +2996,33 @@ return {
       }
     ]
   ).data;
+
+  // A graph edge cannot point back into the original department-to-review
+  // path: that would make the FLOW cyclic and block publishing. The catalog
+  // has already been loaded before the review step, so clone the selection
+  // path starting at its visible input. This makes Change Appointment show
+  // the next prompt immediately instead of handing off to a silent record
+  // node, then terminate a second change request safely instead of looping
+  // through the same review node again.
+  cloneAcyclicRestartBranch(doc, {
+    startId: "appointment_department_input",
+    stopId: "appointment_booking_confirmation",
+    prefix: "appointment_change_",
+    stopEdges: [
+      {
+        id: "confirmation_confirm",
+        target: "appointment_payment_confirmation_authorize",
+        label: "confirm",
+        condition: { operator: "equals", value: "confirm" }
+      },
+      {
+        id: "confirmation_change_slot",
+        target: "appointment_no_booking_message",
+        label: "change_slot",
+        isDefault: true
+      }
+    ]
+  });
 
   pruneUnreachable(doc);
   applyDomainRecordSchema(doc);

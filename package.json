@@ -8,6 +8,8 @@
     "contract:generate": "node scripts/sync-contract-from-app.mjs",
     "contract:check": "node scripts/sync-contract-from-app.mjs --check",
     "test:notifications": "node --test scripts/notification-data.test.mjs",
+    "test:flow-return": "node --test scripts/validate-flow-return.test.mjs",
+    "test:localized-content": "node --test scripts/validate-localized-content.test.mjs",
     "domains:build": "node scripts/run-domain-workflows.mjs build",
     "domains:validate": "node scripts/run-domain-workflows.mjs validate",
     "domains:check": "node scripts/run-domain-workflows.mjs check",
@@ -41,7 +43,7 @@
     "template:validate": "npm run domain:hospital:validate",
     "template:audit:journeys": "npm run domain:hospital:audit:journeys",
     "template:audit:content": "npm run domain:hospital:audit:content",
-    "check": "npm run contract:check && npm run domains:check",
-    "check:strict": "npm run contract:check && npm run domains:check:strict"
+    "check": "npm run contract:check && npm run test:localized-content && npm run domains:check",
+    "check:strict": "npm run contract:check && npm run test:localized-content && npm run domains:check:strict"
   }
 }

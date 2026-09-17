@@ -4,7 +4,36 @@
   "bot": {
     "name": "External Contract Example Bot",
     "description": "Minimal validator-safe export example.",
-    "globalVariables": []
+    "globalVariables": [],
+    "languageSupport": {
+      "enabledLanguages": [
+        "en",
+        "hi",
+        "te"
+      ],
+      "defaultLanguage": "en",
+      "fallbackLanguage": "en",
+      "canonicalProcessingLanguage": "en",
+      "supportRomanizedInput": true,
+      "lowConfidenceThreshold": 0.7,
+      "allowMidConversationSwitch": true
+    },
+    "localizedVariables": {
+      "version": 1,
+      "baseLanguage": "en",
+      "languages": {
+        "en": {
+          "welcome_message": "Welcome. This export demonstrates localized customer-visible content."
+        },
+        "hi": {
+          "welcome_message": "स्वागत है। यह निर्यात स्थानीयकृत ग्राहक-दृश्य सामग्री दिखाता है।"
+        },
+        "te": {
+          "welcome_message": "స్వాగతం. ఈ ఎగుమతి స్థానికీకరించిన వినియోగదారులకు కనిపించే కంటెంట్‌ను చూపిస్తుంది."
+        }
+      }
+    },
+    "customerVisibleLocalizationMode": "catalog_only"
   },
   "flow": {
     "version": {
@@ -35,7 +64,7 @@
           "messages": [
             {
               "type": "text",
-              "text": "Welcome. This export demonstrates the canonical wrapper and a validator-safe minimal graph."
+              "text": "{{welcome_message}}"
             }
           ],
           "buttons": []

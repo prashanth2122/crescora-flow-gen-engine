@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-13",
+  "generatedAt": "2026-09-17",
   "exportWrapper": {
     "requiredKeys": [
       "version",
@@ -25,7 +25,10 @@
         "headerLogoUrl",
         "headerTitle",
         "headerTagline",
-        "globalVariables"
+        "globalVariables",
+        "languageSupport",
+        "localizedVariables",
+        "customerVisibleLocalizationMode"
       ],
       "globalVariables": {
         "type": "array",
@@ -34,6 +37,51 @@
           "value": "string"
         },
         "keyPattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+      },
+      "languageSupport": {
+        "type": "object",
+        "requiredKeys": [
+          "enabledLanguages",
+          "defaultLanguage",
+          "fallbackLanguage",
+          "canonicalProcessingLanguage",
+          "supportRomanizedInput",
+          "lowConfidenceThreshold",
+          "allowMidConversationSwitch"
+        ],
+        "canonicalProcessingLanguage": "en",
+        "defaults": {
+          "enabledLanguages": [
+            "en",
+            "hi",
+            "te"
+          ],
+          "defaultLanguage": "en",
+          "fallbackLanguage": "en",
+          "canonicalProcessingLanguage": "en",
+          "supportRomanizedInput": true,
+          "lowConfidenceThreshold": 0.7,
+          "allowMidConversationSwitch": true
+        }
+      },
+      "localizedVariables": {
+        "type": "object",
+        "requiredKeys": [
+          "version",
+          "baseLanguage",
+          "languages"
+        ],
+        "version": 1,
+        "baseLanguage": "en",
+        "languages": "Record<languageCode, Record<variableKey, string>>",
+        "keyPattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+      },
+      "customerVisibleLocalizationMode": {
+        "type": "string",
+        "allowedValues": [
+          "ai_translate",
+          "catalog_only"
+        ]
       }
     },
     "flow": {
@@ -128,7 +176,8 @@
           "label",
           "condition",
           "isDefault",
-          "isError"
+          "isError",
+          "isRetry"
         ],
         "condition": {
           "operator": [
@@ -228,9 +277,11 @@
     "No conditional node may have conditional branches without exactly one default edge.",
     "Allowed edge condition operators are only `equals` and `contains`.",
     "Do not use bare `{{botId}}`, `{{channel}}`, or `{{sessionId}}`; use `{{system.botId}}`, `{{system.channel}}`, and `{{system.sessionId}}`.",
-    "Every `{{variable}}` read must come from an upstream writer, a declared bot global variable, or an allowed system/context variable.",
+    "Every `{{variable}}` read must come from an upstream writer, a declared bot global variable, a declared localized content key, or an allowed system/context variable.",
+    "Every stable customer-visible string created or changed by the generator must be stored in `bot.localizedVariables` and referenced by its `{{key}}`; this includes messages, prompts, buttons, forms, carousel copy, confirmations, and user-visible errors.",
+    "Localized content keys are readonly runtime variables. Do not write them with input, form, script, `setVariable`, AI, or integration nodes.",
     "Do not copy example-only placeholders such as `{{source}}`, `{{payment_status}}`, `{{customer_phone}}`, `{{consent_text}}`, or `{{ip_address}}` unless the flow writes them first.",
-    "Do not create self-loops or ancestor back-edges unless the loop is explicitly bounded and has a clear exit path.",
+    "Ordinary graph cycles are rejected. To revisit an earlier user prompt, route through a retry node with maxRetries 1–4, one isRetry return edge to input/form/decision, and one isDefault exhausted exit edge. Clear dependent variables on return; perform non-idempotent writes only after final confirmation.",
     "Keep `metadata.nodeCount` equal to `flow.nodes.length`."
   ]
 }
