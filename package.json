@@ -17,7 +17,7 @@
     "domain:hospital:build": "node scripts/build-hospital-full-automation.mjs",
     "domain:hospital:validate": "node scripts/validate-flow-export.mjs domains/hospital/templates/hospital-full-automation.flow.json",
     "domain:hospital:appointment-single-branch:build": "node scripts/build-hospital-appointment-single-branch.mjs",
-    "domain:hospital:appointment-single-branch:validate": "node scripts/validate-flow-export.mjs domains/hospital/templates/assai-deepa-hospital-appointment-single-branch.flow.json",
+    "domain:hospital:appointment-single-branch:validate": "node scripts/validate-flow-export.mjs domains/hospital/templates/assai-deepa-hospital-appointment-single-branch.flow.json && node scripts/validate-hospital-appointment-sync.mjs domains/hospital/templates/assai-deepa-hospital-appointment-single-branch.flow.json",
     "domain:real-estate:build": "node scripts/build-real-estate-lead-to-site-visit.mjs",
     "domain:real-estate:validate": "node scripts/validate-flow-export.mjs domains/real-estate/templates/real-estate-lead-to-site-visit.flow.json",
     "domain:financial-services:build": "node scripts/build-financial-services-loan-advisor-automation.mjs",

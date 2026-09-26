@@ -184,6 +184,13 @@ Do not copy example-only placeholders such as `{{source}}`, `{{payment_status}}`
 - `data.outputVar` must describe the verification result and must not be `otp` or contain `code`.
 - Ask for recipient, channel, expiry, attempts, resend, provider, consent, and approved-template details when they are not supplied.
 
+## WhatsApp Form presentation rules
+
+- Every `form` node may set `data.channelPresentation.whatsapp.formMode` to `"auto"` or `"chat"`. Omit it or use `"auto"` to use the normal native Meta Flow when the asset is ready, with the validated conversational fallback retained for delivery or eligibility failures.
+- Use `"chat"` when a WhatsApp form is intentionally better as a conversation, especially a single short input such as a mobile number, email address, OTP-related lookup identifier, or a tightly validated value. The runtime asks one field at a time and must run the same field validation, output mapping, and downstream transition as the native form.
+- `"chat"` is a presentation choice only: do not replace the Form node with an unvalidated message or input node merely to avoid a Meta Flow. Preserve the Form's fields, validation rules, `outputVar`, and `mapToVariables` behavior.
+- Do not set `"chat"` for password fields. Passwords remain blocked from WhatsApp collection. Use an approved secure channel instead.
+
 ## Record and persistence rules
 
 Record `data.schemaName`, when supplied, must be one of:

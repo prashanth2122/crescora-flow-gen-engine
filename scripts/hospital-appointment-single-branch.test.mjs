@@ -23,17 +23,18 @@ test("single-branch appointment variant keeps the requested booking constraints"
   assert.match(doc.metadata.runtimeDataPrerequisite, /ensure-sai-deepa-healthcare-schema\.sql/);
   assert.doesNotMatch(doc.metadata.runtimeDataPrerequisite, /sync-sai-deepa-runtime-records\.sql/);
   const globalValue = (key) => doc.bot.globalVariables.find((item) => item.key === key)?.value;
-  assert.equal(globalValue("whatsapp_otp_template_name"), "jaspers_market_order_confirmation_v1");
-  assert.equal(globalValue("whatsapp_confirmation_template_name"), "appointment_confirmed");
+  assert.equal(globalValue("whatsapp_otp_template_name"), "verify_otp_usecase");
+  assert.equal(globalValue("whatsapp_confirmation_template_name"), "doc_appointment_confirmed");
+  assert.equal(globalValue("hospital_location_url"), "https://maps.app.goo.gl/CnLgUZGcaas1Pm776");
   assert.equal(globalValue("whatsapp_template_language"), "en_US");
-  assert.equal(globalValue("whatsapp_reminder_template_name"), "appointment_reminder");
-  assert.equal(globalValue("whatsapp_reminder_12h_template_name"), "appointment_reminder");
-  assert.equal(globalValue("whatsapp_reminder_2h_template_name"), "appointment_reminder");
-  assert.equal(globalValue("otp_notification_email"), "prashanth.chinala@gmail.com");
+  assert.equal(globalValue("whatsapp_reminder_template_name"), "doc_appointment_reminder");
+  assert.equal(globalValue("whatsapp_reminder_12h_template_name"), "doc_appointment_reminder");
+  assert.equal(globalValue("whatsapp_reminder_2h_template_name"), "doc_appointment_reminder");
+  assert.equal(globalValue("otp_notification_email"), undefined);
   assert.equal(globalValue("temporary_notification_email"), undefined);
-  assert.equal(doc.metadata.activeNotificationChannel, "mixed");
+  assert.equal(doc.metadata.activeNotificationChannel, "whatsapp");
   assert.deepEqual(doc.metadata.notificationChannels, {
-    otp: "email + whatsapp",
+    otp: ["whatsapp"],
     confirmation: "whatsapp",
     reminder12h: "whatsapp",
     reminder2h: "whatsapp"
@@ -45,7 +46,7 @@ test("single-branch appointment variant keeps the requested booking constraints"
   for (const node of doc.flow.nodes.filter((item) => item.type === "scheduler")) {
     if (node.data.payload?.type !== "appointment_reminder") continue;
     assert.equal(node.data.payload.channel, "whatsapp");
-    assert.equal(node.data.payload.templateName, "appointment_reminder");
+    assert.equal(node.data.payload.templateName, "doc_appointment_reminder");
   }
   assert.doesNotMatch(JSON.stringify(doc), /temporary_notification_email/);
   assert.equal(nodeMap.has("appointment_branch_input"), false);
@@ -70,12 +71,19 @@ test("single-branch appointment variant keeps the requested booking constraints"
     "🚨 **Medical Emergency**\n\nIf you are experiencing a medical emergency, please **visit the nearest hospital immediately** or contact our emergency support team at **📞 +91 7093762716**.\n\n⚠️ This chat is not a substitute for emergency medical care."
   );
 
-  const mobileField = nodeMap.get("existing_patient_lookup_form").data.fields[0];
+  const mobileForm = nodeMap.get("existing_patient_lookup_form");
+  assert.equal(mobileForm.type, "form");
+  const mobileField = mobileForm.data.fields[0];
   assert.equal(mobileField.key, "patient_mobile");
   assert.equal(mobileField.label, "Mobile Number");
   assert.equal(mobileField.placeholder, "Enter 10-digit mobile number");
   assert.equal(mobileField.pattern, "^(?:\\+91[\\s-]?)?[6-9]\\d{9}$");
   assert.equal(mobileField.showPatternHint, false);
+  assert.equal(
+    mobileForm.data.messages[0],
+    "Please enter the 10-digit mobile number to continue. We'll send a 6-digit OTP for verification."
+  );
+  assert.equal(mobileForm.data.channelPresentation.whatsapp.formMode, "chat");
   assert.equal(outgoing("existing_patient_lookup_form")[0].target, "appointment_mobile_normalize");
 
   assert.equal(nodeMap.has("appointment_reminder_12h_scheduler"), true);
@@ -91,7 +99,9 @@ test("single-branch appointment variant keeps the requested booking constraints"
   assert.equal(nodeMap.get("appointment_reminder_trigger_router").data.variable, "input");
   assert.equal(outgoing("appointment_reminder_trigger_router").find((edge) => edge.condition?.value === "appointment_reminder_12h").target, "appointment_reminder_12h_template");
   assert.equal(outgoing("appointment_reminder_trigger_router").find((edge) => edge.condition?.value === "appointment_reminder_2h").target, "appointment_reminder_2h_template");
-  assert.equal(outgoing("appointment_reminder_trigger_router").find((edge) => edge.condition?.value === "appointment_post_booking_tasks").target, "appointment_notify");
+  assert.equal(outgoing("appointment_reminder_trigger_router").find((edge) => edge.condition?.value === "appointment_post_booking_tasks").target, "appointment_whatsapp_confirmation_code");
+  assert.equal(outgoing("appointment_whatsapp_confirmation_code")[0].target, "appointment_notify");
+  assert.match(nodeMap.get("appointment_whatsapp_confirmation_code").data.script, /slice\(0, 12\)/);
   for (const [id, outputVar] of [
     ["appointment_reminder_12h_template", "appointment_reminder_12h_delivery_result"],
     ["appointment_reminder_2h_template", "appointment_reminder_2h_delivery_result"]
@@ -99,23 +109,27 @@ test("single-branch appointment variant keeps the requested booking constraints"
     const template = nodeMap.get(id);
     assert.equal(template.type, "template-message");
     assert.equal(template.data.channel, "whatsapp");
-    assert.equal(template.data.templateName, "appointment_reminder");
+    assert.equal(template.data.templateName, "doc_appointment_reminder");
     assert.equal(template.data.to, "{{patient_mobile}}");
     assert.equal(template.data.language, "{{whatsapp_template_language}}");
     assert.equal(template.data.category, "transactional");
     assert.equal(template.data.requiresMediaHeader, false);
-    assert.equal(template.data.approvedTemplatesCsv, "appointment_reminder");
+    assert.equal(template.data.approvedTemplatesCsv, "doc_appointment_reminder");
     assert.deepEqual(template.data.variables, {
       "1": "{{appointment_date}}",
       "2": "{{appointment_slot_label}}"
     });
+    assert.doesNotMatch(
+      JSON.stringify(template.data),
+      /\{\{(?:customer_name|slot_label)\}\}/
+    );
     assert.equal(template.data.outputVar, outputVar);
   }
 
   const otpNode = nodeMap.get("existing_patient_lookup_otp");
   assert.ok(otpNode);
   assert.equal(otpNode.type, "otp");
-  assert.deepEqual(otpNode.data.channels, ["email", "whatsapp"]);
+  assert.deepEqual(otpNode.data.channels, ["whatsapp"]);
   assert.equal(otpNode.data.resendCooldownSeconds, 30);
   assert.equal(otpNode.data.maxResends, 3);
   assert.equal(otpNode.data.maxAttempts, 3);
@@ -123,17 +137,24 @@ test("single-branch appointment variant keeps the requested booking constraints"
   assert.equal(otpNode.data.defaultCountryCode, "+91");
   assert.equal(otpNode.data.phone, "{{patient_mobile}}");
   assert.equal(otpNode.data.whatsappPhone, "{{patient_mobile}}");
-  assert.equal(otpNode.data.email, "{{otp_notification_email}}");
+  assert.equal(otpNode.data.email, "");
   assert.equal(otpNode.data.whatsappTemplateName, "{{whatsapp_otp_template_name}}");
   assert.equal(otpNode.data.whatsappTemplateLanguage, "{{whatsapp_template_language}}");
+  assert.equal(
+    nodeMap.get("existing_patient_lookup_otp_max_attempts_message").data.messages[0].text,
+    "We couldn't verify that OTP after 3 attempts. Please call Sai Deepa Hospital at +91 7093762716 to continue your appointment booking, or try again later."
+  );
   assert.equal(otpNode.data.whatsappMessageTemplate, "");
   assert.deepEqual(JSON.parse(otpNode.data.whatsappTemplateVariablesJson), {
-    "1": "User",
-    "2": "{{otp}}",
-    "3": "5 minutes"
+    "code": "{{otp}}",
+    "text": "appointment"
   });
-  assert.match(otpNode.data.emailSubject, /verification code/);
-  assert.match(otpNode.data.emailBody, /Your Sai Deepa Hospital verification code is \{\{otp\}\}/);
+  assert.deepEqual(JSON.parse(otpNode.data.whatsappTemplateButtonParametersJson), {
+    "0": "{{otp}}"
+  });
+  assert.ok(JSON.parse(otpNode.data.whatsappTemplateButtonParametersJson)["0"].length <= 15);
+  assert.equal(otpNode.data.emailSubject, "");
+  assert.equal(otpNode.data.emailBody, "");
   assert.equal(otpNode.data.outputVar, "existing_patient_lookup_otp_result");
   assert.equal(JSON.stringify(doc).includes("existing_patient_lookup_otp_expected"), false);
 
@@ -220,13 +241,14 @@ test("single-branch appointment variant keeps the requested booking constraints"
       ["🧠 Psychiatry", "psychiatry"],
       ["🩻 Neuro Physiotherapy", "neuro_physiotherapy"],
       ["🚹 Urology", "urology"],
-      ["🩸 Vascular Surgery", "vascular_surgery"]
+      ["🩸 Vascular Surgery", "vascular_surgery"],
+      ["🤔 Not sure / describe issue", "not_sure"]
     ]
   );
-  assert.match(nodeMap.get("appointment_department_input").data.messages[0], /Please choose the department/);
+  assert.match(nodeMap.get("appointment_department_input").data.messages[0], /Choose the department/);
   assert.equal(
     nodeMap.get("appointment_department_input").data.messages[0],
-    "Please choose the department you would like to visit.\n\nNot sure which department to choose? Describe your health concern, and we'll help you choose."
+    "Choose the department. If you are not sure, select Not sure / describe issue and type your concern in your own words."
   );
   assert.equal(nodeMap.get("appointment_department_input").data.disableChatInput, false);
   assert.equal(nodeMap.get("appointment_department_carousel"), undefined);
@@ -267,12 +289,36 @@ test("single-branch appointment variant keeps the requested booking constraints"
     department: "Not Sure"
   };
   assert.equal(runDepartmentPrepare(typedNotSureVars).route, "ask_concern");
+  const invalidNumericVars = {
+    department_keys: ["cardiology", "ent", "general_medicine"],
+    department_map: {
+      cardiology: "Cardiology",
+      ent: "ENT",
+      general_medicine: "General Medicine"
+    },
+    department: "15"
+  };
+  assert.equal(runDepartmentPrepare(invalidNumericVars).route, "invalid");
+  assert.equal(invalidNumericVars.department, "");
+  const numericNotSureVars = {
+    department_keys: [
+      "cardiology", "ent", "general_medicine", "general_surgery", "neurology", "orthopedics",
+      "pulmonology", "obstetrics_gynecology", "psychiatry", "neuro_physiotherapy", "urology", "vascular_surgery"
+    ],
+    department_map: {},
+    department: "13"
+  };
+  assert.equal(runDepartmentPrepare(numericNotSureVars).route, "ask_concern");
+  assert.equal(numericNotSureVars.department, "");
 
   const departmentReasonInput = nodeMap.get("appointment_department_reason_input");
   assert.equal(departmentReasonInput.type, "input");
   assert.equal(departmentReasonInput.data.variable, "department_reason");
   assert.equal(departmentReasonInput.data.disableChatInput, false);
-  assert.match(departmentReasonInput.data.messages[0], /health concern/);
+  assert.equal(
+    departmentReasonInput.data.messages[0],
+    "Please briefly tell us about your health concern.\n\nFor example:\n• Cough for the last 3 days\n• Knee pain while walking\n• Stomach pain since this morning\n\nWe’ll help you choose the right department for your appointment."
+  );
   const departmentAiMatch = nodeMap.get("appointment_department_ai_match");
   assert.equal(departmentAiMatch.type, "ai-grounded");
   assert.equal(departmentAiMatch.data.emitResponse, false);
@@ -284,13 +330,15 @@ test("single-branch appointment variant keeps the requested booking constraints"
   const departmentAiPrepare = nodeMap.get("appointment_department_match_prepare");
   assert.match(departmentAiPrepare.data.script, /supportedDepartments/);
   assert.match(departmentAiPrepare.data.script, /general_medicine/);
+  assert.match(departmentAiPrepare.data.script, /shouldFallback/);
   assert.match(departmentAiPrepare.data.script, /appointment_department_ai_route = "emergency"/);
   assert.deepEqual(
     outgoing("appointment_department_route").map((edge) => [edge.label, edge.target]).sort(),
     [
       ["ask_concern", "appointment_department_reason_input"],
       ["department", "appointment_prepare_scope"],
-      ["direct_concern", "appointment_department_ai_match"]
+      ["direct_concern", "appointment_department_ai_match"],
+      ["invalid", "appointment_department_invalid_message"]
     ].sort()
   );
   assert.equal(outgoing("appointment_department_reason_input")[0].target, "appointment_department_ai_match");
@@ -300,7 +348,14 @@ test("single-branch appointment variant keeps the requested booking constraints"
   assert.equal(outgoing("appointment_department_ai_route").find((edge) => edge.condition?.value === "matched").target, "appointment_department_safe_message");
   assert.equal(outgoing("appointment_department_ai_route").find((edge) => edge.condition?.value === "general_medicine").target, "appointment_department_safe_message");
   assert.equal(outgoing("appointment_department_ai_route").find((edge) => edge.condition?.value === "emergency").target, "emergency_safety_message");
+  assert.equal(outgoing("appointment_department_ai_route").find((edge) => edge.condition?.value === "unresolved").target, "appointment_department_concern_fallback_message");
+  assert.equal(outgoing("appointment_department_ai_route").find((edge) => edge.isDefault).target, "appointment_department_concern_fallback_message");
   assert.equal(outgoing("appointment_department_safe_message")[0].target, "appointment_prepare_scope");
+  assert.equal(outgoing("appointment_department_invalid_message")[0].target, "appointment_department_recovery_retry");
+  assert.equal(outgoing("appointment_department_concern_fallback_message")[0].target, "existing_patient_lookup_otp_invalid_end");
+  assert.equal(nodeMap.get("existing_patient_lookup_otp_invalid_end").type, "end");
+  assert.equal(outgoing("appointment_department_recovery_retry").find((edge) => edge.isRetry).target, "appointment_department_input");
+  assert.equal(nodeMap.get("appointment_department_recovery_retry").data.maxRetries, 3);
 
   const runDepartmentScript = (script, vars) => new Function("vars", script)(vars);
   const catalogKeys = [
@@ -311,13 +366,33 @@ test("single-branch appointment variant keeps the requested booking constraints"
   assert.equal(runDepartmentScript(departmentAiPrepare.data.script, matchedVars).route, "matched");
   assert.equal(matchedVars.department, "vascular_surgery");
   const fallbackVars = { appointment_department_ai_raw_match: "dermatology", department_keys: catalogKeys };
-  assert.equal(runDepartmentScript(departmentAiPrepare.data.script, fallbackVars).route, "general_medicine");
-  assert.equal(fallbackVars.department, "general_medicine");
+  assert.equal(runDepartmentScript(departmentAiPrepare.data.script, fallbackVars).route, "unresolved");
+  assert.equal(fallbackVars.department, "");
+  const generalMedicineVars = { appointment_department_ai_raw_match: "general_medicine", department_keys: catalogKeys };
+  assert.equal(runDepartmentScript(departmentAiPrepare.data.script, generalMedicineVars).route, "general_medicine");
+  assert.equal(generalMedicineVars.department, "general_medicine");
+  const junkVars = { appointment_department_ai_raw_match: "hello", department_keys: catalogKeys };
+  assert.equal(runDepartmentScript(departmentAiPrepare.data.script, junkVars).route, "unresolved");
+  assert.equal(junkVars.department, "");
   const emergencyVars = { appointment_department_ai_raw_match: "emergency_medicine", department_keys: catalogKeys };
   assert.equal(runDepartmentScript(departmentAiPrepare.data.script, emergencyVars).route, "emergency");
   assert.equal(emergencyVars.department, "");
 
-  assert.equal(nodeMap.get("appointment_doctors_fetch").data.where.booking_enabled, true);
+  assert.deepEqual(nodeMap.get("appointment_doctors_fetch").data.where, {
+    branch_id: "{{doctor_scope_branch_id}}",
+    department: "{{department}}",
+    consultation_mode: "{{consultation_type}}",
+    booking_enabled: true,
+    is_active: true
+  });
+  for (const node of doc.flow.nodes.filter((item) => item.data?.collection === "doctors" && item.data?.action === "list")) {
+    assert.equal(node.data.where.branch_id, "{{doctor_scope_branch_id}}");
+    assert.equal(node.data.where.booking_enabled, true);
+    assert.equal(node.data.where.is_active, true);
+  }
+  for (const node of doc.flow.nodes.filter((item) => item.data?.collection === "appointment_booking_policies" && item.data?.action === "list")) {
+    assert.equal(node.data.where.is_active, true);
+  }
   assert.equal(nodeMap.get("appointment_doctor_carousel").type, "carousel");
   assert.equal(nodeMap.get("appointment_doctor_carousel").data.slidesMode, "dynamic");
   assert.equal(nodeMap.get("appointment_doctor_carousel").data.slidesSource, "{{appointment_doctor_carousel_slides}}");
@@ -325,6 +400,14 @@ test("single-branch appointment variant keeps the requested booking constraints"
   assert.match(nodeMap.get("appointment_doctor_carousel").data.slideTemplateJson, /image_url/);
   assert.match(nodeMap.get("appointment_doctor_carousel").data.slideTemplateJson, /imageUrl/);
   assert.match(nodeMap.get("appointment_doctor_carousel").data.slideTemplateJson, /Consultation Fee/);
+  for (const id of ["appointment_doctor_carousel"]) {
+    const actions = JSON.parse(nodeMap.get(id).data.slideTemplateJson).actions;
+    assert.deepEqual(actions, [
+      { label: "✅ Select Doctor", value: "{{item.selection_value}}" },
+      { label: "↩️ Change Department", value: "change_department" }
+    ]);
+  }
+  assert.equal(nodeMap.has("appointment_change_appointment_doctor_carousel"), false);
   assert.equal(nodeMap.get("appointment_doctor_input").data.disableChatInput, false);
   assert.deepEqual(nodeMap.get("appointment_doctor_input").data.messages, []);
   const doctorPrepareVars = {
@@ -357,9 +440,36 @@ test("single-branch appointment variant keeps the requested booking constraints"
     doctorPrepareVars.appointment_doctor_carousel_slides[0].image_url,
     "https://www.statnews.com/wp-content/uploads/2024/08/AdobeStock_641399935-645x645.jpeg"
   );
+  const changeDepartmentVars = {
+    doctor_id: "change_department",
+    appointment_doctor_rows: doctorPrepareVars.appointment_doctor_rows
+  };
+  const changeDepartmentResult = new Function(
+    "vars",
+    nodeMap.get("appointment_doctor_choice_prepare").data.script
+  )(changeDepartmentVars);
+  assert.equal(changeDepartmentResult.route, "change_department");
+  assert.equal(changeDepartmentVars.doctor_id, "");
+  assert.equal(
+    outgoing("appointment_doctor_choice_route").find((edge) => edge.condition?.value === "change_department").target,
+    "appointment_doctor_change_department_retry"
+  );
+  assert.equal(nodeMap.get("appointment_doctor_change_department_retry").type, "retry");
+  assert.equal(nodeMap.get("appointment_doctor_change_department_retry").data.maxRetries, 3);
+  assert.ok(nodeMap.get("appointment_doctor_change_department_retry").data.resetVariables.includes("department"));
+  assert.equal(
+    outgoing("appointment_doctor_change_department_retry").find((edge) => edge.isRetry === true).target,
+    "appointment_department_input"
+  );
+  assert.equal(
+    outgoing("appointment_doctor_change_department_retry").find((edge) => edge.isDefault === true).target,
+    "appointment_doctor_change_department_retry_exhausted_message"
+  );
   for (const id of ["appointment_slot_booking", "appointment_alternate_slot_booking", "appointment_conflict_slot_booking"]) {
     const slot = nodeMap.get(id);
     assert.equal(slot.data.slotMode, "dynamic");
+    assert.equal(slot.data.availableWeekdays, "0,1,2,3,4,5,6");
+    assert.equal(slot.data.disableGeneratedFallback, true);
     assert.equal(slot.data.dynamicSlotsVar, id === "appointment_slot_booking" ? "appointment_future_slots" : id === "appointment_alternate_slot_booking" ? "alternate_appointment_future_slots" : "conflict_appointment_future_slots");
     assert.equal(slot.data.dynamicSlotsPath, "data");
     assert.equal(slot.data.maxSlotsPerDay, 32);
@@ -367,6 +477,8 @@ test("single-branch appointment variant keeps the requested booking constraints"
     assert.equal(slot.data.horizonDays, 30);
     assert.equal(slot.data.bookedSlotBehavior, "strikethrough");
   }
+  assert.equal(nodeMap.has("appointment_change_appointment_slot_booking"), false);
+  assert.equal(nodeMap.has("appointment_change_appointment_alternate_slot_booking"), false);
   for (const id of [
     "appointment_filter_available_slots",
     "appointment_filter_alternate_slots",
@@ -444,6 +556,21 @@ test("single-branch appointment variant keeps the requested booking constraints"
   assert.deepEqual(leaveDaySlots.map((slot) => slot.start), ["09:00", "10:00", "10:30"]);
 
   assert.equal(outgoing("appointment_set_ids")[0].target, "appointment_booking_confirmation");
+  for (const [setNodeId, generatorNodeId] of [
+    ["appointment_set_ids", "appointment_id_generate"]
+  ]) {
+    const generator = nodeMap.get(generatorNodeId);
+    assert.equal(generator.type, "script");
+    assert.match(generator.data.script, /timeZone: "Asia\/Kolkata"/);
+    assert.match(generator.data.script, /SDH-/);
+    assert.equal(
+      nodeMap.get(setNodeId).data.assignments.find((item) => item.key === "appointment_id").value,
+      "{{appointment_business_id}}"
+    );
+    assert.equal(outgoing(generatorNodeId)[0].target, setNodeId);
+    const generatedId = new Function("vars", generator.data.script)({});
+    assert.match(generatedId, /^SDH-\d{6}-\d{6}$/);
+  }
   assert.equal(outgoing("appointment_summary_route")[0].target, "appointment_set_pay_at_hospital");
   assert.equal(nodeMap.has("appointment_summary"), false);
   assert.equal(
@@ -452,22 +579,46 @@ test("single-branch appointment variant keeps the requested booking constraints"
   );
   assert.equal(
     outgoing("appointment_booking_confirmation").find((edge) => edge.label === "change_slot").target,
-    "appointment_change_appointment_department_input"
-  );
-  assert.ok(nodeMap.has("appointment_change_appointment_department_input"));
-  assert.equal(
-    nodeMap.get("appointment_change_appointment_department_input").data.messages[0],
-    "Please choose the department you would like to visit.\n\nNot sure which department to choose? Describe your health concern, and we'll help you choose."
+    "appointment_reselect_slot"
   );
   assert.equal(
-    outgoing("appointment_change_appointment_booking_confirmation").find((edge) => edge.condition?.value === "confirm").target,
+    nodeMap.get("appointment_reselect_slot").data.messages[0],
+    "Please choose a convenient appointment date."
+  );
+  assert.equal(
+    nodeMap.get("appointment_reselect_slot").data.dynamicSlotsVar,
+    "appointment_future_slots"
+  );
+  assert.equal(
+    outgoing("appointment_reselect_slot")[0].target,
+    "appointment_reselect_resolve_selected_slot"
+  );
+  assert.equal(
+    outgoing("appointment_reselect_set_ids")[0].target,
+    "appointment_reselect_confirmation"
+  );
+  const reselectSetIds = nodeMap.get("appointment_reselect_set_ids");
+  assert.equal(
+    reselectSetIds.data.assignments.find((item) => item.key === "appointment_date").value,
+    "{{appointment_reselected_slot.date}}"
+  );
+  assert.equal(
+    reselectSetIds.data.assignments.find((item) => item.key === "appointment_slot_label").value,
+    "{{appointment_reselected_slot.label}}"
+  );
+  const reselectConfirmation = nodeMap.get("appointment_reselect_confirmation");
+  assert.match(reselectConfirmation.data.messages[0], /Doctor: \{\{appointment_doctor_name\}\}/);
+  assert.match(reselectConfirmation.data.messages[0], /Date: \{\{appointment_date\}\}/);
+  assert.match(reselectConfirmation.data.messages[0], /Appointment: \{\{appointment_slot_label\}\}/);
+  assert.deepEqual(
+    reselectConfirmation.data.buttons.map((button) => [button.label, button.value]),
+    [["Confirm", "confirm"], ["Cancel", "cancel"]]
+  );
+  assert.equal(
+    outgoing("appointment_reselect_confirmation").find((edge) => edge.condition?.value === "confirm").target,
     "appointment_payment_confirmation_authorize"
   );
-  assert.equal(
-    outgoing("appointment_change_appointment_booking_confirmation").find((edge) => edge.label === "change_slot").target,
-    "appointment_no_booking_message"
-  );
-  assert.equal(nodeMap.has("appointment_reselect_confirmation"), false);
+  assert.equal(nodeMap.has("appointment_change_appointment_department_input"), false);
   assert.equal(
     outgoing("appointment_payment_confirmation_authorize")[0].target,
     "appointment_prepare_reservation_hold"
@@ -546,10 +697,15 @@ test("single-branch appointment variant keeps the requested booking constraints"
   assert.match(confirmationPrompt, /Would you like to confirm this appointment\?/);
   assert.deepEqual(
     nodeMap.get("appointment_booking_confirmation").data.buttons.map((button) => [button.label, button.value]),
-    [["✅ Confirm Appointment", "confirm"], ["← Change Appointment", "change_slot"]]
+    [["Confirm", "confirm"], ["Change Slot", "change_slot"]]
   );
+  assert.equal(nodeMap.has("appointment_change_appointment_booking_confirmation"), false);
   assert.equal(nodeMap.has("appointment_summary"), false);
   assert.equal(nodeMap.get("appointment_confirmation").type, "carousel");
+  assert.deepEqual(
+    nodeMap.get("appointment_booking_complete_end").data.messages,
+    ["Thank you for choosing Sai Deepa Hospital.\nWe look forward to assisting you.\nHave a healthy and pleasant day! 😊"]
+  );
   for (const node of nodeMap.values()) {
     if (node.type === "message") {
       assert.ok(Array.isArray(node.data.messages) && node.data.messages.length > 0, `${node.id} must contain a message`);
@@ -558,18 +714,26 @@ test("single-branch appointment variant keeps the requested booking constraints"
   assert.match(nodeMap.get("appointment_confirmation").data.slidesJson, /Appointment ID/);
   assert.match(nodeMap.get("appointment_confirmation").data.introText, /Your appointment has been confirmed/);
   assert.match(nodeMap.get("appointment_confirmation").data.slidesJson, /In-person consultation/);
+  const confirmationSlides = JSON.parse(nodeMap.get("appointment_confirmation").data.slidesJson);
+  assert.deepEqual(confirmationSlides[0].actions, [
+    {
+      label: "View location",
+      value: "view_hospital_location",
+      actionType: "url",
+      url: "{{hospital_location_url}}"
+    }
+  ]);
   const appointmentNotification = nodeMap.get("appointment_notify");
   assert.deepEqual(appointmentNotification.data.channels.map((channel) => channel.type), ["whatsapp"]);
   assert.equal(appointmentNotification.data.recipients[0].whatsappPhone, "{{patient_mobile}}");
-  assert.equal(appointmentNotification.data.channels[0].templateName, "appointment_confirmed");
+  assert.equal(appointmentNotification.data.channels[0].templateName, "doc_appointment_confirmed");
   assert.equal(appointmentNotification.data.channels[0].language, "{{whatsapp_template_language}}");
   assert.equal(appointmentNotification.data.channels[0].requiresMediaHeader, false);
   assert.deepEqual(appointmentNotification.data.channels[0].variables, {
     "1": "{{patient_name}}",
-    "2": "{{appointment_date}}",
-    "3": "{{appointment_slot_label}}",
-    "4": "{{appointment_department_name}}",
-    "5": "{{appointment_id}}"
+    "2": "{{appointment_date}} {{appointment_slot_label}}",
+    "3": "{{appointment_doctor_name}}",
+    "4": "{{appointment_whatsapp_confirmation_code}}"
   });
   assert.equal(appointmentNotification.data.channels[0].enabled, true);
   assert.doesNotMatch(JSON.stringify(appointmentNotification.data), /temporary_notification_email|prashanth\.chinala@gmail\.com/);
@@ -577,6 +741,18 @@ test("single-branch appointment variant keeps the requested booking constraints"
   assert.equal(
     nodeMap.get("appointment_booking_commit").data.bookingCommit.appointment.data.patient_name,
     "{{patient_name}}"
+  );
+  assert.equal(
+    nodeMap.get("appointment_booking_commit").data.bookingCommit.appointment.data.booking_source,
+    "{{system.channel}}"
+  );
+  assert.equal(
+    nodeMap.get("appointment_booking_commit").data.bookingCommit.appointment.collection,
+    "appointments"
+  );
+  assert.equal(
+    nodeMap.get("appointment_booking_commit").data.collectionSchema.fields.booking_source.type,
+    "string"
   );
   assert.equal(
     nodeMap.get("appointment_booking_commit").data.collectionSchema.fields.patient_name.required,
@@ -606,7 +782,7 @@ test("single-branch appointment variant keeps the requested booking constraints"
     assert.equal(reminder.data.sendWindow.end, "23:59");
     assert.equal(reminder.data.sendWindow.outsideWindowPolicy, "skip");
     assert.equal(reminder.data.payload.channel, "whatsapp");
-    assert.equal(reminder.data.payload.templateName, "appointment_reminder");
+    assert.equal(reminder.data.payload.templateName, "doc_appointment_reminder");
     assert.equal(reminder.data.payload.triggerText, triggerText);
   }
 });

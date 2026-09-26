@@ -404,6 +404,7 @@ OTP Verification is a blocking node. It waits internally for code entry and rese
 - `whatsappTemplateName` (text): WhatsApp Template Name.
 - `whatsappTemplateLanguage` (text): WhatsApp Template Language.
 - `whatsappTemplateVariablesJson` (textarea): WhatsApp Template Variables JSON.
+- `whatsappTemplateButtonParametersJson` (textarea): WhatsApp Template Button Parameters JSON.
 - `emailSubject` (text): Email Subject.
 - `emailBody` (textarea): Email Body.
 - `emailBodyType` (select): Email Body Type. Options: text, html.
@@ -437,6 +438,7 @@ OTP Verification is a blocking node. It waits internally for code entry and rese
   "whatsappTemplateName": "",
   "whatsappTemplateLanguage": "en",
   "whatsappTemplateVariablesJson": "{\n  \"1\": \"{{otp}}\"\n}",
+  "whatsappTemplateButtonParametersJson": "{}",
   "emailSubject": "Your verification code",
   "emailBody": "Your verification code is {{otp}}. It expires in {{otp_ttl_minutes}} minutes.",
   "emailBodyType": "text",
@@ -711,7 +713,7 @@ Collects structured multi-field input, stores it as a reusable payload, and maps
 - The node is linear and should continue to exactly one next step after capture.
 - The chat textbox should stay disabled while the form bubble is active so users submit through the form controls instead of free text.
 - Structured form replies are stored as readable internal transcript rows instead of raw JSON blobs in the visible chat.
-- On WhatsApp, eligible forms are provisioned as native Meta Flows; unavailable or ineligible assets fall back to one validated question at a time.
+- On WhatsApp, the default is a native Meta Flow when ready, with a one-question-at-a-time validated fallback. Set channelPresentation.whatsapp.formMode to chat for forms that should always collect and validate their fields in the conversation.
 - WhatsApp password fields are blocked, and time fields use conversational fallback. Web and Telegram behavior is unchanged.
 
 **Edge Expectations**
@@ -759,6 +761,7 @@ Form is a linear capture step. It waits for the user payload, validates required
   "formErrorMessage": "Please fix the highlighted fields.",
   "channelPresentation": {
     "whatsapp": {
+      "formMode": "auto",
       "ctaLabel": "Enter details",
       "submitLabel": "Continue",
       "category": "OTHER"

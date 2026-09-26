@@ -25,8 +25,26 @@ export const outputPath = join(
   "assai-deepa-hospital-appointment-single-branch.flow.json"
 );
 const DOMAIN_RECORD_SCHEMA = "healthcare";
-const OTP_NOTIFICATION_EMAIL = "prashanth.chinala@gmail.com";
-const WHATSAPP_OTP_TEMPLATE_NAME = "jaspers_market_order_confirmation_v1";
+const WHATSAPP_OTP_TEMPLATE_NAME = "verify_otp_usecase";
+const SAI_DEEPA_HOSPITAL_CONTACT_PHONE = "+91 7093762716";
+const APPOINTMENT_BOOKING_COMPLETION_MESSAGE = "Thank you for choosing Sai Deepa Hospital.\nWe look forward to assisting you.\nHave a healthy and pleasant day! 😊";
+const APPOINTMENT_REVIEW_TEXT = "Please review your appointment details\n\n👨‍⚕️ Doctor: {{appointment_doctor_name}}\n🏥 Department: {{appointment_department_name}}\n📍 Hospital: Sai Deepa Hospital, Chanda Nagar\n📅 Date: {{appointment_date}}\n🕐 Appointment: {{appointment_slot_label}}\n🩺 Visit Type: In-person consultation\n💰 Consultation Fee: {{currency}} {{appointment_booking_fee}}\n💳 Payment: Pay at hospital";
+// The appointment executor's weekday contract is JavaScript's 0-6 range
+// (Sunday-Saturday). In dynamic mode this is only a permissive renderer
+// fallback; the CRM-computed inventory remains the source of truth.
+const ALL_APPOINTMENT_WEEKDAYS = "0,1,2,3,4,5,6";
+// Meta dynamic URL buttons accept only a short suffix for {{1}}, not the
+// complete URL. Use the generated OTP as the suffix so the button carries the
+// same one-time value as the message body; the approved template owns the base
+// URL configuration.
+const WHATSAPP_OTP_BUTTON_PARAMETER = "{{otp}}";
+const REQUIRED_APPOINTMENT_BASE_NODE_IDS = [
+  "existing_patient_lookup_otp_invalid_end",
+  "appointment_booking_confirmation",
+  "appointment_payment_confirmation_authorize",
+  "appointment_no_booking_message",
+  "appointment_audit"
+];
 
 // FLOW input buttons do not support a dynamic button source or a native icon
 // field. Keep this deterministic export-time presentation list in sync with
@@ -59,7 +77,8 @@ const SAI_DEEPA_DEPARTMENT_BUTTONS = [
   ["🧠 Psychiatry", "psychiatry"],
   ["🩻 Neuro Physiotherapy", "neuro_physiotherapy"],
   ["🚹 Urology", "urology"],
-  ["🩸 Vascular Surgery", "vascular_surgery"]
+  ["🩸 Vascular Surgery", "vascular_surgery"],
+  ["🤔 Not sure / describe issue", "not_sure"]
 ];
 
 function deepClone(value) {
@@ -192,6 +211,11 @@ function setGlobal(doc, key, value) {
   doc.bot.globalVariables.push({ key, value });
 }
 
+function removeGlobal(doc, key) {
+  if (!Array.isArray(doc.bot.globalVariables)) return;
+  doc.bot.globalVariables = doc.bot.globalVariables.filter((item) => item.key !== key);
+}
+
 function applyDomainRecordSchema(doc) {
   for (const node of doc.flow?.nodes ?? []) {
     if (node?.type === "record") {
@@ -317,6 +341,42 @@ function staticCarouselNode(id, position, introText, slides) {
   };
 }
 
+function appointmentConfirmationLocationAction() {
+  return {
+    label: "View location",
+    value: "view_hospital_location",
+    actionType: "url",
+    url: "{{hospital_location_url}}"
+  };
+}
+
+function configureAppointmentConfirmationLocation(doc) {
+  const confirmation = findNode(doc, "appointment_confirmation");
+  const data = confirmation.data ?? {};
+  let slides = Array.isArray(data.slides) ? data.slides : [];
+  if (slides.length === 0 && typeof data.slidesJson === "string") {
+    try {
+      const parsed = JSON.parse(data.slidesJson);
+      slides = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      slides = [];
+    }
+  }
+  if (slides.length === 0) return;
+
+  const locationAction = appointmentConfirmationLocationAction();
+  confirmation.data.slides = slides.map((slide) => ({
+    ...slide,
+    actions: [
+      ...(Array.isArray(slide.actions)
+        ? slide.actions.filter((action) => action?.value !== locationAction.value)
+        : []),
+      locationAction
+    ]
+  }));
+  confirmation.data.slidesJson = JSON.stringify(confirmation.data.slides, null, 2);
+}
+
 function inputNode(id, position, message, variable, buttons = [], disableChatInput = false) {
   return {
     id,
@@ -360,6 +420,19 @@ function switchNode(id, position, variable) {
     type: "switch",
     position,
     data: { variable }
+  };
+}
+
+function retryNode(id, position, { maxRetries, counterVar, resetVariables }) {
+  return {
+    id,
+    type: "retry",
+    position,
+    data: {
+      maxRetries,
+      counterVar,
+      resetVariables
+    }
   };
 }
 
@@ -420,15 +493,14 @@ function appointmentConfirmationWhatsappData() {
       {
         type: "whatsapp",
         enabled: true,
-        templateName: "appointment_confirmed",
+        templateName: "doc_appointment_confirmed",
         language: "{{whatsapp_template_language}}",
         requiresMediaHeader: false,
         variables: {
           "1": "{{patient_name}}",
-          "2": "{{appointment_date}}",
-          "3": "{{appointment_slot_label}}",
-          "4": "{{appointment_department_name}}",
-          "5": "{{appointment_id}}"
+          "2": "{{appointment_date}} {{appointment_slot_label}}",
+          "3": "{{appointment_doctor_name}}",
+          "4": "{{appointment_whatsapp_confirmation_code}}"
         }
       }
     ],
@@ -436,6 +508,138 @@ function appointmentConfirmationWhatsappData() {
     outputVar: "appointment_notification_result",
     messageCategory: "transactional"
   });
+}
+
+function configureAppointmentWhatsappConfirmationCode(doc) {
+  const confirmationCodeNode = scriptNode(
+    "appointment_whatsapp_confirmation_code",
+    { x: 1020, y: 40 },
+    `const raw = String(vars.appointment_id || "").trim();
+const suffix = raw
+  .replace(/^APT[-_]?/i, "")
+  .replace(/[^A-Za-z0-9]/g, "")
+  .slice(0, 12);
+const code = suffix ? "APT-" + suffix : "APT-UNKNOWN";
+vars.appointment_whatsapp_confirmation_code = code;
+return code;`,
+    "appointment_whatsapp_confirmation_code"
+  );
+  upsertNode(doc, confirmationCodeNode);
+
+  const postBookingEdge = doc.flow.edges.find(
+    (edge) =>
+      edge.source === "appointment_reminder_trigger_router" &&
+      edge.condition?.value === "appointment_post_booking_tasks"
+  );
+  if (postBookingEdge) {
+    postBookingEdge.target = confirmationCodeNode.id;
+  }
+  replaceOutgoing(doc, confirmationCodeNode.id, [
+    {
+      id: "edge_variant_appointment_whatsapp_confirmation_code_notify",
+      target: "appointment_notify"
+    }
+  ]);
+}
+
+const APPOINTMENT_REFERENCE_GENERATOR_SCRIPT = `function currentIndiaParts() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false
+  }).formatToParts(new Date());
+  const get = (type) => parts.find((part) => part.type === type)?.value || "00";
+  return {
+    year: get("year").slice(-2),
+    month: get("month"),
+    day: get("day"),
+    hour: get("hour"),
+    minute: get("minute"),
+    second: get("second")
+  };
+}
+const now = currentIndiaParts();
+vars.appointment_business_id = "SDH-" + now.year + now.month + now.day + "-" + now.hour + now.minute + now.second;
+return vars.appointment_business_id;`;
+
+function configureAppointmentReferenceGeneration(doc) {
+  const configurations = [
+    {
+      setNodeId: "appointment_set_ids",
+      generatorNodeId: "appointment_id_generate",
+      edgeId: "edge_variant_appointment_id_generate_set_ids"
+    }
+  ];
+
+  for (const configuration of configurations) {
+    const setNode = findNode(doc, configuration.setNodeId);
+    appendAssignment(setNode, "appointment_id", "{{appointment_business_id}}");
+    const position = setNode.position ?? { x: 0, y: 0 };
+    upsertNode(
+      doc,
+      scriptNode(
+        configuration.generatorNodeId,
+        { x: Number(position.x || 0) - 240, y: Number(position.y || 0) },
+        APPOINTMENT_REFERENCE_GENERATOR_SCRIPT,
+        "appointment_business_id"
+      )
+    );
+
+    for (const edge of doc.flow.edges.filter(
+      (item) => item.target === configuration.setNodeId && item.source !== configuration.generatorNodeId
+    )) {
+      edge.target = configuration.generatorNodeId;
+    }
+    if (!doc.flow.edges.some(
+      (item) => item.source === configuration.generatorNodeId && item.target === configuration.setNodeId
+    )) {
+      addEdge(doc, {
+        id: configuration.edgeId,
+        source: configuration.generatorNodeId,
+        target: configuration.setNodeId
+      });
+    }
+  }
+}
+
+function configureAppointmentBookingSource(doc) {
+  const bookingSource = "{{system.channel}}";
+  let configured = false;
+  const setAppointmentDataSource = (appointmentData) => {
+    if (!appointmentData || typeof appointmentData !== "object") return;
+    appointmentData.booking_source = bookingSource;
+    configured = true;
+  };
+
+  const confirmUpdate = doc.flow.nodes.find((node) => node.id === "appointment_confirm_record_update");
+  if (confirmUpdate?.data?.data && typeof confirmUpdate.data.data === "object") {
+    setAppointmentDataSource(confirmUpdate.data.data);
+    confirmUpdate.data.dataJson = JSON.stringify(confirmUpdate.data.data, null, 2) + "\n";
+    confirmUpdate.data.collectionSchema ??= { fields: {} };
+    confirmUpdate.data.collectionSchema.fields ??= {};
+    confirmUpdate.data.collectionSchema.fields.booking_source = {
+      type: "string",
+      required: false
+    };
+  }
+
+  const bookingCommit = doc.flow.nodes.find((node) => node.id === "appointment_booking_commit");
+  setAppointmentDataSource(bookingCommit?.data?.bookingCommit?.appointment?.data);
+  if (bookingCommit?.data?.collectionSchema?.fields) {
+    bookingCommit.data.collectionSchema.fields.booking_source = {
+      type: "string",
+      required: false
+    };
+  }
+
+  if (!configured) {
+    throw new Error("Hospital appointment flow is missing an appointment record payload for booking_source");
+  }
 }
 
 function formatDoctorLabelScript({
@@ -562,7 +766,7 @@ return { route: vars.${routeVar}, count: unique.length };
 `;
 }
 
-function doctorChoiceValidationScript({ rowsVar, routeVar }) {
+function doctorChoiceValidationScript({ rowsVar, routeVar, allowDepartmentChange = false }) {
   return String.raw`
 function normalizeText(value) {
   return String(value || "")
@@ -574,6 +778,12 @@ function normalizeText(value) {
 const rows = Array.isArray(vars.${rowsVar}) ? vars.${rowsVar} : [];
 const choice = String(vars.doctor_id || "").trim();
 const normalizedChoice = normalizeText(choice);
+if (${allowDepartmentChange ? "true" : "false"} && (normalizedChoice === "change department" || normalizedChoice === "change_department")) {
+  vars.doctor_id = "";
+  vars.doctor_scope_key = "";
+  vars.${routeVar} = "change_department";
+  return { route: vars.${routeVar}, doctor_id: "" };
+}
 const number = Number.parseInt(choice, 10);
 let selected = Number.isFinite(number) && number >= 1 ? rows[number - 1] : null;
 if (!selected && choice) {
@@ -584,9 +794,480 @@ if (!selected && choice) {
 vars.${routeVar} = selected ? "found" : "not_found";
 if (selected) {
   vars.doctor_id = String(selected.doctor_id || "").trim();
+  ${allowDepartmentChange ? "vars.appointment_doctor_change_department_retry_count = 0;" : ""}
 }
 return { route: vars.${routeVar}, doctor_id: vars.doctor_id || "" };
 `;
+}
+
+function configureDoctorChangeDepartmentRecovery(doc) {
+  const resetVariables = [
+    "doctor_id",
+    "doctor_scope_key",
+    "department",
+    "availability_department",
+    "appointment_date",
+    "appointment_slot_id",
+    "appointment_slot_label",
+    "appointment_slot_start",
+    "appointment_slot_end",
+    "appointment_future_slots",
+    "appointment_schedule_exceptions_result",
+    "appointment_reservation_id",
+    "appointment_reservation_key",
+    "appointment_booking_fee",
+    "appointment_booking_fee_paise"
+  ];
+  const retryId = "appointment_doctor_change_department_retry";
+  const exhaustedId = "appointment_doctor_change_department_retry_exhausted_message";
+
+  const retry = retryNode(
+    retryId,
+    { x: 32040, y: 7860 },
+    {
+      maxRetries: 3,
+      counterVar: "appointment_doctor_change_department_retry_count",
+      resetVariables
+    }
+  );
+  const exhausted = messageNode(
+    exhaustedId,
+    { x: 32340, y: 8040 },
+    "I couldn't change the department after several attempts. Please start a new booking when you're ready."
+  );
+  upsertNode(doc, retry);
+  upsertNode(doc, exhausted);
+  replaceOutgoing(doc, retryId, [
+    {
+      id: "edge_variant_doctor_change_department_retry_return",
+      target: "appointment_department_input",
+      label: "retry",
+      isRetry: true
+    },
+    {
+      id: "edge_variant_doctor_change_department_retry_exhausted",
+      target: exhaustedId,
+      label: "exhausted/default",
+      isDefault: true
+    }
+  ]);
+  addEdge(doc, {
+    id: "edge_variant_doctor_change_department_retry_exhausted_end",
+    source: exhaustedId,
+    target: "existing_patient_lookup_otp_invalid_end"
+  });
+
+  const choiceNodes = [
+    ["appointment_doctor_choice_prepare", "appointment_doctor_choice_route"],
+    ["appointment_change_appointment_doctor_choice_prepare", "appointment_change_appointment_doctor_choice_route"]
+  ];
+  for (const [prepareId, routeVar] of choiceNodes) {
+    const prepare = doc.flow.nodes.find((node) => node.id === prepareId);
+    const route = doc.flow.nodes.find((node) => node.id === routeVar);
+    if (!prepare || !route) continue;
+    prepare.data.script = doctorChoiceValidationScript({
+      rowsVar: "appointment_doctor_rows",
+      routeVar,
+      allowDepartmentChange: true
+    });
+    addEdge(doc, {
+      id: `edge_variant_${routeVar}_change_department`,
+      source: routeVar,
+      target: retryId,
+      label: "change_department",
+      condition: { operator: "equals", value: "change_department" }
+    });
+  }
+
+  for (const node of doc.flow.nodes.filter((item) => item.id.endsWith("doctor_carousel"))) {
+    const data = node.data ?? {};
+    let template = data.slideTemplate;
+    if (!template && typeof data.slideTemplateJson === "string") {
+      try {
+        template = JSON.parse(data.slideTemplateJson);
+      } catch {
+        template = null;
+      }
+    }
+    if (!template || !Array.isArray(template.actions)) continue;
+    if (!template.actions.some((action) => action?.value === "change_department")) {
+      template.actions.push({
+        label: "↩️ Change Department",
+        value: "change_department"
+      });
+    }
+    data.slideTemplate = template;
+    data.slideTemplateJson = JSON.stringify(template, null, 2);
+    node.data = data;
+  }
+}
+
+function configureChangeSlotDateTimeRecovery(doc) {
+  const reselectSlot = deepClone(findNode(doc, "appointment_slot_booking"));
+  reselectSlot.id = "appointment_reselect_slot";
+  reselectSlot.position = { x: 49200, y: 9000 };
+  reselectSlot.data.outputVar = "appointment_reselect_booking";
+  reselectSlot.data.messages = ["Please choose a convenient appointment date."];
+
+  const reselectResolve = deepClone(findNode(doc, "appointment_resolve_selected_slot"));
+  reselectResolve.id = "appointment_reselect_resolve_selected_slot";
+  reselectResolve.position = { x: 50400, y: 9000 };
+  reselectResolve.data.script = reselectResolve.data.script
+    .replace(/vars\.appointment_booking/g, "vars.appointment_reselect_booking")
+    .replace(/vars\.appointment_selected_slot/g, "vars.appointment_reselected_slot");
+  reselectResolve.data.outputVar = "appointment_reselected_slot";
+
+  const reselectSetIds = deepClone(findNode(doc, "appointment_set_ids"));
+  reselectSetIds.id = "appointment_reselect_set_ids";
+  reselectSetIds.position = { x: 51600, y: 9000 };
+  reselectSetIds.data.assignments = reselectSetIds.data.assignments.map((assignment) => ({
+    ...assignment,
+    value: typeof assignment.value === "string"
+      ? assignment.value.replaceAll("appointment_selected_slot", "appointment_reselected_slot")
+      : assignment.value
+  }));
+
+  const reselectConfirmation = inputNode(
+    "appointment_reselect_confirmation",
+    { x: 52800, y: 9000 },
+    APPOINTMENT_REVIEW_TEXT + "\n\nWould you like to confirm this appointment?",
+    "appointment_reselect_confirmation_choice",
+    [replyButton("Confirm", "confirm"), replyButton("Cancel", "cancel")],
+    true
+  );
+  upsertNode(doc, reselectSlot);
+  upsertNode(doc, reselectResolve);
+  upsertNode(doc, reselectSetIds);
+  upsertNode(doc, reselectConfirmation);
+
+  const bookingConfirmation = findNode(doc, "appointment_booking_confirmation");
+  const changeSlotEdge = doc.flow.edges.find(
+    (edge) => edge.source === bookingConfirmation.id && edge.label === "change_slot"
+  );
+  if (!changeSlotEdge) {
+    throw new Error("Missing appointment Change Slot edge");
+  }
+  addEdge(doc, {
+    ...changeSlotEdge,
+    target: "appointment_reselect_slot",
+    label: "change_slot",
+    isDefault: true
+  });
+  replaceOutgoing(doc, "appointment_reselect_slot", [
+    { id: "edge_variant_reselect_resolve", target: "appointment_reselect_resolve_selected_slot" }
+  ]);
+  replaceOutgoing(doc, "appointment_reselect_resolve_selected_slot", [
+    { id: "edge_variant_reselect_set_ids", target: "appointment_reselect_set_ids" }
+  ]);
+  replaceOutgoing(doc, "appointment_reselect_set_ids", [
+    { id: "edge_variant_reselect_confirmation", target: "appointment_reselect_confirmation" }
+  ]);
+  replaceOutgoing(doc, "appointment_reselect_confirmation", [
+    {
+      id: "edge_variant_reselect_confirm",
+      target: "appointment_payment_confirmation_authorize",
+      label: "confirm",
+      condition: { operator: "equals", value: "confirm" }
+    },
+    {
+      id: "edge_variant_reselect_cancel",
+      target: "appointment_no_booking_message",
+      label: "cancel",
+      isDefault: true
+    }
+  ]);
+}
+
+function configureOtpMaxAttemptsMessage(doc) {
+  findNode(doc, "existing_patient_lookup_otp_max_attempts_message").data.messages = [
+    {
+      type: "text",
+      text: `We couldn't verify that OTP after 3 attempts. Please call Sai Deepa Hospital at ${SAI_DEEPA_HOSPITAL_CONTACT_PHONE} to continue your appointment booking, or try again later.`
+    }
+  ];
+}
+
+function configureAppointmentBookingCompletionEnd(doc) {
+  const endNode = findNode(doc, "appointment_booking_complete_end");
+  endNode.data = {
+    ...(endNode.data ?? {}),
+    messages: [APPOINTMENT_BOOKING_COMPLETION_MESSAGE]
+  };
+}
+
+function configureDepartmentInputRecovery(doc) {
+  const departmentInput = findNode(doc, "appointment_department_input");
+  const departmentPrompt =
+    "Choose the department. If you are not sure, select Not sure / describe issue and type your concern in your own words.";
+  const concernPrompt =
+    "Please briefly tell us about your health concern.\n\nFor example:\n• Cough for the last 3 days\n• Knee pain while walking\n• Stomach pain since this morning\n\nWe’ll help you choose the right department for your appointment.";
+  departmentInput.data.messages = [departmentPrompt];
+  const buttons = Array.isArray(departmentInput.data.buttons) ? departmentInput.data.buttons : [];
+  const notSureButton = buttons.find((button) => button?.value === "not_sure");
+  if (notSureButton) {
+    notSureButton.label = "🤔 Not sure / describe issue";
+  } else {
+    buttons.push(replyButton("🤔 Not sure / describe issue", "not_sure"));
+  }
+  departmentInput.data.buttons = buttons;
+
+  const departmentReasonInput = findNode(doc, "appointment_department_reason_input");
+  departmentReasonInput.data.messages = [concernPrompt];
+
+  const invalidDepartmentNode = findNode(doc, "appointment_department_invalid_message");
+  invalidDepartmentNode.data.messages = [
+    {
+      type: "text",
+      text: "I couldn't match that department number. Please choose one of the buttons shown or select 🤔 Not sure / describe issue."
+    }
+  ];
+
+  const departmentPrepare = findNode(doc, "appointment_department_prepare");
+  const oldNumericSelection = String.raw`const number = Number.parseInt(raw, 10);
+let key = Number.isInteger(number) && number >= 1 && number <= keys.length ? keys[number - 1] : normalized;
+if (!supported.has(key) || !keys.includes(key)) {
+  key = keys.find((candidate) => supported.has(candidate) && normalize(map[candidate]) === normalized) || "";
+}`;
+const newNumericSelection = String.raw`const numericChoice = /^[+-]?\d+$/.test(raw);
+let key = "";
+if (numericChoice) {
+  const number = Number(raw);
+  const notSureChoiceNumber = ${SAI_DEEPA_DEPARTMENT_BUTTONS.length};
+  if (number === notSureChoiceNumber) {
+    vars.appointment_department_route = "ask_concern";
+    vars.department = "";
+    vars.department_reason = "";
+    vars.availability_department = "";
+    return { route: vars.appointment_department_route };
+  }
+  if (!Number.isInteger(number) || number < 1 || number > keys.length) {
+    vars.appointment_department_route = "invalid";
+    vars.department = "";
+    vars.department_reason = "";
+    vars.availability_department = "";
+    return { route: vars.appointment_department_route, invalidChoice: raw };
+  }
+  key = keys[number - 1] || "";
+} else {
+  key = normalized;
+  if (!supported.has(key) || !keys.includes(key)) {
+    key = keys.find((candidate) => supported.has(candidate) && normalize(map[candidate]) === normalized) || "";
+  }
+}`;
+  if (!departmentPrepare.data.script.includes("const numericChoice")) {
+    departmentPrepare.data.script = departmentPrepare.data.script.replace(oldNumericSelection, newNumericSelection);
+  }
+  if (!departmentPrepare.data.script.includes("const notSureChoiceNumber")) {
+    const currentNumericSelection = String.raw`const numericChoice = /^[+-]?\d+$/.test(raw);
+let key = "";
+if (numericChoice) {
+  const number = Number(raw);
+  if (!Number.isInteger(number) || number < 1 || number > keys.length) {
+    vars.appointment_department_route = "invalid";
+    vars.department = "";
+    vars.department_reason = "";
+    vars.availability_department = "";
+    return { route: vars.appointment_department_route, invalidChoice: raw };
+  }
+  key = keys[number - 1] || "";
+} else {
+  key = normalized;
+  if (!supported.has(key) || !keys.includes(key)) {
+    key = keys.find((candidate) => supported.has(candidate) && normalize(map[candidate]) === normalized) || "";
+  }
+}`;
+    departmentPrepare.data.script = departmentPrepare.data.script.replace(currentNumericSelection, newNumericSelection);
+  }
+
+  const departmentAiMatch = findNode(doc, "appointment_department_ai_match");
+  departmentAiMatch.data.instructions = `Review the concern using only the routing guide. Return exactly one value from this list: ${SAI_DEEPA_SUPPORTED_DEPARTMENT_KEYS.join(", ")}, emergency_medicine, unresolved. Use emergency_medicine only for clearly urgent or life-threatening symptoms. Use unresolved only when the input is empty, clearly junk, unrelated, or not a health concern. Use general_medicine for a genuine but unclear routine health concern. Return only the value.`;
+  departmentAiMatch.data.contextTemplate = String.raw`Sai Deepa Hospital appointment routing guide. Return exactly one supported key, emergency_medicine, or unresolved.
+- general_medicine: genuine but unclear, mixed, fever, weakness, routine adult concerns, or symptoms that do not clearly fit another supported department.
+- cardiology: stable heart concerns, palpitations, or blood-pressure concerns. Severe chest pain is emergency_medicine.
+- ent: ear, nose, throat, sinus, hearing, or voice concerns.
+- general_surgery: hernia, piles, gallbladder, appendix, or other routine surgical concerns.
+- neuro_physiotherapy: rehabilitation, mobility, exercise, or recovery support.
+- neurology: migraine, nerve symptoms, numbness, tremor, or non-emergency seizure follow-up.
+- obstetrics_gynecology: pregnancy, antenatal care, periods, PCOS, fertility, or women's health concerns.
+- orthopedics: bones, joints, fracture follow-up, back, muscle, ligament, or sports injury concerns.
+- psychiatry: anxiety, depression, stress, sleep, behavior, or mental-health concerns.
+- pulmonology: cough, asthma, wheezing, or non-emergency breathing and lung concerns.
+- urology: urine, bladder, prostate, or other urinary concerns.
+- vascular_surgery: blood-vessel, circulation, or varicose-vein concerns.
+- emergency_medicine: severe chest pain, severe breathing difficulty, stroke signs, uncontrolled bleeding, unconsciousness, active seizure, collapse, major trauma, or any life-threatening concern.
+- unresolved: empty, junk, unrelated, or non-health input that cannot be safely routed.
+Emergency overrides all other matches. If concern is a genuine but unclear health concern, use general_medicine. If it is clearly junk, unrelated, or not a health concern, use unresolved. Return one key only.`;
+
+  const departmentAiPrepare = findNode(doc, "appointment_department_match_prepare");
+  if (!departmentAiPrepare.data.script.includes("const shouldFallback")) {
+    const oldAiPrelude = String.raw`const matched = resolveDepartment(raw);
+const catalogKeys = new Set(Array.isArray(vars.department_keys) ? vars.department_keys : []);
+const usable = matched === "emergency_medicine"
+  ? matched
+  : supportedDepartments.has(matched) && catalogKeys.has(matched)
+    ? matched
+    : "general_medicine";
+if (usable === "emergency_medicine") {`;
+    const newAiPrelude = String.raw`const rawNormalized = normalizeText(raw);
+const explicitUnresolved = new Set(["unresolved", "unknown", "invalid", "off_topic", "junk", "not_sure"]).has(rawNormalized);
+const matched = resolveDepartment(raw);
+const catalogKeys = new Set(Array.isArray(vars.department_keys) ? vars.department_keys : []);
+const sourceText = valueFrom(vars.department_reason) || raw;
+const sourceNormalized = normalizeText(sourceText);
+const healthSignal = /(appointment|health|doctor|hospital|symptom|problem|issue|concern|help|pain|ache|fever|cough|cold|breath|breathing|chest|heart|blood|pressure|headache|migraine|ear|nose|throat|sinus|hearing|voice|stomach|abdomen|hernia|piles|gallbladder|appendix|joint|bone|back|muscle|fracture|injury|knee|shoulder|pregnan|period|pcos|fertility|urine|bladder|prostate|anxiety|depress|stress|sleep|seizure|numb|tremor|bleed|stroke|unconscious|collapse|asthma|wheez|lung|varicose|circulation|rehab|mobility|weakness|dizz|vomit|diarrhea|rash|skin|eye|unwell|unwellness)/.test(sourceNormalized);
+const sourceIsCanonicalDepartment = supportedDepartments.has(sourceNormalized) || sourceNormalized === "emergency_medicine";
+const clearlyNonHealth = Boolean(sourceNormalized) && !healthSignal && !sourceIsCanonicalDepartment;
+const shouldFallback = explicitUnresolved || !rawNormalized || !matched || (matched !== "emergency_medicine" && (!catalogKeys.has(matched) || clearlyNonHealth));
+const usable = matched;
+if (shouldFallback) {
+  vars.appointment_department_ai_route = "unresolved";
+  vars.appointment_department_match_text = "I'm not sure how to route that concern safely. Please call {{front_desk_phone}} and our hospital team will help you.";
+  vars.department = "";
+  vars.availability_department = "";
+} else if (usable === "emergency_medicine") {`;
+    departmentAiPrepare.data.script = departmentAiPrepare.data.script.replace(oldAiPrelude, newAiPrelude);
+  }
+  if (!departmentAiPrepare.data.script.includes("const sourceText")) {
+    departmentAiPrepare.data.script = departmentAiPrepare.data.script.replace(
+      /const healthSignal = [^\n]+\nconst clearlyNonHealth = Boolean\(rawNormalized\) && !healthSignal;\n/,
+      ""
+    );
+    departmentAiPrepare.data.script = departmentAiPrepare.data.script.replace(
+      /const shouldFallback = [^\n]+;/,
+      "const sourceText = valueFrom(vars.department_reason) || raw;\nconst sourceNormalized = normalizeText(sourceText);\nconst healthSignal = /(appointment|health|doctor|hospital|symptom|problem|issue|concern|help|pain|ache|fever|cough|cold|breath|breathing|chest|heart|blood|pressure|headache|migraine|ear|nose|throat|sinus|hearing|voice|stomach|abdomen|hernia|piles|gallbladder|appendix|joint|bone|back|muscle|fracture|injury|knee|shoulder|pregnan|period|pcos|fertility|urine|bladder|prostate|anxiety|depress|stress|sleep|seizure|numb|tremor|bleed|stroke|unconscious|collapse|asthma|wheez|lung|varicose|circulation|rehab|mobility|weakness|dizz|vomit|diarrhea|rash|skin|eye|unwell|unwellness)/.test(sourceNormalized);\nconst sourceIsCanonicalDepartment = supportedDepartments.has(sourceNormalized) || sourceNormalized === \"emergency_medicine\";\nconst clearlyNonHealth = Boolean(sourceNormalized) && !healthSignal && !sourceIsCanonicalDepartment;\nconst shouldFallback = explicitUnresolved || !rawNormalized || !matched || (matched !== \"emergency_medicine\" && (!catalogKeys.has(matched) || clearlyNonHealth));"
+    );
+  }
+
+  const recoveryRetryId = "appointment_department_recovery_retry";
+  const recoveryExhaustedId = "appointment_department_recovery_exhausted_message";
+  const recoveryRetry = retryNode(
+    recoveryRetryId,
+    { x: 26100, y: 7100 },
+    {
+      maxRetries: 3,
+      counterVar: "appointment_department_recovery_retry_count",
+      resetVariables: [
+        "department",
+        "department_reason",
+        "availability_department",
+        "appointment_department_route",
+        "appointment_department_ai_route",
+        "appointment_department_match_text",
+        "appointment_department_ai_raw_match",
+        "appointment_department_ai_match_result",
+        "appointment_department_ai_match_key"
+      ]
+    }
+  );
+  const recoveryExhausted = messageNode(
+    recoveryExhaustedId,
+    { x: 26400, y: 7300 },
+    "I couldn't identify the department after several attempts. Please call {{front_desk_phone}} and our hospital team will help you."
+  );
+  const departmentInvalid = messageNode(
+    "appointment_department_invalid_message",
+    { x: 25800, y: 6900 },
+    "I couldn't match that department number. Please choose one of the buttons shown or select 🤔 Not sure / describe issue."
+  );
+  const departmentConcernFallback = messageNode(
+    "appointment_department_concern_fallback_message",
+    { x: 25800, y: 7500 },
+    "I'm not sure how to route that concern safely. Please call {{front_desk_phone}} and our hospital team will help you."
+  );
+  upsertNode(doc, recoveryRetry);
+  upsertNode(doc, recoveryExhausted);
+  upsertNode(doc, departmentInvalid);
+  upsertNode(doc, departmentConcernFallback);
+  replaceOutgoing(doc, "appointment_department_route", [
+    {
+      id: "edge_variant_department_route_valid",
+      target: "appointment_prepare_scope",
+      label: "department",
+      condition: { operator: "equals", value: "department" }
+    },
+    {
+      id: "edge_variant_department_route_direct_concern",
+      target: "appointment_department_ai_match",
+      label: "direct_concern",
+      condition: { operator: "equals", value: "ai_match" }
+    },
+    {
+      id: "edge_variant_department_route_invalid",
+      target: "appointment_department_invalid_message",
+      label: "invalid",
+      condition: { operator: "equals", value: "invalid" }
+    },
+    {
+      id: "edge_variant_department_route_ask_concern",
+      target: "appointment_department_reason_input",
+      label: "ask_concern",
+      condition: { operator: "equals", value: "ask_concern" },
+      isDefault: true
+    }
+  ]);
+  replaceOutgoing(doc, "appointment_department_ai_route", [
+    {
+      id: "edge_variant_department_ai_route_matched",
+      target: "appointment_department_safe_message",
+      label: "matched",
+      condition: { operator: "equals", value: "matched" }
+    },
+    {
+      id: "edge_variant_department_ai_route_general_medicine",
+      target: "appointment_department_safe_message",
+      label: "general_medicine",
+      condition: { operator: "equals", value: "general_medicine" }
+    },
+    {
+      id: "edge_variant_department_ai_route_emergency",
+      target: "emergency_safety_message",
+      label: "emergency",
+      condition: { operator: "equals", value: "emergency" }
+    },
+    {
+      id: "edge_variant_department_ai_route_unresolved",
+      target: "appointment_department_concern_fallback_message",
+      label: "unresolved",
+      condition: { operator: "equals", value: "unresolved" }
+    },
+    {
+      id: "edge_variant_department_ai_route_default",
+      target: "appointment_department_concern_fallback_message",
+      label: "unresolved/default",
+      isDefault: true
+    }
+  ]);
+  replaceOutgoing(doc, "appointment_department_invalid_message", [
+    {
+      id: "edge_variant_department_invalid_recovery_retry",
+      target: recoveryRetryId
+    }
+  ]);
+  replaceOutgoing(doc, "appointment_department_concern_fallback_message", [
+    {
+      id: "edge_variant_department_concern_fallback_end",
+      target: "existing_patient_lookup_otp_invalid_end"
+    }
+  ]);
+  replaceOutgoing(doc, recoveryRetryId, [
+    {
+      id: "edge_variant_department_recovery_retry_return",
+      target: "appointment_department_input",
+      label: "retry",
+      isRetry: true
+    },
+    {
+      id: "edge_variant_department_recovery_retry_exhausted",
+      target: recoveryExhaustedId,
+      label: "exhausted/default",
+      isDefault: true
+    }
+  ]);
+  addEdge(doc, {
+    id: "edge_variant_department_recovery_exhausted_end",
+    source: recoveryExhaustedId,
+    target: "existing_patient_lookup_otp_invalid_end"
+  });
 }
 
 function addOperationalFields(recordNode) {
@@ -634,11 +1315,215 @@ function pruneUnreachable(doc) {
 
 export function loadBaseHospitalFlow() {
   const path = existsSync(baseSourcePath) ? baseSourcePath : baseExportFallbackPath;
-  return JSON.parse(readFileSync(path, "utf8"));
+  const baseDoc = JSON.parse(readFileSync(path, "utf8"));
+  const baseNodeIds = new Set(baseDoc.flow?.nodes?.map((node) => node.id) ?? []);
+  if (REQUIRED_APPOINTMENT_BASE_NODE_IDS.every((id) => baseNodeIds.has(id))) {
+    return baseDoc;
+  }
+
+  // The repository fallback export can be a generic hospital flow without the
+  // appointment/OTP nodes required by this variant. Preserve the last valid
+  // generated appointment export as the compatibility base until the reusable
+  // source flow is restored.
+  if (existsSync(outputPath)) {
+    return JSON.parse(readFileSync(outputPath, "utf8"));
+  }
+
+  throw new Error(
+    `Hospital appointment base flow is missing required nodes: ${REQUIRED_APPOINTMENT_BASE_NODE_IDS.filter((id) => !baseNodeIds.has(id)).join(", ")}`
+  );
+}
+
+function applyWhatsAppNotificationsConfiguration(doc) {
+  configurePatientMobileForm(doc);
+  const otpNode = findNode(doc, "existing_patient_lookup_otp");
+  otpNode.data.channels = ["whatsapp"];
+  otpNode.data.email = "";
+  otpNode.data.whatsappPhone = "{{patient_mobile}}";
+  otpNode.data.whatsappTemplateName = "{{whatsapp_otp_template_name}}";
+  otpNode.data.whatsappTemplateLanguage = "{{whatsapp_template_language}}";
+  otpNode.data.whatsappTemplateVariablesJson = JSON.stringify({
+    "code": "{{otp}}",
+    "text": "appointment"
+  }, null, 2);
+  otpNode.data.whatsappTemplateButtonParametersJson = JSON.stringify({
+    "0": WHATSAPP_OTP_BUTTON_PARAMETER
+  }, null, 2);
+  otpNode.data.emailSubject = "";
+  otpNode.data.emailBody = "";
+
+  configureAppointmentReferenceGeneration(doc);
+  configureAppointmentWhatsappConfirmationCode(doc);
+  findNode(doc, "appointment_notify").data = appointmentConfirmationWhatsappData();
+  for (const id of [
+    "appointment_booking_confirmation",
+    "appointment_change_appointment_booking_confirmation"
+  ]) {
+    const confirmation = doc.flow.nodes.find((node) => node.id === id);
+    if (!confirmation?.data || !Array.isArray(confirmation.data.buttons)) continue;
+    confirmation.data.buttons = confirmation.data.buttons.map((button) => {
+      if (button.value === "confirm") return { ...button, label: "Confirm" };
+      if (button.value === "change_slot") return { ...button, label: "Change Slot" };
+      return button;
+    });
+  }
+  for (const id of [
+    "appointment_reminder_12h_template",
+    "appointment_reminder_2h_template"
+  ]) {
+    const reminder = findNode(doc, id);
+    const variables = {
+      "1": "{{appointment_date}}",
+      "2": "{{appointment_slot_label}}"
+    };
+    reminder.data.templateName = "doc_appointment_reminder";
+    reminder.data.language = "{{whatsapp_template_language}}";
+    reminder.data.variables = variables;
+    reminder.data.variablesJson = JSON.stringify(variables, null, 2);
+    reminder.data.approvedTemplates = ["doc_appointment_reminder"];
+    reminder.data.approvedTemplatesCsv = "doc_appointment_reminder";
+  }
+  for (const id of [
+    "appointment_reminder_12h_scheduler",
+    "appointment_reminder_2h_scheduler"
+  ]) {
+    const scheduler = findNode(doc, id);
+    scheduler.data.payload = {
+      ...scheduler.data.payload,
+      channel: "whatsapp",
+      templateName: "doc_appointment_reminder"
+    };
+  }
+
+  applyHealthcareAppointmentSyncStandard(doc);
+
+  setGlobal(doc, "hospital_location_url", "https://maps.app.goo.gl/CnLgUZGcaas1Pm776");
+  configureAppointmentConfirmationLocation(doc);
+  setGlobal(doc, "whatsapp_otp_template_name", WHATSAPP_OTP_TEMPLATE_NAME);
+  setGlobal(doc, "whatsapp_confirmation_template_name", "doc_appointment_confirmed");
+  setGlobal(doc, "whatsapp_reminder_template_name", "doc_appointment_reminder");
+  setGlobal(doc, "whatsapp_reminder_12h_template_name", "doc_appointment_reminder");
+  setGlobal(doc, "whatsapp_reminder_2h_template_name", "doc_appointment_reminder");
+  setGlobal(doc, "whatsapp_template_language", "en_US");
+
+  doc.metadata.activeNotificationChannel = "whatsapp";
+  doc.metadata.notificationChannels = {
+    otp: ["whatsapp"],
+    confirmation: "whatsapp",
+    reminder12h: "whatsapp",
+    reminder2h: "whatsapp"
+  };
+  doc.metadata.requiredProductionConfiguration = [
+    ...(doc.metadata.requiredProductionConfiguration ?? []),
+    "whatsapp_otp_template_name",
+    "whatsapp_confirmation_template_name",
+    "whatsapp_reminder_12h_template_name",
+    "whatsapp_reminder_2h_template_name"
+  ].filter((key, index, values) => values.indexOf(key) === index);
+}
+
+function configurePatientMobileForm(doc) {
+  const existingNode = findNode(doc, "existing_patient_lookup_form");
+  const fields = [
+    {
+      key: "patient_mobile",
+      type: "phone",
+      label: "Mobile Number",
+      placeholder: "Enter 10-digit mobile number",
+      required: true,
+      pattern: "^(?:\\+91[\\s-]?)?[6-9]\\d{9}$",
+      showPatternHint: false
+    }
+  ];
+  upsertNode(doc, {
+    ...existingNode,
+    type: "form",
+    data: {
+      ...(existingNode.data ?? {}),
+      fields,
+      fieldsJson: JSON.stringify(fields, null, 2),
+      messages: [
+        "Please enter the 10-digit mobile number to continue. We'll send a 6-digit OTP for verification."
+      ],
+      outputVar: existingNode.data?.outputVar || "existing_patient_lookup_form_result",
+      mapToVariables: true,
+      formErrorMessage: "Enter a valid mobile number starting with 6, 7, 8, or 9.",
+      channelPresentation: {
+        ...(existingNode.data?.channelPresentation ?? {}),
+        whatsapp: {
+          ...(existingNode.data?.channelPresentation?.whatsapp ?? {}),
+          formMode: "chat"
+        }
+      }
+    }
+  });
+}
+
+function applyHealthcareAppointmentSyncStandard(doc) {
+  // Every doctor list is branch- and booking-scoped. The CRM owns whether a
+  // doctor is active or bookable; the FLOW must never infer either flag.
+  for (const node of doc.flow.nodes ?? []) {
+    if (node?.type !== "record" || node.data?.collection !== "doctors") continue;
+    if (node.data.action && node.data.action !== "list") continue;
+    const where = node.data.where && typeof node.data.where === "object"
+      ? { ...node.data.where }
+      : {};
+    if (Object.prototype.hasOwnProperty.call(where, "query")) {
+      where.is_active = true;
+      where.booking_enabled = true;
+    } else {
+      where.branch_id = where.branch_id || "{{doctor_scope_branch_id}}";
+      where.is_active = true;
+      where.booking_enabled = true;
+    }
+    node.data.where = where;
+    node.data.whereJson = JSON.stringify(where, null, 2);
+  }
+
+  // Only active branch policy rows may control the inventory calculation.
+  for (const node of doc.flow.nodes ?? []) {
+    if (node?.type !== "record" || node.data?.collection !== "appointment_booking_policies") continue;
+    if (node.data.action && node.data.action !== "list") continue;
+    const where = node.data.where && typeof node.data.where === "object"
+      ? { ...node.data.where, is_active: true }
+      : { is_active: true };
+    node.data.where = where;
+    node.data.whereJson = JSON.stringify(where, null, 2);
+  }
+
+  // Dynamic inventory is the sole source of appointment dates and times.
+  // Keep the renderer permissive for its legacy fallback contract, but never
+  // generate synthetic slots when a CRM read is empty or unavailable.
+  for (const node of doc.flow.nodes ?? []) {
+    if (node?.type !== "appointment" || node.data?.slotMode !== "dynamic") continue;
+    if (!String(node.data?.dynamicSlotsVar ?? "").trim()) continue;
+    node.data.availableWeekdays = ALL_APPOINTMENT_WEEKDAYS;
+    node.data.disableGeneratedFallback = true;
+  }
 }
 
 export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospitalFlow()) {
   const doc = deepClone(baseDoc);
+  removeGlobal(doc, "otp_notification_email");
+  delete doc.metadata.otpEmailDeliveryConfiguration;
+  const baseNodeIds = new Set(doc.flow?.nodes?.map((node) => node.id) ?? []);
+  if (
+    baseNodeIds.has("appointment_booking_commit") &&
+    !baseNodeIds.has("appointment_confirm_record_update")
+  ) {
+    configureDoctorChangeDepartmentRecovery(doc);
+    configureChangeSlotDateTimeRecovery(doc);
+    configureDepartmentInputRecovery(doc);
+    configureOtpMaxAttemptsMessage(doc);
+    configureAppointmentBookingCompletionEnd(doc);
+    configureAppointmentBookingSource(doc);
+    pruneUnreachable(doc);
+    applyWhatsAppNotificationsConfiguration(doc);
+    doc.metadata.nodeCount = doc.flow.nodes.length;
+    doc.exportedAt = new Date().toISOString();
+    doc.metadata.nodeCount = doc.flow.nodes.length;
+    return normalizeNotificationFlow(doc);
+  }
   doc.exportedAt = new Date().toISOString();
   doc.bot.name = "Sai Deepa Hospital Assistant";
   doc.bot.description =
@@ -687,13 +1572,13 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
   const reminder12hTemplate = templateMessageNode(
     "appointment_reminder_12h_template",
     { x: 1980, y: -260 },
-    "appointment_reminder",
+    "doc_appointment_reminder",
     "appointment_reminder_12h_delivery_result"
   );
   const reminder2hTemplate = templateMessageNode(
     "appointment_reminder_2h_template",
     { x: 1980, y: 340 },
-    "appointment_reminder",
+    "doc_appointment_reminder",
     "appointment_reminder_2h_delivery_result"
   );
   const reminderDeliveryEnd = {
@@ -787,10 +1672,7 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
   ]);
   appendAssignment(setTemplateDefaults, "ip_address", "");
 
-  const patientLookupForm = findNode(doc, "existing_patient_lookup_form");
-  patientLookupForm.data.messages = [
-    "Please enter the patient's 10-digit mobile number to continue. We'll send a 6-digit OTP for verification."
-  ];
+  configurePatientMobileForm(doc);
 
   const otpNode = {
     id: "existing_patient_lookup_otp",
@@ -798,11 +1680,11 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
     position: { x: 15360, y: 7836 },
     data: {
       promptText: "Enter the 6-digit OTP to continue your booking.",
-      channels: ["email", "whatsapp"],
+      channels: ["whatsapp"],
       phone: "{{patient_mobile}}",
       smsPhone: "",
       whatsappPhone: "{{patient_mobile}}",
-      email: "{{otp_notification_email}}",
+      email: "",
       defaultCountryCode: "+91",
       codeLength: 6,
       otpTtlSeconds: 300,
@@ -819,12 +1701,14 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
       whatsappTemplateName: "{{whatsapp_otp_template_name}}",
       whatsappTemplateLanguage: "{{whatsapp_template_language}}",
       whatsappTemplateVariablesJson: JSON.stringify({
-        "1": "User",
-        "2": "{{otp}}",
-        "3": "5 minutes"
+        "code": "{{otp}}",
+        "text": "appointment"
       }, null, 2),
-      emailSubject: "Sai Deepa Hospital appointment verification code",
-      emailBody: "Hello,\n\nYour Sai Deepa Hospital verification code is {{otp}}.\n\nThis code expires in {{otp_ttl_minutes}} minutes. Please do not share it with anyone.\n\nRegards,\nSai Deepa Hospital, Chanda Nagar",
+      whatsappTemplateButtonParametersJson: JSON.stringify({
+        "0": WHATSAPP_OTP_BUTTON_PARAMETER
+      }, null, 2),
+      emailSubject: "",
+      emailBody: "",
       emailBodyType: "text",
       emailReplyTo: "",
       outputVar: "existing_patient_lookup_otp_result"
@@ -869,12 +1753,7 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
     target: "existing_patient_lookup_otp_invalid_end"
   });
 
-  findNode(doc, "existing_patient_lookup_otp_max_attempts_message").data.messages = [
-    {
-      type: "text",
-      text: "We couldn't verify that OTP after 3 attempts. Please call {{front_desk_phone}} to continue your appointment booking, or try again later."
-    }
-  ];
+  configureOtpMaxAttemptsMessage(doc);
 
   const selectionModeInput = inputNode(
     "appointment_selection_mode_input",
@@ -1044,6 +1923,10 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
         {
           label: "✅ Select Doctor",
           value: "{{item.selection_value}}"
+        },
+        {
+          label: "↩️ Change Department",
+          value: "change_department"
         }
       ]
     }
@@ -1148,7 +2031,8 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
     { x: 31440, y: 7860 },
     doctorChoiceValidationScript({
       rowsVar: "appointment_doctor_rows",
-      routeVar: "appointment_doctor_choice_route"
+      routeVar: "appointment_doctor_choice_route",
+      allowDepartmentChange: true
     }),
     "appointment_doctor_choice_prepare_result"
   );
@@ -1156,6 +2040,36 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
     "appointment_doctor_choice_route",
     { x: 31740, y: 7860 },
     "appointment_doctor_choice_route"
+  );
+  const doctorChangeDepartmentRetry = retryNode(
+    "appointment_doctor_change_department_retry",
+    { x: 32040, y: 7860 },
+    {
+      maxRetries: 3,
+      counterVar: "appointment_doctor_change_department_retry_count",
+      resetVariables: [
+        "doctor_id",
+        "doctor_scope_key",
+        "department",
+        "availability_department",
+        "appointment_date",
+        "appointment_slot_id",
+        "appointment_slot_label",
+        "appointment_slot_start",
+        "appointment_slot_end",
+        "appointment_future_slots",
+        "appointment_schedule_exceptions_result",
+        "appointment_reservation_id",
+        "appointment_reservation_key",
+        "appointment_booking_fee",
+        "appointment_booking_fee_paise"
+      ]
+    }
+  );
+  const doctorChangeDepartmentRetryExhausted = messageNode(
+    "appointment_doctor_change_department_retry_exhausted_message",
+    { x: 32340, y: 8040 },
+    "I couldn't change the department after several attempts. Please start a new booking when you're ready."
   );
   const doctorChoiceInvalid = messageNode(
     "appointment_doctor_choice_invalid_message",
@@ -1202,6 +2116,8 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
   );
   upsertNode(doc, doctorChoicePrepare);
   upsertNode(doc, doctorChoiceRoute);
+  upsertNode(doc, doctorChangeDepartmentRetry);
+  upsertNode(doc, doctorChangeDepartmentRetryExhausted);
   upsertNode(doc, doctorChoiceInvalid);
   upsertNode(doc, alternateDoctorChoicePrepare);
   upsertNode(doc, alternateDoctorChoiceRoute);
@@ -1224,6 +2140,12 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
   ]);
   replaceOutgoing(doc, "appointment_doctor_choice_route", [
     {
+      id: "edge_variant_doctor_choice_change_department",
+      target: "appointment_doctor_change_department_retry",
+      label: "change_department",
+      condition: { operator: "equals", value: "change_department" }
+    },
+    {
       id: "edge_variant_doctor_choice_found",
       target: "appointment_display_labels_set",
       label: "found",
@@ -1236,6 +2158,25 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
       isDefault: true
     }
   ]);
+  replaceOutgoing(doc, "appointment_doctor_change_department_retry", [
+    {
+      id: "edge_variant_doctor_change_department_retry_return",
+      target: "appointment_department_input",
+      label: "retry",
+      isRetry: true
+    },
+    {
+      id: "edge_variant_doctor_change_department_retry_exhausted",
+      target: "appointment_doctor_change_department_retry_exhausted_message",
+      label: "exhausted/default",
+      isDefault: true
+    }
+  ]);
+  addEdge(doc, {
+    id: "edge_variant_doctor_change_department_retry_exhausted_end",
+    source: "appointment_doctor_change_department_retry_exhausted_message",
+    target: "existing_patient_lookup_otp_invalid_end"
+  });
   addEdge(doc, {
     id: "edge_variant_doctor_choice_invalid_end",
     source: "appointment_doctor_choice_invalid_message",
@@ -1344,6 +2285,7 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
     }
   ]);
 
+  configureAppointmentWhatsappConfirmationCode(doc);
   findNode(doc, "appointment_notify").data = appointmentConfirmationWhatsappData();
 
   const reminder12h = deepClone(findNode(doc, "appointment_reminder_scheduler"));
@@ -1478,6 +2420,7 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
           "Location": "Sai Deepa Hospital, Chanda Nagar",
           "Payment": "Pay at hospital"
         },
+        actions: [appointmentConfirmationLocationAction()],
         footer: "Please arrive at the hospital a little early and keep the confirmation message for reference."
       }
     ]
@@ -1486,7 +2429,7 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
     id: "appointment_booking_complete_end",
     type: "end",
     position: { x: 61500, y: 10190 },
-    data: { messages: [] }
+    data: { messages: [APPOINTMENT_BOOKING_COMPLETION_MESSAGE] }
   };
   upsertNode(doc, appointmentBookingEnd);
   replaceOutgoing(doc, "appointment_confirmation", [
@@ -1530,37 +2473,31 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
   setGlobal(doc, "emergency_phone", "+91 7093762716");
   setGlobal(doc, "payment_link", "https://saideepahospitals.com");
   setGlobal(doc, "report_portal_url", "https://saideepahospitals.com");
+  setGlobal(doc, "hospital_location_url", "https://maps.app.goo.gl/CnLgUZGcaas1Pm776");
   setGlobal(doc, "appointment_fee", "0");
   setGlobal(doc, "whatsapp_otp_template_name", WHATSAPP_OTP_TEMPLATE_NAME);
-  setGlobal(doc, "whatsapp_confirmation_template_name", "appointment_confirmed");
-  setGlobal(doc, "whatsapp_reminder_template_name", "appointment_reminder");
-  setGlobal(doc, "whatsapp_reminder_12h_template_name", "appointment_reminder");
-  setGlobal(doc, "whatsapp_reminder_2h_template_name", "appointment_reminder");
+  setGlobal(doc, "whatsapp_confirmation_template_name", "doc_appointment_confirmed");
+  setGlobal(doc, "whatsapp_reminder_template_name", "doc_appointment_reminder");
+  setGlobal(doc, "whatsapp_reminder_12h_template_name", "doc_appointment_reminder");
+  setGlobal(doc, "whatsapp_reminder_2h_template_name", "doc_appointment_reminder");
   // Meta's approved template cards are registered as English (US), which
   // maps to the Cloud API locale code en_US. Using en silently makes an
   // otherwise valid template name fail lookup at delivery time.
   setGlobal(doc, "whatsapp_template_language", "en_US");
-  setGlobal(doc, "otp_notification_email", OTP_NOTIFICATION_EMAIL);
   doc.bot.description = "Appointment and patient-support assistant for Sai Deepa Hospitals, Chanda Nagar, Hyderabad. Helps patients find the right department and doctor, verify their mobile number, check available appointment dates and slots, view upcoming appointments, book appointments, and receive confirmation and reminder updates through WhatsApp. For medical emergencies, patients are directed to the hospital’s emergency services.";
   doc.metadata.requiredProductionConfiguration = [
     "emergency_phone",
-    "otp_notification_email",
     "whatsapp_otp_template_name",
     "whatsapp_confirmation_template_name",
     "whatsapp_reminder_12h_template_name",
     "whatsapp_reminder_2h_template_name"
   ];
-  doc.metadata.activeNotificationChannel = "mixed";
+  doc.metadata.activeNotificationChannel = "whatsapp";
   doc.metadata.notificationChannels = {
-    otp: "email + whatsapp",
+    otp: ["whatsapp"],
     confirmation: "whatsapp",
     reminder12h: "whatsapp",
     reminder2h: "whatsapp"
-  };
-  doc.metadata.otpEmailDeliveryConfiguration = {
-    recipient: "{{otp_notification_email}}",
-    provider: "runtime sendEmail adapter",
-    purpose: "appointment OTP only"
   };
   doc.metadata.whatsappDeliveryConfiguration = {
     otpTemplate: "{{whatsapp_otp_template_name}}",
@@ -1621,22 +2558,6 @@ return { route: vars.appointment_doctors_alternatives_route, count: unique.lengt
   ]);
 
   // Normalize and verify the patient mobile before any healthcare lookup.
-  patientLookupForm.data.fields = [
-    {
-      key: "patient_mobile",
-      type: "phone",
-      label: "Mobile Number",
-      placeholder: "Enter 10-digit mobile number",
-      required: true,
-      pattern: "^(?:\\+91[\\s-]?)?[6-9]\\d{9}$",
-      showPatternHint: false,
-    }
-  ];
-  patientLookupForm.data.fieldsJson = JSON.stringify(patientLookupForm.data.fields, null, 2);
-  patientLookupForm.data.messages = [
-    "Please enter the patient's 10-digit mobile number to continue. We'll send a 6-digit OTP for verification."
-  ];
-  patientLookupForm.data.formErrorMessage = "Enter a valid mobile number starting with 6, 7, 8, or 9.";
   const mobileNormalize = scriptNode(
     "appointment_mobile_normalize",
     { x: 7200, y: 2140 },
@@ -1698,16 +2619,20 @@ return { route: "valid", mobile: vars.patient_mobile };
     source: "appointment_mobile_invalid_message",
     target: "existing_patient_lookup_otp_invalid_end"
   });
-  otpNode.data.channels = ["email", "whatsapp"];
-  otpNode.data.email = "{{otp_notification_email}}";
+  otpNode.data.channels = ["whatsapp"];
+  otpNode.data.email = "";
   otpNode.data.whatsappPhone = "{{patient_mobile}}";
   otpNode.data.whatsappTemplateName = "{{whatsapp_otp_template_name}}";
   otpNode.data.whatsappTemplateLanguage = "{{whatsapp_template_language}}";
   otpNode.data.whatsappTemplateVariablesJson = JSON.stringify({
-    "1": "User",
-    "2": "{{otp}}",
-    "3": "5 minutes"
+    "code": "{{otp}}",
+    "text": "appointment"
   }, null, 2);
+  otpNode.data.whatsappTemplateButtonParametersJson = JSON.stringify({
+    "0": WHATSAPP_OTP_BUTTON_PARAMETER
+  }, null, 2);
+  otpNode.data.emailSubject = "";
+  otpNode.data.emailBody = "";
 
   // Read existing appointments broadly, then apply the exact future-time rule
   // in one deterministic script because the record node has no range operator.
@@ -1882,7 +2807,7 @@ return { route: vars.appointment_department_catalog_route, count: unique.length 
   const departmentInput = findNode(doc, "appointment_department_input");
   departmentInput.data.buttons = SAI_DEEPA_DEPARTMENT_BUTTONS.map(([label, value]) => replyButton(label, value));
   departmentInput.data.messages = [
-    "Please choose the department you would like to visit.\n\nNot sure which department to choose? Describe your health concern, and we'll help you choose."
+    "Choose the department. If you are not sure, select Not sure / describe issue and type your concern in your own words."
   ];
   departmentInput.data.variable = "department";
   departmentInput.data.disableChatInput = false;
@@ -1924,7 +2849,7 @@ return { route: vars.appointment_department_route, concern: raw };
 `;
   const departmentReasonInput = findNode(doc, "appointment_department_reason_input");
   departmentReasonInput.data.messages = [
-    "Please briefly describe the health concern.\n\nFor example: “Cough for the last 3 days” or “Knee pain while walking.”\n\nI’ll help you choose the most suitable department for booking.\n\nIf this is a medical emergency, please seek immediate hospital care."
+    "Please briefly tell us about your health concern.\n\nFor example:\n• Cough for the last 3 days\n• Knee pain while walking\n• Stomach pain since this morning\n\nWe’ll help you choose the right department for your appointment."
   ];
   departmentReasonInput.data.variable = "department_reason";
   departmentReasonInput.data.buttons = [];
@@ -2222,6 +3147,7 @@ return { route: vars.appointment_department_ai_route, department: vars.departmen
     source: "appointment_department_catalog_unavailable_message",
     target: "existing_patient_lookup_otp_invalid_end"
   });
+  configureDepartmentInputRecovery(doc);
 
   // Match the current healthcare seed field names and booking status values.
   const existingPatientSet = findNode(doc, "appointment_existing_patient_set");
@@ -2316,7 +3242,7 @@ return { route: vars.appointment_department_ai_route, department: vars.departmen
     node.data.data.patient_id = "{{patient_id}}";
     node.data.dataJson = `${JSON.stringify(node.data.data, null, 2)}\n`;
   }
-  confirmUpdate.data.data.booking_source = "appointment_workflow";
+  confirmUpdate.data.data.booking_source = "{{system.channel}}";
   confirmUpdate.data.data.patient_name = "{{patient_name}}";
   confirmUpdate.data.data.consultation_mode = "{{consultation_type}}";
   confirmUpdate.data.data.consultation_fee_paise = "{{appointment_booking_fee_paise}}";
@@ -2811,13 +3737,13 @@ return {
   ]);
 
   // Insert a user confirmation before the reservation hold/booking commit.
-  const appointmentReviewText = "Please review your appointment details\n\n👨‍⚕️ Doctor: {{appointment_doctor_name}}\n🏥 Department: {{appointment_department_name}}\n📍 Hospital: Sai Deepa Hospital, Chanda Nagar\n📅 Date: {{appointment_date}}\n🕐 Appointment: {{appointment_slot_label}}\n🩺 Visit Type: In-person consultation\n💰 Consultation Fee: {{currency}} {{appointment_booking_fee}}\n💳 Payment: Pay at hospital";
+  const appointmentReviewText = APPOINTMENT_REVIEW_TEXT;
   const bookingConfirmation = inputNode(
     "appointment_booking_confirmation",
     { x: 46800, y: 9000 },
     appointmentReviewText + "\n\nWould you like to confirm this appointment?",
     "appointment_booking_confirmation_choice",
-    [replyButton("✅ Confirm Appointment", "confirm"), replyButton("← Change Appointment", "change_slot")],
+    [replyButton("Confirm", "confirm"), replyButton("Change Slot", "change_slot")],
     true
   );
   const noBookingMessage = messageNode(
@@ -2825,78 +3751,15 @@ return {
     { x: 49200, y: 10300 },
     "No problem. Your appointment was not booked. You can start a new booking whenever you're ready."
   );
-  const reselectSlot = deepClone(findNode(doc, "appointment_slot_booking"));
-  reselectSlot.id = "appointment_reselect_slot";
-  reselectSlot.position = { x: 49200, y: 9000 };
-  reselectSlot.data.outputVar = "appointment_reselect_booking";
-  reselectSlot.data.messages = ["Please choose a convenient appointment date."];
-  const reselectResolve = deepClone(findNode(doc, "appointment_resolve_selected_slot"));
-  reselectResolve.id = "appointment_reselect_resolve_selected_slot";
-  reselectResolve.position = { x: 50400, y: 9000 };
-  reselectResolve.data.script = reselectResolve.data.script
-    .replace(/vars\.appointment_booking/g, "vars.appointment_reselect_booking")
-    .replace(/vars\.appointment_selected_slot/g, "vars.appointment_reselected_slot");
-  reselectResolve.data.outputVar = "appointment_reselected_slot";
-  const reselectSetIds = deepClone(findNode(doc, "appointment_set_ids"));
-  reselectSetIds.id = "appointment_reselect_set_ids";
-  reselectSetIds.position = { x: 51600, y: 9000 };
-  const reselectConfirmation = inputNode(
-    "appointment_reselect_confirmation",
-    { x: 52800, y: 9000 },
-    "Would you like to confirm this appointment?",
-    "appointment_reselect_confirmation_choice",
-    [replyButton("✅ Confirm appointment", "confirm"), replyButton("✖️ Cancel", "cancel")],
-    true
-  );
   upsertNode(doc, bookingConfirmation);
   upsertNode(doc, noBookingMessage);
-  upsertNode(doc, reselectSlot);
-  upsertNode(doc, reselectResolve);
-  upsertNode(doc, reselectSetIds);
-  upsertNode(doc, reselectConfirmation);
   replaceOutgoing(doc, "appointment_set_ids", [
     {
       id: "edge_variant_set_ids_confirmation",
       target: "appointment_booking_confirmation"
     }
   ]);
-  replaceOutgoing(doc, "appointment_booking_confirmation", [
-    {
-      id: "edge_variant_confirmation_confirm",
-      target: "appointment_payment_confirmation_authorize",
-      label: "confirm",
-      condition: { operator: "equals", value: "confirm" }
-    },
-    {
-      id: "edge_variant_confirmation_change_slot",
-      target: "appointment_change_appointment_department_input",
-      label: "change_slot",
-      isDefault: true
-    }
-  ]);
-  replaceOutgoing(doc, "appointment_reselect_slot", [
-    { id: "edge_variant_reselect_resolve", target: "appointment_reselect_resolve_selected_slot" }
-  ]);
-  replaceOutgoing(doc, "appointment_reselect_resolve_selected_slot", [
-    { id: "edge_variant_reselect_set_ids", target: "appointment_reselect_set_ids" }
-  ]);
-  replaceOutgoing(doc, "appointment_reselect_set_ids", [
-    { id: "edge_variant_reselect_confirmation", target: "appointment_reselect_confirmation" }
-  ]);
-  replaceOutgoing(doc, "appointment_reselect_confirmation", [
-    {
-      id: "edge_variant_reselect_confirm",
-      target: "appointment_payment_confirmation_authorize",
-      label: "confirm",
-      condition: { operator: "equals", value: "confirm" }
-    },
-    {
-      id: "edge_variant_reselect_cancel",
-      target: "appointment_no_booking_message",
-      label: "cancel",
-      isDefault: true
-    }
-  ]);
+  configureChangeSlotDateTimeRecovery(doc);
   addEdge(doc, {
     id: "edge_variant_no_booking_end",
     source: "appointment_no_booking_message",
@@ -2948,6 +3811,7 @@ return {
   // summary node is bypassed above and pruned from the export.
 
   // Use stable appointment IDs for all delivery and scheduler deduplication.
+  configureAppointmentWhatsappConfirmationCode(doc);
   findNode(doc, "appointment_notify").data = appointmentConfirmationWhatsappData();
   for (const [node, window, triggerText] of [
     [reminder12h, "12_hours", "appointment_reminder_12h"],
@@ -2957,7 +3821,7 @@ return {
       triggerText,
       type: "appointment_reminder",
       channel: "whatsapp",
-      templateName: "appointment_reminder",
+      templateName: "doc_appointment_reminder",
       reminder_window: window,
       appointment_id: "{{appointment_id}}"
     };
@@ -2992,39 +3856,16 @@ return {
           "Location": "Sai Deepa Hospital, Chanda Nagar",
           "Payment": "Pay at hospital"
         },
+        actions: [appointmentConfirmationLocationAction()],
         footer: "Please arrive at the hospital a little early and keep the confirmation message for reference."
       }
     ]
   ).data;
 
-  // A graph edge cannot point back into the original department-to-review
-  // path: that would make the FLOW cyclic and block publishing. The catalog
-  // has already been loaded before the review step, so clone the selection
-  // path starting at its visible input. This makes Change Appointment show
-  // the next prompt immediately instead of handing off to a silent record
-  // node, then terminate a second change request safely instead of looping
-  // through the same review node again.
-  cloneAcyclicRestartBranch(doc, {
-    startId: "appointment_department_input",
-    stopId: "appointment_booking_confirmation",
-    prefix: "appointment_change_",
-    stopEdges: [
-      {
-        id: "confirmation_confirm",
-        target: "appointment_payment_confirmation_authorize",
-        label: "confirm",
-        condition: { operator: "equals", value: "confirm" }
-      },
-      {
-        id: "confirmation_change_slot",
-        target: "appointment_no_booking_message",
-        label: "change_slot",
-        isDefault: true
-      }
-    ]
-  });
-
+  configureAppointmentReferenceGeneration(doc);
+  configureAppointmentBookingSource(doc);
   pruneUnreachable(doc);
+  applyHealthcareAppointmentSyncStandard(doc);
   applyDomainRecordSchema(doc);
   doc.metadata.nodeCount = doc.flow.nodes.length;
   return normalizeNotificationFlow(doc);
