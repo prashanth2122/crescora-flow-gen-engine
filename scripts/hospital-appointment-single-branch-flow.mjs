@@ -2,6 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { indexAppointmentAvailability } from "./appointment-availability-index.mjs";
+
 import {
   normalizeNotificationFlow,
   notificationData as buildNotificationData
@@ -283,6 +285,45 @@ const isBlockingException = (exception) => ["block", "unavailable", "leave", "cl
     throw new Error(`Availability node ${node.id} could not be configured for schedule exceptions`);
   }
   node.data.script = script;
+}
+
+function configureAvailabilityFailureSafety(doc) {
+  const failureId = "appointment_availability_failed_end";
+  const catalog = doc.bot.localizedVariables ?? { version: 1, baseLanguage: "en", languages: {} };
+  catalog.languages ??= {};
+  catalog.languages.en ??= {};
+  catalog.languages.en.appointment_availability_failed_copy =
+    "We couldn't check appointment availability right now. Please try again later or call";
+  doc.bot.localizedVariables = catalog;
+  upsertNode(doc, {
+    id: failureId,
+    type: "end",
+    position: { x: 37500, y: 12000 },
+    data: { messages: ["{{appointment_availability_failed_copy}} {{front_desk_phone}}."] }
+  });
+  for (const id of [
+    "appointment_filter_available_slots",
+    "appointment_filter_alternate_slots",
+    "appointment_filter_conflict_slots"
+  ]) {
+    const node = findNode(doc, id);
+    indexAppointmentAvailability(node);
+    // These bounded, local calculations need headroom above the former 100 ms.
+    // Other script nodes retain their existing budgets.
+    node.data.timeoutMs = 1000;
+    if (!node.data.script.includes("// Clear stale inventory before calculating availability.")) {
+      const inventoryVar = node.data.script.match(/vars\.(\w+) = \{ data: slots \}/)?.[1];
+      const routeVar = node.data.script.match(/vars\.(\w+) = slots.length > 0/)?.[1];
+      const countVar = node.data.script.match(/vars\.(\w+) = slots.length;/)?.[1];
+      if (!inventoryVar || !routeVar || !countVar) throw new Error(`Missing inventory outputs for ${id}`);
+      node.data.script = `// Clear stale inventory before calculating availability.\nvars.${inventoryVar} = { data: [] };\nvars.${routeVar} = "error";\nvars.${countVar} = 0;\nvars.${node.data.outputVar} = { route: "error", count: 0 };\n${node.data.script}`;
+    }
+    const failureEdge = doc.flow.edges.find((edge) => edge.source === id && edge.isDefault);
+    if (!failureEdge) throw new Error(`Missing failure edge for ${id}`);
+    failureEdge.target = failureId;
+    failureEdge.condition = { operator: "equals", value: "failure" };
+    failureEdge.label = "failure/default";
+  }
 }
 
 function replyButton(label, value) {
@@ -1517,6 +1558,7 @@ export function buildHospitalAppointmentSingleBranchFlow(baseDoc = loadBaseHospi
     configureOtpMaxAttemptsMessage(doc);
     configureAppointmentBookingCompletionEnd(doc);
     configureAppointmentBookingSource(doc);
+    configureAvailabilityFailureSafety(doc);
     pruneUnreachable(doc);
     applyWhatsAppNotificationsConfiguration(doc);
     doc.metadata.nodeCount = doc.flow.nodes.length;
@@ -3864,6 +3906,7 @@ return {
 
   configureAppointmentReferenceGeneration(doc);
   configureAppointmentBookingSource(doc);
+  configureAvailabilityFailureSafety(doc);
   pruneUnreachable(doc);
   applyHealthcareAppointmentSyncStandard(doc);
   applyDomainRecordSchema(doc);

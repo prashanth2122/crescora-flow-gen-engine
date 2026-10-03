@@ -260,6 +260,9 @@ Email is usually used as a single linear step. Connect it to one next node, and 
 - `cc` (text): CC (optional).
 - `bcc` (text): BCC (optional).
 - `replyTo` (text): Reply-To (optional).
+- `emailPresentation` (select): Email Design. Options: shared, raw.
+- `emailTemplateKey` (text): Platform Template Key (optional).
+- `emailTemplateVariablesJson` (textarea): Template Variables JSON (optional).
 - `subject` (text) required: Subject.
 - `body` (textarea) required: Body Template.
 - `bodyType` (select): Body Type. Options: text, html.
@@ -409,6 +412,9 @@ OTP Verification is a blocking node. It waits internally for code entry and rese
 - `emailBody` (textarea): Email Body.
 - `emailBodyType` (select): Email Body Type. Options: text, html.
 - `emailReplyTo` (text): Email Reply-To.
+- `emailPresentation` (select): Email Design. Options: shared, raw.
+- `emailTemplateKey` (text): Email Template Key (optional).
+- `emailTemplateVariablesJson` (textarea): Email Template Variables JSON (optional).
 - `outputVar` (text): Save Result As.
 
 **Runtime Defaults**
@@ -488,6 +494,9 @@ Notification should connect each delivery outcome to a clear next step. It usual
 - `strategy` (select): Delivery Strategy. Options: first_success, send_all, priority_order.
 - `messageCategory` (select): Message Category. Options: transactional, promotional, service.
 - `dedupeKey` (text): Idempotency Key (optional).
+- `emailPresentation` (select): Email Design. Options: shared, raw.
+- `emailTemplateKey` (text): Email Template Key (optional).
+- `emailTemplateVariablesJson` (textarea): Email Template Variables JSON (optional).
 - `defaultCountryCode` (text): Default Country Code.
 - `strictTemplateValidation` (boolean): Fail If Template Variables Missing.
 - `outputVar` (text): Save Result As.

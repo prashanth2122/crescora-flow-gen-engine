@@ -148,6 +148,28 @@
           "required": false
         },
         {
+          "key": "emailPresentation",
+          "label": "Email Design",
+          "type": "select",
+          "required": false,
+          "options": [
+            "shared",
+            "raw"
+          ]
+        },
+        {
+          "key": "emailTemplateKey",
+          "label": "Platform Template Key (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "emailTemplateVariablesJson",
+          "label": "Template Variables JSON (optional)",
+          "type": "textarea",
+          "required": false
+        },
+        {
           "key": "subject",
           "label": "Subject",
           "type": "text",
@@ -515,6 +537,28 @@
           "required": false
         },
         {
+          "key": "emailPresentation",
+          "label": "Email Design",
+          "type": "select",
+          "required": false,
+          "options": [
+            "shared",
+            "raw"
+          ]
+        },
+        {
+          "key": "emailTemplateKey",
+          "label": "Email Template Key (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "emailTemplateVariablesJson",
+          "label": "Email Template Variables JSON (optional)",
+          "type": "textarea",
+          "required": false
+        },
+        {
           "key": "outputVar",
           "label": "Save Result As",
           "type": "text",
@@ -630,6 +674,28 @@
           "key": "dedupeKey",
           "label": "Idempotency Key (optional)",
           "type": "text",
+          "required": false
+        },
+        {
+          "key": "emailPresentation",
+          "label": "Email Design",
+          "type": "select",
+          "required": false,
+          "options": [
+            "shared",
+            "raw"
+          ]
+        },
+        {
+          "key": "emailTemplateKey",
+          "label": "Email Template Key (optional)",
+          "type": "text",
+          "required": false
+        },
+        {
+          "key": "emailTemplateVariablesJson",
+          "label": "Email Template Variables JSON (optional)",
+          "type": "textarea",
           "required": false
         },
         {

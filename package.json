@@ -38,7 +38,7 @@
     "domain:interior-design:validate": "node scripts/validate-flow-export.mjs domains/interior-design/templates/interior-design-sales-consultant.flow.json",
     "domain:hospital:audit:journeys": "node scripts/audit-hospital-journeys.mjs",
     "domain:hospital:audit:content": "node scripts/audit-hospital-content.mjs",
-    "test:hospital:appointment-single-branch": "node --test scripts/hospital-appointment-single-branch.test.mjs",
+    "test:hospital:appointment-single-branch": "node --test scripts/hospital-appointment-single-branch.test.mjs scripts/appointment-availability.test.mjs",
     "template:build": "npm run domain:hospital:build",
     "template:validate": "npm run domain:hospital:validate",
     "template:audit:journeys": "npm run domain:hospital:audit:journeys",

@@ -172,6 +172,12 @@ payment_status
 - Slot becomes unavailable: refresh live inventory and return to date
   selection.
 - CRM read failure: stop safely; never fall back to a hardcoded schedule.
+- Availability calculation error or timeout: use an explicit `failure` edge to
+  a localized technical-recovery message and stop. Never route calculation
+  failure to the empty-inventory branch. Clear prior inventory before execution;
+  keep technical details in runtime diagnostics. Index appointment timestamps
+  once and group reservation windows by doctor/date rather than rescanning all
+  records for every slot. The Sai Deepa calculation budget is bounded at 1,000 ms.
 - Branch, department, doctor, or consultation-mode change: clear stale
   selection, hold, and schedule state before continuing.
 

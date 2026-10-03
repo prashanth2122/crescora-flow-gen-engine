@@ -42,6 +42,16 @@ Emergency never requests patient data or OTP. It shows the urgent-care message w
 
 Booking configuration and contracts:
 
+Availability calculations index appointment timestamps once and group reservation
+windows by doctor/date. Primary, alternate, and conflict calculations retain the
+same slot IDs, capacities, statuses, and leave rules with a bounded 1,000 ms
+budget. Each calculation clears its previous inventory before starting. A script
+failure takes an explicit `failure` edge to a localized recovery message and ends
+the turn; only a successful calculation with empty inventory says no dates were
+found. Detailed errors remain in `lastScriptError` and the execution trace after
+deploying the matching API runtime change. Deploy that change and re-import the
+regenerated single-branch FLOW together; start a new conversation for validation.
+
 - `patient_mobile` accepts `^(?:\+91[\s-]?)?[6-9]\d{9}$` and is normalized to `+91XXXXXXXXXX`; the lookup uses the healthcare patient record’s `mobile_normalized` value. The widget keeps this validation active but hides the technical regex guidance, so patients see a clean Mobile Number field.
 - The native OTP node sends the generated OTP through WhatsApp using the approved named-parameter template `verify_otp_usecase`, with `code=OTP` and `text=appointment`; the purpose value stays within Meta's 15-character parameter limit. The template's dynamic URL button at index `0` receives the generated `{{otp}}` value, which is resolved to the six-digit OTP at send time; Meta's approved template owns the base URL, so the full `https://saideepahospitals.com/` URL must not be sent as the button parameter. It has a five-minute expiry, 30-second resend cooldown, three resends, and three attempts. OTP values are never copied into ordinary flow variables. Appointment confirmation and reminders remain WhatsApp-only.
 - When OTP verification is exhausted after three attempts, the patient-facing message shows the complete Sai Deepa Hospital contact number `+91 7093762716` and ends the OTP path.

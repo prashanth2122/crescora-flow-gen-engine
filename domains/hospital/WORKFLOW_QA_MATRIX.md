@@ -78,6 +78,8 @@ path must satisfy both documents.
 | Booking fee payload | The reservation hold preparation computes `appointment_booking_fee_paise` before returning, so payment and appointment record validation receives the selected consultation fee. |
 | Flow-level PII encryption | Generated record nodes do not depend on `encryptPii: true` unless the deployment preflights `RECORD_PII_ENCRYPTION_KEY`; otherwise record nodes use `encryptPii: false`. |
 | Default failure copy | Generic default branches use neutral recovery wording and do not claim a specific cause such as "slot taken" unless that branch is exclusively for that cause. |
+| Availability calculation load | Primary, alternate, and conflict scripts handle 500 appointment rows within their bounded budget, parse each booking timestamp once, and preserve booked-slot capacity, holds, leave, and slot IDs. |
+| Availability calculation failure | A thrown error or timeout clears old inventory and follows an explicit `failure` edge to localized recovery copy and an end node. No raw script error, false "no dates", alternate-doctor prompt, hold, appointment, or payment follows this branch. Successful empty inventory retains the existing no-dates path. |
 
 ## Sensitive And Regulated Data
 
